@@ -59,6 +59,7 @@ import java.io.Serial;
  * @author Thomas Ball
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MenuShortcut implements java.io.Serializable
 {
     /**
@@ -88,12 +89,6 @@ public class MenuShortcut implements java.io.Serializable
      * @since 1.1
      */
     boolean usesShift;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = 143448358473180225L;
 
     /**
      * Constructs a new MenuShortcut for the specified virtual keycode.

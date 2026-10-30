@@ -43,6 +43,7 @@ import java.rmi.server.RMIServerSocketFactory;
 import sun.rmi.registry.RegistryImpl;
 
 /** A Registry that consists of a single entry that never changes. */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SingleEntryRegistry extends RegistryImpl {
     SingleEntryRegistry(int port, String name, Remote object)
             throws RemoteException {
@@ -106,5 +107,4 @@ public class SingleEntryRegistry extends RegistryImpl {
     @SuppressWarnings("serial") // Type of field is not Serializable
     private final Remote object;
 
-    private static final long serialVersionUID = -4897238949499730950L;
 }

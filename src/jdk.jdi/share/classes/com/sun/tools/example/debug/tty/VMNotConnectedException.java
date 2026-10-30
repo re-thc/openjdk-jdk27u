@@ -34,9 +34,8 @@
 
 package com.sun.tools.example.debug.tty;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class VMNotConnectedException extends RuntimeException {
-
-    private static final long serialVersionUID = -7433430494903950165L;
 
     public VMNotConnectedException() {
         super();

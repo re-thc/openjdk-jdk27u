@@ -26,8 +26,7 @@
  * @modules java.transaction.xa
  * @compile
  *   test/transaction/XAExceptionTests.java
- *   util/SerializedTransactionExceptions.java
- * @run testng/othervm Driver
+ * * @run testng/othervm Driver
  */
 public class Driver  extends test.transaction.XAExceptionTests {
 }

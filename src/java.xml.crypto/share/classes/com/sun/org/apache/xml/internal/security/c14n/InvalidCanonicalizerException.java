@@ -24,13 +24,12 @@ package com.sun.org.apache.xml.internal.security.c14n;
 
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidCanonicalizerException extends XMLSecurityException {
 
     /**
      *
      */
-    private static final long serialVersionUID = 1L;
-
     /**
      * Constructor InvalidCanonicalizerException
      *

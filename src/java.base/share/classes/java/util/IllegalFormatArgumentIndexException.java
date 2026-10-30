@@ -33,10 +33,8 @@ package java.util;
  *
  * @since 16
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class IllegalFormatArgumentIndexException extends IllegalFormatException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 4191767811181838112L;
 
     private final int illegalIndex;
 

@@ -80,9 +80,8 @@ import javax.management.ObjectName;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class JMXConnectionNotification extends Notification {
-
-    private static final long serialVersionUID = -2331308725952627538L;
 
     /**
      * <p>Notification type string for a connection-opened notification.

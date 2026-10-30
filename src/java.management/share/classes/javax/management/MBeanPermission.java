@@ -168,10 +168,9 @@ import java.security.Permission;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public class MBeanPermission extends Permission {
-
-    private static final long serialVersionUID = -2416928705275160661L;
 
     /**
      * Actions list.

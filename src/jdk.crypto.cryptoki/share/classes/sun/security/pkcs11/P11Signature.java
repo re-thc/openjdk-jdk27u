@@ -64,8 +64,6 @@ import sun.security.util.KeyUtil;
  *   . SHA3-512withDSA
  *   . <any of above>inP1363Format
  * . RSA:
- *   . MD2withRSA
- *   . MD5withRSA
  *   . SHA1withRSA
  *   . SHA224withRSA
  *   . SHA256withRSA
@@ -177,9 +175,7 @@ final class P11Signature extends SignatureSpi {
         ObjectIdentifier digestOID = null;
         MessageDigest md = null;
         switch ((int) mechanism) {
-            case (int) CKM_MD2_RSA_PKCS,
-                    (int) CKM_MD5_RSA_PKCS,
-                    (int) CKM_SHA1_RSA_PKCS,
+            case (int) CKM_SHA1_RSA_PKCS,
                     (int) CKM_SHA224_RSA_PKCS,
                     (int) CKM_SHA256_RSA_PKCS,
                     (int) CKM_SHA384_RSA_PKCS,
@@ -448,7 +444,6 @@ final class P11Signature extends SignatureSpi {
         }
         int maxDataSize = padding.getMaxDataSize();
         int encodedLength = switch (algorithm) {
-            case "MD5withRSA", "MD2withRSA" -> 34;
             case "SHA1withRSA" -> 35;
             case "SHA224withRSA", "SHA3-224withRSA" -> 47;
             case "SHA256withRSA", "SHA3-256withRSA" -> 51;

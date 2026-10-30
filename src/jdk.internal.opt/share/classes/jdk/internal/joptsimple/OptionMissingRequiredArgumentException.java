@@ -62,9 +62,8 @@ import static java.util.Arrays.*;
  *
  * @author <a href="mailto:pholser@alumni.rice.edu">Paul Holser</a>
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class OptionMissingRequiredArgumentException extends OptionException {
-    private static final long serialVersionUID = -1L;
-
     OptionMissingRequiredArgumentException( OptionSpec<?> option ) {
         super( asList( option ) );
     }

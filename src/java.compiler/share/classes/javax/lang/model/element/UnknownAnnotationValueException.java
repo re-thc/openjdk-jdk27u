@@ -40,10 +40,8 @@ import javax.lang.model.UnknownEntityException;
  * @see AnnotationValueVisitor#visitUnknown
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnknownAnnotationValueException extends UnknownEntityException {
-
-    @Serial
-    private static final long serialVersionUID = 269L;
 
     private transient AnnotationValue av;
     private transient Object parameter;

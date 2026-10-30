@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -360,8 +360,8 @@ class Krb5Context implements GSSContextSpi {
      */
 
     /**
-     * Get the context specific DESCipher instance, invoked in
-     * MessageToken.init()
+     * Get the context specific CipherHelper instance, invoked in
+     * MessageToken_v2.init()
      */
     final CipherHelper getCipherHelper(EncryptionKey ckey) throws GSSException {
          EncryptionKey cipherKey;
@@ -853,15 +853,8 @@ class Krb5Context implements GSSContextSpi {
     public final int getWrapSizeLimit(int qop, boolean confReq,
                                        int maxTokSize) throws GSSException {
 
-        int retVal = 0;
-        if (cipherHelper.getProto() == 0) {
-            retVal = WrapToken.getSizeLimit(qop, confReq, maxTokSize,
-                                        getCipherHelper(null));
-        } else if (cipherHelper.getProto() == 1) {
-            retVal = WrapToken_v2.getSizeLimit(qop, confReq, maxTokSize,
-                                        getCipherHelper(null));
-        }
-        return retVal;
+        return WrapToken_v2.getSizeLimit(qop, confReq, maxTokSize,
+                getCipherHelper(null));
     }
 
     /*
@@ -881,54 +874,15 @@ class Krb5Context implements GSSContextSpi {
 
         byte[] encToken = null;
         try {
-            if (cipherHelper.getProto() == 0) {
-                WrapToken token =
-                        new WrapToken(this, msgProp, inBuf, offset, len);
-                encToken = token.encode();
-            } else if (cipherHelper.getProto() == 1) {
-                WrapToken_v2 token =
-                        new WrapToken_v2(this, msgProp, inBuf, offset, len);
-                encToken = token.encode();
-            }
+            WrapToken_v2 token =
+                    new WrapToken_v2(this, msgProp, inBuf, offset, len);
+            encToken = token.encode();
             if (DEBUG != null) {
                 DEBUG.println("Krb5Context.wrap: token=["
                                    + getHexBytes(encToken, 0, encToken.length)
                                    + "]");
             }
             return encToken;
-        } catch (IOException e) {
-            GSSException gssException =
-                new GSSException(GSSException.FAILURE, -1, e.getMessage());
-            gssException.initCause(e);
-            throw gssException;
-        }
-    }
-
-    public final int wrap(byte[] inBuf, int inOffset, int len,
-                          byte[] outBuf, int outOffset,
-                          MessageProp msgProp) throws GSSException {
-
-        if (state != STATE_DONE)
-            throw new GSSException(GSSException.NO_CONTEXT, -1,
-                                   "Wrap called in invalid state!");
-
-        int retVal = 0;
-        try {
-            if (cipherHelper.getProto() == 0) {
-                WrapToken token =
-                        new WrapToken(this, msgProp, inBuf, inOffset, len);
-                retVal = token.encode(outBuf, outOffset);
-            } else if (cipherHelper.getProto() == 1) {
-                WrapToken_v2 token =
-                        new WrapToken_v2(this, msgProp, inBuf, inOffset, len);
-                retVal = token.encode(outBuf, outOffset);
-            }
-            if (DEBUG != null) {
-                DEBUG.println("Krb5Context.wrap: token=["
-                                   + getHexBytes(outBuf, outOffset, retVal)
-                                   + "]");
-            }
-            return retVal;
         } catch (IOException e) {
             GSSException gssException =
                 new GSSException(GSSException.FAILURE, -1, e.getMessage());
@@ -947,20 +901,11 @@ class Krb5Context implements GSSContextSpi {
 
         byte[] encToken = null;
         try {
-            if (cipherHelper.getProto() == 0) {
-                WrapToken token =
-                        new WrapToken(this, msgProp, inBuf, offset, len);
-                token.encode(os);
-                if (DEBUG != null) {
-                    encToken = token.encode();
-                }
-            } else if (cipherHelper.getProto() == 1) {
-                WrapToken_v2 token =
-                        new WrapToken_v2(this, msgProp, inBuf, offset, len);
-                token.encode(os);
-                if (DEBUG != null) {
-                    encToken = token.encode();
-                }
+            WrapToken_v2 token =
+                    new WrapToken_v2(this, msgProp, inBuf, offset, len);
+            token.encode(os);
+            if (DEBUG != null) {
+                encToken = token.encode();
             }
         } catch (IOException e) {
             GSSException gssException =
@@ -994,78 +939,26 @@ class Krb5Context implements GSSContextSpi {
 
     public final byte[] unwrap(byte[] inBuf, int offset, int len,
                                MessageProp msgProp)
-        throws GSSException {
+            throws GSSException {
 
-            if (DEBUG != null) {
-                DEBUG.println("Krb5Context.unwrap: token=["
-                                   + getHexBytes(inBuf, offset, len)
-                                   + "]");
-            }
-
-            if (state != STATE_DONE) {
-                throw new GSSException(GSSException.NO_CONTEXT, -1,
-                                       " Unwrap called in invalid state!");
-            }
-
-            byte[] data = null;
-            if (cipherHelper.getProto() == 0) {
-                WrapToken token =
-                        new WrapToken(this, inBuf, offset, len, msgProp);
-                data = token.getData();
-                setSequencingAndReplayProps(token, msgProp);
-            } else if (cipherHelper.getProto() == 1) {
-                WrapToken_v2 token =
-                        new WrapToken_v2(this, inBuf, offset, len, msgProp);
-                data = token.getData();
-                setSequencingAndReplayProps(token, msgProp);
-            }
-
-            return data;
+        if (DEBUG != null) {
+            DEBUG.println("Krb5Context.unwrap: token=["
+                    + getHexBytes(inBuf, offset, len)
+                    + "]");
         }
 
-    public final int unwrap(byte[] inBuf, int inOffset, int len,
-                             byte[] outBuf, int outOffset,
-                             MessageProp msgProp) throws GSSException {
-
-        if (state != STATE_DONE)
+        if (state != STATE_DONE) {
             throw new GSSException(GSSException.NO_CONTEXT, -1,
-                                   "Unwrap called in invalid state!");
-
-        if (cipherHelper.getProto() == 0) {
-            WrapToken token =
-                        new WrapToken(this, inBuf, inOffset, len, msgProp);
-            len = token.getData(outBuf, outOffset);
-            setSequencingAndReplayProps(token, msgProp);
-        } else if (cipherHelper.getProto() == 1) {
-            WrapToken_v2 token =
-                        new WrapToken_v2(this, inBuf, inOffset, len, msgProp);
-            len = token.getData(outBuf, outOffset);
-            setSequencingAndReplayProps(token, msgProp);
+                    " Unwrap called in invalid state!");
         }
-        return len;
+
+        WrapToken_v2 token =
+                new WrapToken_v2(this, inBuf, offset, len, msgProp);
+        byte[] data = token.getData();
+        setSequencingAndReplayProps(token, msgProp);
+
+        return data;
     }
-
-    public final int unwrap(InputStream is,
-                            byte[] outBuf, int outOffset,
-                            MessageProp msgProp) throws GSSException {
-
-        if (state != STATE_DONE)
-            throw new GSSException(GSSException.NO_CONTEXT, -1,
-                                   "Unwrap called in invalid state!");
-
-        int len = 0;
-        if (cipherHelper.getProto() == 0) {
-            WrapToken token = new WrapToken(this, is, msgProp);
-            len = token.getData(outBuf, outOffset);
-            setSequencingAndReplayProps(token, msgProp);
-        } else if (cipherHelper.getProto() == 1) {
-            WrapToken_v2 token = new WrapToken_v2(this, is, msgProp);
-            len = token.getData(outBuf, outOffset);
-            setSequencingAndReplayProps(token, msgProp);
-        }
-        return len;
-    }
-
 
     public final void unwrap(InputStream is, OutputStream os,
                              MessageProp msgProp) throws GSSException {
@@ -1074,16 +967,9 @@ class Krb5Context implements GSSContextSpi {
             throw new GSSException(GSSException.NO_CONTEXT, -1,
                                    "Unwrap called in invalid state!");
 
-        byte[] data = null;
-        if (cipherHelper.getProto() == 0) {
-            WrapToken token = new WrapToken(this, is, msgProp);
-            data = token.getData();
-            setSequencingAndReplayProps(token, msgProp);
-        } else if (cipherHelper.getProto() == 1) {
-            WrapToken_v2 token = new WrapToken_v2(this, is, msgProp);
-            data = token.getData();
-            setSequencingAndReplayProps(token, msgProp);
-        }
+        WrapToken_v2 token = new WrapToken_v2(this, is, msgProp);
+        byte[] data = token.getData();
+        setSequencingAndReplayProps(token, msgProp);
 
         try {
             os.write(data);
@@ -1101,15 +987,9 @@ class Krb5Context implements GSSContextSpi {
 
             byte[] micToken = null;
             try {
-                if (cipherHelper.getProto() == 0) {
-                    MicToken token =
-                        new MicToken(this, msgProp, inMsg, offset, len);
-                    micToken = token.encode();
-                } else if (cipherHelper.getProto() == 1) {
-                    MicToken_v2 token =
-                        new MicToken_v2(this, msgProp, inMsg, offset, len);
-                    micToken = token.encode();
-                }
+                MicToken_v2 token =
+                    new MicToken_v2(this, msgProp, inMsg, offset, len);
+                micToken = token.encode();
                 return micToken;
             } catch (IOException e) {
                 micToken = null;
@@ -1119,31 +999,6 @@ class Krb5Context implements GSSContextSpi {
                 throw gssException;
             }
         }
-
-    private int getMIC(byte[] inMsg, int offset, int len,
-                       byte[] outBuf, int outOffset,
-                       MessageProp msgProp)
-        throws GSSException {
-
-        int retVal = 0;
-        try {
-            if (cipherHelper.getProto() == 0) {
-                MicToken token =
-                        new MicToken(this, msgProp, inMsg, offset, len);
-                retVal = token.encode(outBuf, outOffset);
-            } else if (cipherHelper.getProto() == 1) {
-                MicToken_v2 token =
-                        new MicToken_v2(this, msgProp, inMsg, offset, len);
-                retVal = token.encode(outBuf, outOffset);
-            }
-            return retVal;
-        } catch (IOException e) {
-            GSSException gssException =
-                new GSSException(GSSException.FAILURE, -1, e.getMessage());
-            gssException.initCause(e);
-            throw gssException;
-        }
-    }
 
     /*
      * Checksum calculation requires a byte[]. Hence, might as well pass
@@ -1157,15 +1012,9 @@ class Krb5Context implements GSSContextSpi {
         throws GSSException {
 
         try {
-            if (cipherHelper.getProto() == 0) {
-                MicToken token =
-                        new MicToken(this, msgProp, inMsg, offset, len);
-                token.encode(os);
-            } else if (cipherHelper.getProto() == 1) {
-                MicToken_v2 token =
-                        new MicToken_v2(this, msgProp, inMsg, offset, len);
-                token.encode(os);
-            }
+            MicToken_v2 token =
+                    new MicToken_v2(this, msgProp, inMsg, offset, len);
+            token.encode(os);
         } catch (IOException e) {
             GSSException gssException =
                 new GSSException(GSSException.FAILURE, -1, e.getMessage());
@@ -1194,17 +1043,10 @@ class Krb5Context implements GSSContextSpi {
                                 MessageProp msgProp)
         throws GSSException {
 
-        if (cipherHelper.getProto() == 0) {
-            MicToken token =
-                new MicToken(this, inTok, tokOffset, tokLen, msgProp);
-            token.verify(inMsg, msgOffset, msgLen);
-            setSequencingAndReplayProps(token, msgProp);
-        } else if (cipherHelper.getProto() == 1) {
-            MicToken_v2 token =
-                new MicToken_v2(this, inTok, tokOffset, tokLen, msgProp);
-            token.verify(inMsg, msgOffset, msgLen);
-            setSequencingAndReplayProps(token, msgProp);
-        }
+        MicToken_v2 token =
+            new MicToken_v2(this, inTok, tokOffset, tokLen, msgProp);
+        token.verify(inMsg, msgOffset, msgLen);
+        setSequencingAndReplayProps(token, msgProp);
     }
 
     private void verifyMIC(InputStream is,
@@ -1212,15 +1054,9 @@ class Krb5Context implements GSSContextSpi {
                            MessageProp msgProp)
         throws GSSException {
 
-        if (cipherHelper.getProto() == 0) {
-            MicToken token = new MicToken(this, is, msgProp);
-            token.verify(inMsg, msgOffset, msgLen);
-            setSequencingAndReplayProps(token, msgProp);
-        } else if (cipherHelper.getProto() == 1) {
-            MicToken_v2 token = new MicToken_v2(this, is, msgProp);
-            token.verify(inMsg, msgOffset, msgLen);
-            setSequencingAndReplayProps(token, msgProp);
-        }
+        MicToken_v2 token = new MicToken_v2(this, is, msgProp);
+        token.verify(inMsg, msgOffset, msgLen);
+        setSequencingAndReplayProps(token, msgProp);
     }
 
     public final void verifyMIC(InputStream is, InputStream msgStr,
@@ -1274,18 +1110,6 @@ class Krb5Context implements GSSContextSpi {
      * Sets replay and sequencing information for a message token received
      * form the peer.
      */
-    private void setSequencingAndReplayProps(MessageToken token,
-                                             MessageProp prop) {
-        if (replayDetState || sequenceDetState) {
-            int seqNum = token.getSequenceNumber();
-            peerTokenTracker.getProps(seqNum, prop);
-        }
-    }
-
-    /**
-     * Sets replay and sequencing information for a message token received
-     * form the peer.
-     */
     private void setSequencingAndReplayProps(MessageToken_v2 token,
                                              MessageProp prop) {
         if (replayDetState || sequenceDetState) {
@@ -1332,10 +1156,8 @@ class Krb5Context implements GSSContextSpi {
     /**
      * The session key returned by inquireSecContext(KRB5_INQ_SSPI_SESSION_KEY)
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class KerberosSessionKey implements Key {
-        @Serial
-        private static final long serialVersionUID = 699307378954123869L;
-
         @SuppressWarnings("serial") // Not statically typed as Serializable
         private final EncryptionKey key;
 

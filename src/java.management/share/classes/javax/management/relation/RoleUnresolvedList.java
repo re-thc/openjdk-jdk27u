@@ -56,10 +56,8 @@ import java.util.List;
    the asList() method so you can write
        for (RoleUnresolved r : roleUnresolvedList.asList())
 */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RoleUnresolvedList extends ArrayList<Object> {
-
-    /* Serial version */
-    private static final long serialVersionUID = 4054902803091433324L;
 
     //
     // Constructors

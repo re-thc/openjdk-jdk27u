@@ -29,6 +29,7 @@ import javax.naming.*;
 import javax.naming.directory.*;
 import javax.naming.ldap.*;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class SearchResultWithControls extends SearchResult implements HasControls {
     private Control[] controls;
 
@@ -43,5 +44,4 @@ class SearchResultWithControls extends SearchResult implements HasControls {
         return controls;
     }
 
-    private static final long serialVersionUID = 8476983938747908202L;
 }

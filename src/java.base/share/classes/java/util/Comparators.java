@@ -61,9 +61,8 @@ class Comparators {
     /**
      * Null-friendly comparators
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class NullComparator<T> implements Comparator<T>, Serializable {
-        @java.io.Serial
-        private static final long serialVersionUID = -7569533591570686392L;
         private final boolean nullFirst;
         // if null, non-null Ts are considered equal
         @SuppressWarnings("serial") // Not statically typed as Serializable

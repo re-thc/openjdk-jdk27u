@@ -265,7 +265,7 @@ public abstract class ClientHelloInterOp {
 
         // Import the trused certs.
         if (trustedMaterials != null && trustedMaterials.length != 0) {
-            ts = KeyStore.getInstance("JKS");
+            ts = KeyStore.getInstance("PKCS12");
             ts.load(null, null);
 
             Certificate[] trustedCert =
@@ -289,7 +289,7 @@ public abstract class ClientHelloInterOp {
             (keyMaterialCerts.length == keyMaterialKeys.length) &&
             (keyMaterialCerts.length == keyMaterialKeyAlgs.length);
         if (hasKeyMaterials) {
-            ks = KeyStore.getInstance("JKS");
+            ks = KeyStore.getInstance("PKCS12");
             ks.load(null, null);
 
             for (int i = 0; i < keyMaterialCerts.length; i++) {

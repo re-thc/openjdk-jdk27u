@@ -23,7 +23,7 @@
  */
 
 // NOTE: the test takes a long time for each VM option combination, so we split
-// it into 3 @test parts, so that they can be executed in parallel. If you make a
+// it into 2 @test parts, so that they can be executed in parallel. If you make a
 // change, please ensure all @test blocks are in sync.
 
 
@@ -59,18 +59,7 @@
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. IncompatibleOptions 1
  */
 
-/*
- * @test
- * @requires vm.cds.write.archived.java.heap
- * @requires vm.gc.G1
- * @requires (vm.gc=="null")
- * @requires vm.flagless
- * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @build HelloString
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. IncompatibleOptions 2
- */
+
 
 
 import jdk.test.lib.Asserts;
@@ -83,8 +72,6 @@ import jdk.test.whitebox.gc.GC;
 public class IncompatibleOptions {
     static final String OBJ_ALIGNMENT_MISMATCH =
         "The shared archive file's ObjectAlignmentInBytes of .* does not equal the current ObjectAlignmentInBytes of";
-    static final String COMPACT_STRING_MISMATCH =
-        "The shared archive file's CompactStrings setting .* does not equal the current CompactStrings setting";
     static final String COMPRESSED_OOPS_NOT_CONSISTENT =
         "The saved state of UseCompressedOops \\(%d\\) is different from runtime \\(%d\\), CDS will be disabled.";
     static final String COMPRESSED_OOPS_NOT_CONSISTENT_10 = COMPRESSED_OOPS_NOT_CONSISTENT.formatted(1, 0);
@@ -94,7 +81,7 @@ public class IncompatibleOptions {
 
     public static void main(String[] args) throws Exception {
         String[] noargs = {};
-        SharedStringsUtils.run(Integer.parseInt(args[0]), 3, noargs, IncompatibleOptions::test);
+        SharedStringsUtils.run(Integer.parseInt(args[0]), 2, noargs, IncompatibleOptions::test);
         // Add a new @test block if you get an assert ----^ about this number. See
         // SharedStringsUtils.java for details.
     }
@@ -168,16 +155,7 @@ public class IncompatibleOptions {
         // Implicitly archive without compressed oops and run with.
         testDump(9, "-XX:+UseG1GC", "-Xmx32G", null, false);
         testExec(9, "-XX:+UseG1GC", "-Xmx1G", null, true);
-        // CompactStrings must match between dump time and run time
-        testDump(10, "-XX:+UseG1GC", "-XX:-CompactStrings", null, false);
-        testExec(10, "-XX:+UseG1GC", "-XX:+CompactStrings",
-                 COMPACT_STRING_MISMATCH, true);
-        testDump(11, "-XX:+UseG1GC", "-XX:+CompactStrings", null, false);
-        testExec(11, "-XX:+UseG1GC", "-XX:-CompactStrings",
-                 COMPACT_STRING_MISMATCH, true);
-        testDump(11, "-XX:+AOTStreamableObjects", "-XX:+CompactStrings", null, false);
-        testExec(11, "-XX:+AOTStreamableObjects", "-XX:-CompactStrings",
-                 COMPACT_STRING_MISMATCH, true);
+
     }
 
     static void testDump(int testCaseNr, String collectorOption, String extraOption,

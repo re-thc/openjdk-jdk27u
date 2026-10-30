@@ -36,13 +36,8 @@ import java.io.Serial;
  *
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IllegalPathStateException extends RuntimeException {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -5158084205220481094L;
 
     /**
      * Constructs an {@code IllegalPathStateException} with no

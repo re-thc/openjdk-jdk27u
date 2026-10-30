@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +24,7 @@
 
 /*
  * @test
- * @summary Test that the diagnostic command arguemnt parser works
+ * @summary Test the diagnostic command argument parser, including memory-size overflow
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -32,6 +33,11 @@
  */
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.parser.DiagnosticCommand;
@@ -39,6 +45,12 @@ import jdk.test.whitebox.parser.DiagnosticCommand.DiagnosticArgumentType;
 import jdk.test.whitebox.WhiteBox;
 
 public class ParserTest {
+    private static final BigInteger MEMORY_SIZE_MAX = BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE);
+    private static final String MEMORY_SIZE_TOO_LARGE = "Parsing error memory size value: value is too large";
+    private static final String[] MEMORY_SIZE_UNITS = {"", "b", "B", "k", "K", "m", "M", "g", "G"};
+    private static final long MEMORY_SIZE_ORACLE_SEED = 0x5EED27L;
+    private static final int MEMORY_SIZE_RANDOM_CASES_PER_UNIT = 200;
+
     WhiteBox wb;
 
     public ParserTest() throws Exception {
@@ -209,8 +221,185 @@ public class ParserTest {
         parse(name, bi.toString(), name + "=7g", args);
         parse(name, defaultValue, "", args);
 
-        //shouldFail(name + "=7gg", args); <---- should fail, doesn't
-        //shouldFail(name + "=7t", args);  <----- should fail, doesn't
+        BigInteger max = BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE);
+        // The parser stores an unsigned size; WhiteBox retains its signed rendering.
+        String renderedMax = Long.toString(max.longValue());
+        parse(name, renderedMax, name + "=" + max, args);
+        parse(name, renderedMax, name + "=" + max + "b", args);
+        String[] suffixes = {"kK", "mM", "gG"};
+        for (int i = 0; i < suffixes.length; i++) {
+            BigInteger multiplier = BigInteger.valueOf(1024).pow(i + 1);
+            BigInteger limit = max.divide(multiplier);
+            for (char suffix : suffixes[i].toCharArray()) {
+                parse(name, "0", name + "=0" + suffix, args);
+                parse(name, multiplier.toString(), name + "=1" + suffix, args);
+                parse(name, Long.toString(limit.multiply(multiplier).longValue()), name + "=" + limit + suffix, args);
+                shouldFail(name + "=" + limit.add(BigInteger.ONE) + suffix, args);
+                shouldFail(name + "=" + max + suffix, args);
+                shouldFail(name + "=-1" + suffix, args);
+            }
+        }
+
+        testMemorySizeLimits(name, args);
+        testMemorySizeOracle(name, args);
+    }
+
+    private void testMemorySizeLimits(String name, DiagnosticCommand[] args) throws Exception {
+        BigInteger max = MEMORY_SIZE_MAX;
+        BigInteger overflow = max.add(BigInteger.ONE);
+        String renderedMax = Long.toString(max.longValue());
+
+        String[] oversized = {
+            overflow.toString(),
+            max.add(BigInteger.TWO).toString(),
+            max.multiply(BigInteger.TEN).toString(),
+            "9".repeat(20),
+            "9".repeat(40),
+            "1" + "0".repeat(100),
+            "0".repeat(30) + overflow,
+        };
+        for (String unit : MEMORY_SIZE_UNITS) {
+            BigInteger multiplier = unitMultiplier(unit);
+            BigInteger limit = max.divide(multiplier);
+            parse(name, Long.toString(limit.multiply(multiplier).longValue()), name + "=" + limit + unit, args);
+            shouldFailTooLarge(name + "=" + limit.add(BigInteger.ONE) + unit, args);
+            for (String value : oversized) {
+                shouldFailTooLarge(name + "=" + value + unit, args);
+            }
+        }
+
+        parse(name, renderedMax, name + "=" + "0".repeat(30) + max, args);
+        parse(name, "7", name + "=+7", args);
+        parse(name, "7", name + "=007", args);
+        parse(name, "7168", name + "=007k", args);
+    }
+
+    private void shouldFailTooLarge(String argument, DiagnosticCommand[] argumentTypes) throws Exception {
+        try {
+            wb.parseCommandLine(argument, ',', argumentTypes);
+        } catch (IllegalArgumentException e) {
+            if (!e.getMessage().contains(MEMORY_SIZE_TOO_LARGE)) {
+                throw new Exception("Wrong error for '" + argument + "': " + e.getMessage(), e);
+            }
+            return;
+        }
+        throw new Exception("Parser accepted argument: " + argument);
+    }
+
+    private static BigInteger unitMultiplier(String unit) {
+        return switch (unit) {
+            case "k", "K" -> BigInteger.ONE.shiftLeft(10);
+            case "m", "M" -> BigInteger.ONE.shiftLeft(20);
+            case "g", "G" -> BigInteger.ONE.shiftLeft(30);
+            default -> BigInteger.ONE;
+        };
+    }
+
+    private record MemorySizeCase(String text, BigInteger bytes) {
+        boolean representable() {
+            return bytes.compareTo(MEMORY_SIZE_MAX) <= 0;
+        }
+
+        // WhiteBox renders the unsigned size through a signed 64-bit conversion.
+        String rendered() {
+            return Long.toString(bytes.longValue());
+        }
+    }
+
+    private record MemorySizeCases(List<MemorySizeCase> unique, int generated) { }
+
+    private static MemorySizeCases memorySizeCases(long seed) {
+        Random random = new Random(seed);
+        BigInteger twoTo63 = BigInteger.ONE.shiftLeft(63);
+        Set<String> seen = new LinkedHashSet<>();
+        List<MemorySizeCase> cases = new ArrayList<>();
+        int generated = 0;
+        for (String unit : MEMORY_SIZE_UNITS) {
+            BigInteger limit = MEMORY_SIZE_MAX.divide(unitMultiplier(unit));
+            List<BigInteger> values = new ArrayList<>();
+            for (int delta = -2; delta <= 2; delta++) {
+                values.add(limit.add(BigInteger.valueOf(delta)));
+            }
+            for (int delta = -1; delta <= 2; delta++) {
+                values.add(MEMORY_SIZE_MAX.add(BigInteger.valueOf(delta)));
+            }
+            values.add(BigInteger.ZERO);
+            values.add(BigInteger.ONE);
+            values.add(twoTo63.subtract(BigInteger.ONE));
+            values.add(twoTo63);
+            values.add(twoTo63.add(BigInteger.ONE));
+            values.add(BigInteger.TEN.pow(19));
+            values.add(BigInteger.TEN.pow(20).subtract(BigInteger.ONE));
+            values.add(BigInteger.TEN.pow(20));
+            values.add(BigInteger.TEN.pow(30));
+            List<String> texts = new ArrayList<>();
+            for (BigInteger value : values) {
+                texts.add(value.toString());
+            }
+            for (int i = 0; i < MEMORY_SIZE_RANDOM_CASES_PER_UNIT; i++) {
+                BigInteger value = switch (random.nextInt(3)) {
+                    case 0 -> new BigInteger(1 + random.nextInt(130), random);
+                    case 1 -> limit.add(BigInteger.valueOf(random.nextInt(4097) - 2048));
+                    default -> MEMORY_SIZE_MAX.add(BigInteger.valueOf(random.nextInt(4097) - 2048));
+                };
+                value = value.max(BigInteger.ZERO);
+                String digits = value.toString();
+                if (random.nextInt(8) == 0) {
+                    digits = "0".repeat(1 + random.nextInt(25)) + digits;
+                }
+                values.add(value);
+                texts.add(digits);
+            }
+            for (int i = 0; i < values.size(); i++) {
+                generated++;
+                String text = texts.get(i) + unit;
+                if (seen.add(text)) {
+                    cases.add(new MemorySizeCase(text, values.get(i).multiply(unitMultiplier(unit))));
+                }
+            }
+        }
+        return new MemorySizeCases(cases, generated);
+    }
+
+    private void testMemorySizeOracle(String name, DiagnosticCommand[] args) throws Exception {
+        MemorySizeCases generated = memorySizeCases(MEMORY_SIZE_ORACLE_SEED);
+        if (!generated.equals(memorySizeCases(MEMORY_SIZE_ORACLE_SEED))) {
+            throw new Exception("Memory size case generation is not deterministic");
+        }
+        List<MemorySizeCase> cases = generated.unique();
+        List<String> mismatches = new ArrayList<>();
+        int representable = 0;
+        for (MemorySizeCase c : cases) {
+            String cmdLine = name + "=" + c.text();
+            String problem = null;
+            representable += c.representable() ? 1 : 0;
+            try {
+                Object[] res = wb.parseCommandLine(cmdLine, ',', args);
+                String actual = (String) res[1];
+                if (!c.representable()) {
+                    problem = "accepted as " + actual + " but " + c.bytes() + " bytes exceeds 2^64-1";
+                } else if (!actual.equals(c.rendered())) {
+                    problem = "parsed as " + actual + ", expected " + c.rendered();
+                }
+            } catch (IllegalArgumentException e) {
+                if (c.representable()) {
+                    problem = "rejected (" + e.getMessage().trim() + ") but " + c.bytes() + " bytes is representable";
+                } else if (!e.getMessage().contains(MEMORY_SIZE_TOO_LARGE)) {
+                    problem = "rejected with the wrong error: " + e.getMessage().trim();
+                }
+            }
+            if (problem != null) {
+                mismatches.add(cmdLine + ": " + problem);
+            }
+        }
+        System.out.printf("Memory size oracle: seed=0x%X generated=%d unique=%d representable=%d oversized=%d mismatches=%d%n",
+                          MEMORY_SIZE_ORACLE_SEED, generated.generated(), cases.size(), representable,
+                          cases.size() - representable, mismatches.size());
+        if (!mismatches.isEmpty()) {
+            mismatches.stream().limit(10).forEach(System.out::println);
+            throw new Exception(mismatches.size() + " of " + cases.size() + " memory size cases mismatched; seed=0x"
+                                + Long.toHexString(MEMORY_SIZE_ORACLE_SEED));
+        }
     }
 
     public void parse(String searchName, String expectedValue,

@@ -33,10 +33,8 @@ package java.io;
  * @see     java.io.IOException
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SyncFailedException extends IOException {
-    @java.io.Serial
-    private static final long serialVersionUID = -2353342684412443330L;
-
     /**
      * Constructs an SyncFailedException with a detail message.
      * A detail message is a String that describes this particular exception.

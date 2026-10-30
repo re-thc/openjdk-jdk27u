@@ -90,13 +90,8 @@ import java.io.Serial;
  * @see         HierarchyBoundsListener
  * @since       1.3
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class HierarchyEvent extends AWTEvent {
-
-    /**
-     * Use serialVersionUID from JDK 1.6 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -5337576970038043990L;
 
     /**
      * Marks the first integer id for the range of hierarchy event ids.

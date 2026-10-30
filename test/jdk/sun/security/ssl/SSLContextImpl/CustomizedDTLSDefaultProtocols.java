@@ -28,7 +28,7 @@
  * @test
  * @bug 8237474
  * @summary Test jdk.tls.client.protocols with DTLS
- * @run main/othervm -Djdk.tls.client.protocols="DTLSv1.0"
+ * @run main/othervm -Djdk.tls.client.protocols="DTLSv1.0,DTLSv1.2"
  *   CustomizedDTLSDefaultProtocols
 */
 
@@ -52,16 +52,14 @@ public class CustomizedDTLSDefaultProtocols {
 
     enum ContextVersion {
         TLS_CV_01("DTLS",
-                new String[] {"DTLSv1.0"}),
-        TLS_CV_02("DTLSv1.0",
-                new String[] {"DTLSv1.0"}),
+                new String[] {"DTLSv1.2"}),
         TLS_CV_03("DTLSv1.2",
-                new String[] {"DTLSv1.0", "DTLSv1.2"});
+                new String[] {"DTLSv1.2"});
 
         final String contextVersion;
         final String[] enabledProtocols;
         final static String[] supportedProtocols = new String[] {
-                "DTLSv1.0", "DTLSv1.2"};
+                "DTLSv1.2"};
 
         ContextVersion(String contextVersion, String[] enabledProtocols) {
             this.contextVersion = contextVersion;

@@ -35,10 +35,8 @@ import java.io.IOException;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnknownServiceException extends IOException {
-    @java.io.Serial
-    private static final long serialVersionUID = -4169033248853639508L;
-
     /**
      * Constructs a new {@code UnknownServiceException} with no
      * detail message.

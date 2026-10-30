@@ -32,9 +32,8 @@ import java.lang.annotation.*;
  * @author  Josh Bloch
  * @since   1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class TypeNotPresentExceptionProxy extends ExceptionProxy {
-    @java.io.Serial
-    private static final long serialVersionUID = 5565925172427947573L;
     final String typeName;
     final Throwable cause;
 

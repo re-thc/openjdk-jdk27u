@@ -107,11 +107,9 @@ import java.util.List;
  * @see X509Extension
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract non-sealed class X509Certificate extends Certificate
     implements X509Extension, BinaryEncodable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -2491127588187038216L;
 
     private transient X500Principal subjectX500Principal, issuerX500Principal;
 

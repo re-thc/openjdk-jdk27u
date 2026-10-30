@@ -36,11 +36,9 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class QualifiedAttributeValueExp extends AttributeValueExp   {
 
-
-    /* Serial version */
-    private static final long serialVersionUID = 8832517277410933254L;
 
     /**
      * @serial The attribute class name

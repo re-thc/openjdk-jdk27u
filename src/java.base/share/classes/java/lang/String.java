@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,6 +171,7 @@ import sun.nio.cs.UTF_8;
  * @jls     15.18.1 String Concatenation Operator +
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class String
     implements java.io.Serializable, Comparable<String>, CharSequence,
                Constable, ConstantDesc {
@@ -213,52 +215,11 @@ public final class String
      */
     private boolean hashIsZero; // Default to false;
 
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = -6849794470754667710L;
-
     /**
-     * If String compaction is disabled, the bytes in {@code value} are
-     * always encoded in UTF16.
-     *
-     * For methods with several possible implementation paths, when String
-     * compaction is disabled, only one code path is taken.
-     *
-     * The instance field value is generally opaque to optimizing JIT
-     * compilers. Therefore, in performance-sensitive place, an explicit
-     * check of the static boolean {@code COMPACT_STRINGS} is done first
-     * before checking the {@code coder} field since the static boolean
-     * {@code COMPACT_STRINGS} would be constant folded away by an
-     * optimizing JIT compiler. The idioms for these cases are as follows.
-     *
-     * For code such as:
-     *
-     *    if (coder == LATIN1) { ... }
-     *
-     * can be written more optimally as
-     *
-     *    if (coder() == LATIN1) { ... }
-     *
-     * or:
-     *
-     *    if (COMPACT_STRINGS && coder == LATIN1) { ... }
-     *
-     * An optimizing JIT compiler can fold the above conditional as:
-     *
-     *    COMPACT_STRINGS == true  => if (coder == LATIN1) { ... }
-     *    COMPACT_STRINGS == false => if (false)           { ... }
-     *
-     * @implNote
-     * The actual value for this field is injected by JVM. The static
-     * initialization block is used to set the value here to communicate
-     * that this static final field is not statically foldable, and to
-     * avoid any possible circular dependency during vm initialization.
+     * Compact String storage is always enabled. Latin-1 strings use one byte
+     * per code unit; other strings use UTF-16 in a byte array.
      */
-    static final boolean COMPACT_STRINGS;
-
-    static {
-        COMPACT_STRINGS = true;
-    }
+    static final boolean COMPACT_STRINGS = true;
 
     /**
      * Class String is special cased within the Serialization Stream Protocol.
@@ -386,14 +347,9 @@ public final class String
             this.coder = "".coder;
             return;
         }
-        if (COMPACT_STRINGS) {
-            byte[] val = StringUTF16.compress(codePoints, offset, count);
-            this.coder = StringUTF16.coderFromArrayLen(val, count);
-            this.value = val;
-            return;
-        }
-        this.coder = UTF16;
-        this.value = StringUTF16.toBytes(codePoints, offset, count);
+        byte[] val = StringUTF16.compress(codePoints, offset, count);
+        this.coder = StringUTF16.coderFromArrayLen(val, count);
+        this.value = val;
     }
 
     /**
@@ -404,8 +360,8 @@ public final class String
      * subarray, and the {@code count} argument specifies the length of the
      * subarray.
      *
-     * <p> Each {@code byte} in the subarray is converted to a {@code char} as
-     * specified in the {@link #String(byte[],int) String(byte[],int)} constructor.
+     * <p> Each byte {@code b} in the subarray is converted to a character
+     * {@code (char) (((hibyte & 0xff) << 8) | (b & 0xff))}.
      *
      * <p> The contents of the string are unspecified if the byte array
      * is modified during string construction.
@@ -430,7 +386,6 @@ public final class String
      *          If {@code offset} is negative, {@code count} is negative, or
      *          {@code offset} is greater than {@code ascii.length - count}
      *
-     * @see  #String(byte[], int)
      * @see  #String(byte[], int, int, java.lang.String)
      * @see  #String(byte[], int, int, java.nio.charset.Charset)
      * @see  #String(byte[], int, int)
@@ -446,7 +401,7 @@ public final class String
             this.coder = "".coder;
             return;
         }
-        if (COMPACT_STRINGS && (byte)hibyte == 0) {
+        if ((byte)hibyte == 0) {
             this.value = Arrays.copyOfRange(ascii, offset, offset + count);
             this.coder = LATIN1;
         } else {
@@ -458,43 +413,6 @@ public final class String
             this.value = val;
             this.coder = UTF16;
         }
-    }
-
-    /**
-     * Allocates a new {@code String} containing characters constructed from
-     * an array of 8-bit integer values. Each character <i>c</i> in the
-     * resulting string is constructed from the corresponding component
-     * <i>b</i> in the byte array such that:
-     *
-     * <blockquote><pre>
-     *     <b><i>c</i></b> == (char)(((hibyte &amp; 0xff) &lt;&lt; 8)
-     *                         | (<b><i>b</i></b> &amp; 0xff))
-     * </pre></blockquote>
-     *
-     * <p> The contents of the string are unspecified if the byte array
-     * is modified during string construction.
-     *
-     * @deprecated  This method does not properly convert bytes into
-     * characters.  As of JDK&nbsp;1.1, the preferred way to do this is via the
-     * {@code String} constructors that take a {@link Charset}, charset name,
-     * or that use the {@link Charset#defaultCharset() default charset}.
-     *
-     * @param  ascii
-     *         The bytes to be converted to characters
-     *
-     * @param  hibyte
-     *         The top 8 bits of each 16-bit Unicode code unit
-     *
-     * @see  #String(byte[], int, int, java.lang.String)
-     * @see  #String(byte[], int, int, java.nio.charset.Charset)
-     * @see  #String(byte[], int, int)
-     * @see  #String(byte[], java.lang.String)
-     * @see  #String(byte[], java.nio.charset.Charset)
-     * @see  #String(byte[])
-     */
-    @Deprecated(since="1.1")
-    public String(byte[] ascii, int hibyte) {
-        this(ascii, hibyte, 0, ascii.length);
     }
 
     /**
@@ -598,66 +516,53 @@ public final class String
     }
 
     private static String utf8(byte[] bytes, int offset, int length) {
-        if (COMPACT_STRINGS) {
-            int dp = StringCoding.countPositives(bytes, offset, length);
-            if (dp == length) {
-                return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+        int dp = StringCoding.countPositives(bytes, offset, length);
+        if (dp == length) {
+            return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+        }
+        // Decode with a stable copy, to be the result if the decoded length is the same
+        byte[] latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
+        int sp = dp;            // first dp bytes are already in the copy
+        while (sp < length) {
+            int b1 = latin1[sp++];
+            if (b1 >= 0) {
+                latin1[dp++] = (byte) b1;
+                continue;
             }
-            // Decode with a stable copy, to be the result if the decoded length is the same
-            byte[] latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
-            int sp = dp;            // first dp bytes are already in the copy
-            while (sp < length) {
-                int b1 = latin1[sp++];
-                if (b1 >= 0) {
-                    latin1[dp++] = (byte) b1;
+            if ((b1 & 0xfe) == 0xc2 && sp < length) { // b1 either 0xc2 or 0xc3
+                int b2 = latin1[sp];
+                if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
+                    latin1[dp++] = (byte) decode2(b1, b2);
+                    sp++;
                     continue;
                 }
-                if ((b1 & 0xfe) == 0xc2 && sp < length) { // b1 either 0xc2 or 0xc3
-                    int b2 = latin1[sp];
-                    if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
-                        latin1[dp++] = (byte) decode2(b1, b2);
-                        sp++;
-                        continue;
-                    }
-                }
-                // anything not a latin1, including the REPL
-                // we have to go with the utf16
-                sp--;
-                break;
             }
-            if (sp == length) {
-                if (dp != latin1.length) {
-                    latin1 = Arrays.copyOf(latin1, dp);
-                }
-                return new String(latin1, LATIN1);
-            }
-            byte[] utf16 = StringUTF16.newBytesFor(length);
-            StringLatin1.inflate(latin1, 0, utf16, 0, dp);
-            dp = decodeUTF8_UTF16(latin1, sp, length, utf16, dp);
-            if (dp != length) {
-                utf16 = Arrays.copyOf(utf16, dp << 1);
-            }
-            return new String(utf16, UTF16);
-        } else { // !COMPACT_STRINGS
-            byte[] dst = StringUTF16.newBytesFor(length);
-            int dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0);
-            if (dp != length) {
-                dst = Arrays.copyOf(dst, dp << 1);
-            }
-            return new String(dst, UTF16);
+            // anything not a latin1, including the REPL
+            // we have to go with the utf16
+            sp--;
+            break;
         }
+        if (sp == length) {
+            if (dp != latin1.length) {
+                latin1 = Arrays.copyOf(latin1, dp);
+            }
+            return new String(latin1, LATIN1);
+        }
+        byte[] utf16 = StringUTF16.newBytesFor(length);
+        StringLatin1.inflate(latin1, 0, utf16, 0, dp);
+        dp = decodeUTF8_UTF16(latin1, sp, length, utf16, dp);
+        if (dp != length) {
+            utf16 = Arrays.copyOf(utf16, dp << 1);
+        }
+        return new String(utf16, UTF16);
     }
 
     private static String iso88591(byte[] bytes, int offset, int length) {
-        if (COMPACT_STRINGS) {
-            return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
-        } else {
-            return new String(StringLatin1.inflate(bytes, offset, length), UTF16);
-        }
+        return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
     }
 
     private static String ascii(byte[] bytes, int offset, int length) {
-        if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
+        if (!StringCoding.hasNegatives(bytes, offset, length)) {
             return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
         } else {
             byte[] dst = StringUTF16.newBytesFor(length);
@@ -687,7 +592,7 @@ public final class String
                 return iso88591(bytes, offset, length);
             } else {
                 // fastpath for always Latin1 decodable single byte
-                if (COMPACT_STRINGS && ad.isLatin1Decodable()) {
+                if (ad.isLatin1Decodable()) {
                     byte[] dst = new byte[length];
                     ad.decodeToLatin1(bytes, offset, length, dst);
                     return new String(dst, LATIN1);
@@ -739,58 +644,51 @@ public final class String
         if (length == 0) {
             return "";
         }
-        int dp;
-        byte[] dst;
-        if (COMPACT_STRINGS) {
-            dp = StringCoding.countPositives(bytes, offset, length);
-            int sl = offset + length;
-            if (dp == length) {
-                if (length != bytes.length) {
-                    return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
-                } else {
-                    return new String(bytes, LATIN1);
-                }
+        int dp = StringCoding.countPositives(bytes, offset, length);
+        int sl = offset + length;
+        if (dp == length) {
+            if (length != bytes.length) {
+                return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+            } else {
+                return new String(bytes, LATIN1);
             }
-            dst = new byte[length];
-            System.arraycopy(bytes, offset, dst, 0, dp);
-            offset += dp;
-            while (offset < sl) {
-                int b1 = bytes[offset++];
-                if (b1 >= 0) {
-                    dst[dp++] = (byte)b1;
+        }
+        byte[] dst = new byte[length];
+        System.arraycopy(bytes, offset, dst, 0, dp);
+        offset += dp;
+        while (offset < sl) {
+            int b1 = bytes[offset++];
+            if (b1 >= 0) {
+                dst[dp++] = (byte)b1;
+                continue;
+            }
+            if ((b1 & 0xfe) == 0xc2 && offset < sl) { // b1 either 0xc2 or 0xc3
+                int b2 = bytes[offset];
+                if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
+                    dst[dp++] = (byte)decode2(b1, b2);
+                    offset++;
                     continue;
                 }
-                if ((b1 & 0xfe) == 0xc2 && offset < sl) { // b1 either 0xc2 or 0xc3
-                    int b2 = bytes[offset];
-                    if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
-                        dst[dp++] = (byte)decode2(b1, b2);
-                        offset++;
-                        continue;
-                    }
-                }
-                // anything not a latin1, including the REPL
-                // we have to go with the utf16
-                offset--;
-                break;
             }
-            if (offset == sl) {
-                if (dp != dst.length) {
-                    dst = Arrays.copyOf(dst, dp);
-                }
-                return new String(dst, LATIN1);
-            }
-            if (dp == 0) {
-                dst = StringUTF16.newBytesFor(length);
-            } else {
-                byte[] buf = StringUTF16.newBytesFor(length);
-                StringLatin1.inflate(dst, 0, buf, 0, dp);
-                dst = buf;
-            }
-            dp = decodeUTF8_UTF16OrThrow(bytes, offset, sl, dst, dp);
-        } else { // !COMPACT_STRINGS
-            dst = StringUTF16.newBytesFor(length);
-            dp = decodeUTF8_UTF16OrThrow(bytes, offset, offset + length, dst, 0);
+            // anything not a latin1, including the REPL
+            // we have to go with the utf16
+            offset--;
+            break;
         }
+        if (offset == sl) {
+            if (dp != dst.length) {
+                dst = Arrays.copyOf(dst, dp);
+            }
+            return new String(dst, LATIN1);
+        }
+        if (dp == 0) {
+            dst = StringUTF16.newBytesFor(length);
+        } else {
+            byte[] buf = StringUTF16.newBytesFor(length);
+            StringLatin1.inflate(dst, 0, buf, 0, dp);
+            dst = buf;
+        }
+        dp = decodeUTF8_UTF16OrThrow(bytes, offset, sl, dst, dp);
         if (dp != length) {
             dst = Arrays.copyOf(dst, dp << 1);
         }
@@ -807,9 +705,7 @@ public final class String
             return "";
         }
 
-        if (COMPACT_STRINGS)
-            return new String(src, LATIN1);
-        return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
+        return new String(src, LATIN1);
     }
 
     /**
@@ -836,15 +732,11 @@ public final class String
             return newStringUTF8OrThrow(src, 0, src.length);
         }
         if (cs == ISO_8859_1.INSTANCE) {
-            if (COMPACT_STRINGS)
-                return new String(src, LATIN1);
-            return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
+            return new String(src, LATIN1);
         }
         if (cs == US_ASCII.INSTANCE) {
             if (!StringCoding.hasNegatives(src, 0, src.length)) {
-                if (COMPACT_STRINGS)
-                    return new String(src, LATIN1);
-                return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
+                return new String(src, LATIN1);
             } else {
                 throw malformedASCII(src);
             }
@@ -855,19 +747,14 @@ public final class String
         if (cd instanceof ArrayDecoder ad &&
                 ad.isASCIICompatible() &&
                 !StringCoding.hasNegatives(src, 0, src.length)) {
-            if (COMPACT_STRINGS)
-                return new String(src, LATIN1);
-            return new String(src, 0, src.length, ISO_8859_1.INSTANCE);
+            return new String(src, LATIN1);
         }
         int en = scale(len, cd.maxCharsPerByte());
         char[] ca = new char[en];
         int caLen = decodeWithDecoder(cd, ca, src, 0, src.length);
-        if (COMPACT_STRINGS) {
-            byte[] val = StringUTF16.compress(ca, 0, caLen);
-            byte coder = StringUTF16.coderFromArrayLen(val, caLen);
-            return new String(val, coder);
-        }
-        return new String(StringUTF16.toBytes(ca, 0, caLen), UTF16);
+        byte[] val = StringUTF16.compress(ca, 0, caLen);
+        byte coder = StringUTF16.coderFromArrayLen(val, caLen);
+        return new String(val, coder);
     }
 
     private static final char REPL = '\ufffd';
@@ -2171,7 +2058,7 @@ public final class String
             return true;
         }
         return (anObject instanceof String aString)
-                && (!COMPACT_STRINGS || this.coder == aString.coder)
+                && (this.coder == aString.coder)
                 && StringLatin1.equals(value, aString.value);
     }
 
@@ -2431,12 +2318,10 @@ public final class String
     /**
      * CaseInsensitiveComparator for Strings.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class CaseInsensitiveComparator
             implements Comparator<String>, java.io.Serializable {
         // use serialVersionUID from JDK 1.2.2 for interoperability
-        @java.io.Serial
-        private static final long serialVersionUID = 8575799808933029326L;
-
         public int compare(String s1, String s2) {
             byte[] v1 = s1.value;
             byte[] v2 = s2.value;
@@ -4998,7 +4883,7 @@ public final class String
      *          as its single character the argument {@code c}.
      */
     public static String valueOf(char c) {
-        if (COMPACT_STRINGS && StringLatin1.canEncode(c)) {
+        if (StringLatin1.canEncode(c)) {
             return new String(StringLatin1.toBytes(c), LATIN1);
         }
         return new String(StringUTF16.toBytes(c), UTF16);
@@ -5213,14 +5098,9 @@ public final class String
             this.coder = "".coder;
             return;
         }
-        if (COMPACT_STRINGS) {
-            byte[] val = StringUTF16.compress(value, off, len);
-            this.coder = StringUTF16.coderFromArrayLen(val, len);
-            this.value = val;
-            return;
-        }
-        this.coder = UTF16;
-        this.value = StringUTF16.toBytes(value, off, len);
+        byte[] val = StringUTF16.compress(value, off, len);
+        this.coder = StringUTF16.coderFromArrayLen(val, len);
+        this.value = val;
     }
 
     /*
@@ -5238,7 +5118,7 @@ public final class String
             this.value = Arrays.copyOfRange(val, 0, length);
         } else {
             // only try to compress val if some characters were deleted.
-            if (COMPACT_STRINGS && asb.maybeLatin1) {
+            if (asb.maybeLatin1) {
                 this.value = StringUTF16.compress(val, 0, length);
                 this.coder = StringUTF16.coderFromArrayLen(this.value, length);
                 return;
@@ -5257,7 +5137,7 @@ public final class String
     }
 
     byte coder() {
-        return COMPACT_STRINGS ? coder : UTF16;
+        return coder;
     }
 
     byte[] value() {
@@ -5265,7 +5145,7 @@ public final class String
     }
 
     boolean isLatin1() {
-        return COMPACT_STRINGS && coder == LATIN1;
+        return coder == LATIN1;
     }
 
     @Native static final byte LATIN1 = 0;
@@ -5324,7 +5204,7 @@ public final class String
      *          valid Unicode code point}.
      */
     static String valueOfCodePoint(int codePoint) {
-        if (COMPACT_STRINGS && StringLatin1.canEncode(codePoint)) {
+        if (StringLatin1.canEncode(codePoint)) {
             return new String(StringLatin1.toBytes((char)codePoint), LATIN1);
         } else if (Character.isBmpCodePoint(codePoint)) {
             return new String(StringUTF16.toBytes((char)codePoint), UTF16);

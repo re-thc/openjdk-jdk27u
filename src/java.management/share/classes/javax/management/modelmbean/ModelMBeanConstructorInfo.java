@@ -83,15 +83,14 @@ import javax.management.RuntimeOperationsException;
  * <p>The default descriptor will have the {@code name}, {@code
  * descriptorType}, {@code displayName} and {@code role} fields.
  *
- * <p>The <b>serialVersionUID</b> of this class is <code>3862947819818064362L</code>.
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ModelMBeanConstructorInfo
     extends MBeanConstructorInfo
     implements DescriptorAccess {
 
-        private static final long serialVersionUID = 3862947819818064362L;
         /**
          * @serialField consDescriptor Descriptor The {@link Descriptor} containing the metadata for this instance
          */

@@ -28,7 +28,6 @@
  * with wrong mode with EncryptedPrivateKeyInfo.getKeySpec
  * (Cipher) method.
  * @author Valerie Peng
- * @run main GetKeySpecException2 PBEWithMD5AndDES
  * @run main GetKeySpecException2 PBEWithSHA1AndDESede
  */
 import java.security.*;

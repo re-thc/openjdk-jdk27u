@@ -130,6 +130,7 @@ import java.util.regex.Pattern;
  *
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class Duration
         implements TemporalAmount, Comparable<Duration>, Serializable {
@@ -169,11 +170,6 @@ public final class Duration
      * @since 26
      */
     public static final Duration MAX = new Duration(Long.MAX_VALUE, 999_999_999);
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 3078945930695997490L;
     /**
      * Constant for nanos per second.
      */

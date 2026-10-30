@@ -40,9 +40,8 @@ import java.io.PrintWriter;
  * @author JSR 105 Expert Group
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class KeySelectorException extends Exception {
-
-    private static final long serialVersionUID = -7480033639322531109L;
 
     /**
      * The throwable that caused this exception to get thrown, or

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +23,15 @@
  *
  */
 
+#include "cppstdlib/cstdlib.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/javaThread.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <errno.h>
 
 StringArrayArgument::StringArrayArgument() {
   _array = new (mtServiceability) GrowableArray<char *>(32, mtServiceability);
@@ -322,31 +326,45 @@ template <> void DCmdArgument<MemorySizeArgument>::parse_value(const char* str,
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                "Parsing error memory size value: negative values not allowed\n");
   }
-  int res = sscanf(str, UINT64_FORMAT "%c", &_value._val, &_value._multiplier);
-  if (res == 2) {
-     switch (_value._multiplier) {
+  STATIC_ASSERT(sizeof(unsigned long long) == sizeof(_value._val));
+  char* end = nullptr;
+  errno = 0;
+  const unsigned long long val = strtoull(str, &end, 10);
+  if (end == str) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              "Parsing error memory size value: invalid value\n");
+  }
+  if (errno == ERANGE) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              "Parsing error memory size value: value is too large\n");
+  }
+  _value._val = val;
+  if (*end != '\0') {
+    _value._multiplier = *end;
+    uint shift = 0;
+    switch (_value._multiplier) {
       case 'k': case 'K':
-         _value._size = _value._val * 1024;
-         break;
+        shift = 10;
+        break;
       case 'm': case 'M':
-         _value._size = _value._val * 1024 * 1024;
-         break;
+        shift = 20;
+        break;
       case 'g': case 'G':
-         _value._size = _value._val * 1024 * 1024 * 1024;
-         break;
-       default:
-         _value._size = _value._val;
-         _value._multiplier = ' ';
-         //default case should be to break with no error, since user
-         //can write size in bytes, or might have a delimiter and next arg
-         break;
-     }
-   } else if (res == 1) {
-     _value._size = _value._val;
-   } else {
-     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-               "Parsing error memory size value: invalid value\n");
-   }
+        shift = 30;
+        break;
+      default:
+        // Preserve byte values and the existing handling of delimiters.
+        _value._multiplier = ' ';
+        break;
+    }
+    if (_value._val > (UINT64_MAX >> shift)) {
+      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+                "Parsing error memory size value: value is too large\n");
+    }
+    _value._size = _value._val << shift;
+  } else {
+    _value._size = _value._val;
+  }
 }
 
 template <> void DCmdArgument<MemorySizeArgument>::init_value(TRAPS) {

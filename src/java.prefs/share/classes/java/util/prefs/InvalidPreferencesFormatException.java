@@ -37,6 +37,7 @@ import java.io.NotSerializableException;
  * @see     Preferences
  * @since   1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidPreferencesFormatException extends Exception {
     /**
      * Constructs an InvalidPreferencesFormatException with the specified
@@ -73,5 +74,4 @@ public class InvalidPreferencesFormatException extends Exception {
         super(message, cause);
     }
 
-    private static final long serialVersionUID = -791715184232119669L;
 }

@@ -437,7 +437,7 @@ public class Bug4168625Test extends RBTestFmwk {
                             logln("Loading system class: "+className);
                             result = loadFromSystem(className);
                         } else {
-                            result = defineClass(classData, 0, classData.length);
+                            result = defineClass(null, classData, 0, classData.length);
                             if (result == null) {
                                 //there was an error defining the class
                                 result = loadFromSystem(className);

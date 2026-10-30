@@ -25,13 +25,12 @@ package com.sun.org.apache.xml.internal.security.keys.storage;
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class StorageResolverException extends XMLSecurityException {
 
     /**
      *
      */
-    private static final long serialVersionUID = 1L;
-
     /**
      * Constructor StorageResolverException
      *

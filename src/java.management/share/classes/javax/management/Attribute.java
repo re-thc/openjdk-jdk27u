@@ -36,10 +36,8 @@ import java.io.Serializable;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Attribute implements Serializable   {
-
-    /* Serial version */
-    private static final long serialVersionUID = 2484220110589082382L;
 
     /**
      * @serial Attribute name.

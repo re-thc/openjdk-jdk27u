@@ -43,9 +43,8 @@ import java.util.Arrays;
  * @author  Andreas Sterbenz
  * @author  JSR 268 Expert Group
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ResponseAPDU implements java.io.Serializable {
-
-    private static final long serialVersionUID = 6962744978375594225L;
 
     /** @serial */
     private byte[] apdu;

@@ -44,6 +44,7 @@ package java.rmi.server;
  * @since   1.1
  * @see     java.rmi.server.UnicastRemoteObject#clone()
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ServerCloneException extends CloneNotSupportedException {
 
     /**
@@ -56,9 +57,6 @@ public class ServerCloneException extends CloneNotSupportedException {
      * @serial
      */
     public Exception detail;
-
-    /* indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = 6617456357664815945L;
 
     /**
      * Constructs a {@code ServerCloneException} with the specified

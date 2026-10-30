@@ -722,54 +722,6 @@ public abstract class ClassLoader {
 
     /**
      * Converts an array of bytes into an instance of class {@code Class}.
-     * Before the {@code Class} can be used it must be resolved.  This method
-     * is deprecated in favor of the version that takes a <a
-     * href="#binary-name">binary name</a> as its first argument, and is more secure.
-     *
-     * @param  b
-     *         The bytes that make up the class data.  The bytes in positions
-     *         {@code off} through {@code off+len-1} should have the format
-     *         of a valid class file as defined by
-     *         <cite>The Java Virtual Machine Specification</cite>.
-     *
-     * @param  off
-     *         The start offset in {@code b} of the class data
-     *
-     * @param  len
-     *         The length of the class data
-     *
-     * @return  The {@code Class} object that was created from the specified
-     *          class data
-     *
-     * @throws  ClassFormatError
-     *          If the data did not contain a valid class
-     *
-     * @throws  IndexOutOfBoundsException
-     *          If either {@code off} or {@code len} is negative, or if
-     *          {@code off+len} is greater than {@code b.length}.
-     *
-     * @throws  SecurityException
-     *          If an attempt is made to add this class to a package that
-     *          contains classes that were signed by a different set of
-     *          certificates than this class, or if an attempt is made
-     *          to define a class in a package with a fully-qualified name
-     *          that starts with "{@code java.}".
-     *
-     * @see  #loadClass(String, boolean)
-     * @see  #resolveClass(Class)
-     *
-     * @deprecated  Replaced by {@link #defineClass(String, byte[], int, int)
-     * defineClass(String, byte[], int, int)}
-     */
-    @Deprecated(since="1.1")
-    protected final Class<?> defineClass(byte[] b, int off, int len)
-        throws ClassFormatError
-    {
-        return defineClass(null, b, off, len, null);
-    }
-
-    /**
-     * Converts an array of bytes into an instance of class {@code Class}.
      * Before the {@code Class} can be used it must be resolved.
      *
      * <p> This method assigns a default {@link java.security.ProtectionDomain

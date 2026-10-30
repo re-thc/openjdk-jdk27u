@@ -33,7 +33,7 @@
  *          fail trusted checks
  * @library /test/lib
  * @modules java.base/sun.security.x509 java.base/sun.security.util
- * @run main/othervm CriticalSubjectAltName TLSv1.2 MD5withRSA
+ * @run main/othervm CriticalSubjectAltName TLSv1.2 SHA256withRSA
  * @author Xuelei Fan
  */
 
@@ -78,9 +78,7 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.List;
 
-import jdk.test.lib.security.SecurityUtils;
 
 public class CriticalSubjectAltName implements HostnameVerifier {
     /*
@@ -213,12 +211,6 @@ public class CriticalSubjectAltName implements HostnameVerifier {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
-        if (args[1].contains("MD5")) {
-            SecurityUtils.removeFromDisabledAlgs(
-                    "jdk.certpath.disabledAlgorithms", List.of("MD5"));
-            SecurityUtils.removeFromDisabledTlsAlgs("MD5");
-        }
-
         if (debug) {
             System.setProperty("javax.net.debug", "all");
         }

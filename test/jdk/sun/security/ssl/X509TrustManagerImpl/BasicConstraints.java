@@ -386,7 +386,7 @@ public class BasicConstraints {
         final PEMDecoder pemDecoder = PEMDecoder.of();
 
         // create a key store
-        KeyStore ks = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
         ks.load(null, null);
 
         // generate certificate from cert string

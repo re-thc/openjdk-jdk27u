@@ -32,10 +32,8 @@ package java.util.jar;
  * @author  David Connelly
  * @since   1.2
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class JarException extends java.util.zip.ZipException {
-    @java.io.Serial
-    private static final long serialVersionUID = 7159778400963954473L;
-
     /**
      * Constructs a JarException with no detail message.
      */

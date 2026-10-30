@@ -51,7 +51,7 @@ public class AnchorCertificates {
     static  {
         File f = new File(FilePaths.cacerts());
         try {
-            KeyStore cacerts = KeyStore.getInstance("JKS");
+            KeyStore cacerts = KeyStore.getInstance("PKCS12");
             try (FileInputStream fis = new FileInputStream(f)) {
                 cacerts.load(fis, null);
                 certs = new HashSet<>();

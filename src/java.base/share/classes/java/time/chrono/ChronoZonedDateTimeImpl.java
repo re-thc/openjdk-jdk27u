@@ -101,14 +101,9 @@ import java.util.Objects;
  * @param <D> the concrete type for the date of this date-time
  * @since 1.8
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
         implements ChronoZonedDateTime<D>, Serializable {
-
-    /**
-     * Serialization version.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = -5261813987200935591L;
 
     /**
      * The local date-time.

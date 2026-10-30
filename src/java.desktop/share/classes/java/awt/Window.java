@@ -160,6 +160,7 @@ import sun.util.logging.PlatformLogger;
  * @see java.awt.BorderLayout
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Window extends Container implements Accessible {
 
     /**
@@ -371,12 +372,6 @@ public class Window extends Container implements Accessible {
 
     private static final String base = "win";
     private static int nameCounter = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 4497834738069338734L;
 
     private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.Window");
 
@@ -3030,14 +3025,9 @@ public class Window extends Container implements Accessible {
      * Java Accessibility API appropriate to window user-interface elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTWindow extends AccessibleAWTContainer
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 4215068635060671780L;
-
         /**
          * Constructs an {@code AccessibleAWTWindow}.
          */
@@ -3937,13 +3927,9 @@ public class Window extends Container implements Accessible {
  * This class is no longer used, but is maintained for Serialization
  * backward-compatibility.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class FocusManager implements java.io.Serializable {
     Container focusRoot;
     Component focusOwner;
 
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 2491878825643557906L;
 }

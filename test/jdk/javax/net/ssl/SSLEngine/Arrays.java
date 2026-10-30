@@ -28,9 +28,6 @@
  * @library /test/lib
  * @run main/othervm Arrays SSL
  * @run main/othervm Arrays TLS
- * @run main/othervm Arrays SSLv3
- * @run main/othervm Arrays TLSv1
- * @run main/othervm Arrays TLSv1.1
  * @run main/othervm Arrays TLSv1.2
  * @run main/othervm Arrays TLSv1.3
  * @run main/othervm -Djdk.tls.acknowledgeCloseNotify=true Arrays TLSv1.3
@@ -42,7 +39,6 @@ import java.io.*;
 import java.security.*;
 import java.nio.*;
 
-import jdk.test.lib.security.SecurityUtils;
 
 public class Arrays {
 
@@ -162,9 +158,6 @@ public class Arrays {
                     String protocol = ssle2.getSession().getProtocol();
                     if (!acknowledgeCloseNotify) {
                         switch (ssle2.getSession().getProtocol()) {
-                            case "SSLv3":
-                            case "TLSv1":
-                            case "TLSv1.1":
                             case "TLSv1.2":
                                 break;
                             default:    // TLSv1.3
@@ -185,15 +178,6 @@ public class Arrays {
     private static String contextVersion;
     public static void main(String args[]) throws Exception {
         contextVersion = args[0];
-        // Re-enable context version if it is disabled.
-        // If context version is SSLv3, TLSv1 needs to be re-enabled.
-        if (contextVersion.equals("SSLv3")) {
-            SecurityUtils.removeFromDisabledTlsAlgs("TLSv1");
-        } else if (contextVersion.equals("TLSv1") ||
-                   contextVersion.equals("TLSv1.1")) {
-            SecurityUtils.removeFromDisabledTlsAlgs(contextVersion);
-        }
-
         Arrays test;
 
         test = new Arrays();
@@ -221,8 +205,8 @@ public class Arrays {
     private SSLContext getSSLContext(String keyFile, String trustFile)
             throws Exception {
 
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        KeyStore ts = KeyStore.getInstance("PKCS12");
 
         char[] passphrase = "passphrase".toCharArray();
 

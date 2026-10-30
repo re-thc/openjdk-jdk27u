@@ -85,6 +85,7 @@ import jdk.internal.misc.VM;
  * @since 1.7
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ThreadLocalRandom extends Random {
     /*
      * This class implements the java.util.Random API (and subclasses
@@ -300,8 +301,6 @@ public final class ThreadLocalRandom extends Random {
     }
 
     // Serialization support
-
-    private static final long serialVersionUID = -5851777807851030925L;
 
     /**
      * @serialField rnd long

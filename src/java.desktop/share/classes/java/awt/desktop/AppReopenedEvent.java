@@ -36,13 +36,8 @@ import java.io.Serial;
  * @see AppReopenedListener#appReopened(AppReopenedEvent)
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class AppReopenedEvent extends AppEvent {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 1503238361530407990L;
 
     /**
      * Constructs an {@code AppReopenedEvent}.

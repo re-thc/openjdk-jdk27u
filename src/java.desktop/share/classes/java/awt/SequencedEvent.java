@@ -42,13 +42,8 @@ import sun.awt.SunToolkit;
  *
  * @author David Mendenhall
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class SequencedEvent extends AWTEvent implements ActiveEvent {
-
-    /**
-     * Use serialVersionUID from JDK 1.6 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 547742659238625067L;
 
     private static final int ID =
         java.awt.event.FocusEvent.FOCUS_LAST + 1;

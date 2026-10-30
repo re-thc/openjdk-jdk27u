@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,9 +46,10 @@ include $(TOPDIR)/make/conf/docs-modules.conf
 
 include $(TOPDIR)/make/conf/build-module-sets.conf
 
-# Desktop APIs and their dependent modules are omitted before any build phase.
+# GUI APIs and their dependent modules are omitted before any build phase.
+# java.desktop retains only the Java-only beans source set below.
 ifeq ($(ENABLE_DESKTOP), false)
-  MODULES_FILTER += java.desktop java.datatransfer java.se \
+  override MODULES_FILTER += java.datatransfer java.se \
       jdk.accessibility jdk.editpad jdk.hotspot.agent jdk.jconsole \
       jdk.jpackage jdk.unsupported.desktop
 endif
@@ -92,24 +94,31 @@ MAN_SUBDIRS += share/man $(TARGET_OS)/man
 # The docs should include the sum of all man pages for all platforms
 MAN_DOCS_SUBDIRS += share/man windows/man
 
+# Keep the upstream desktop tree out of both compilation and source discovery.
+# This also prevents implicit attribution from dragging in GUI sources.
+HeadlessModuleInfos = $(if $(filter false,$(ENABLE_DESKTOP)), \
+    $(foreach mi,$1,$(if $(filter $(addsuffix /java.desktop/share/classes/module-info.java,$(TOP_SRC_DIRS)),$(mi)), \
+        $(subst /share/classes/,/headless/classes/,$(mi)), \
+        $(if $(filter $(addsuffix /java.desktop/module-info.java,$(IMPORT_MODULES_SRC)),$(mi)),,$(mi)))), $1)
+
 # Find all module-info.java files for the current build target platform and
 # configuration.
 # Param 1 - Module to find for, set to * for finding all
 FindAllModuleInfos = \
-    $(sort $(wildcard \
+    $(sort $(call HeadlessModuleInfos,$(wildcard \
         $(foreach sub, $(SRC_SUBDIRS), \
           $(patsubst %,%/$(strip $1)/$(sub)/module-info.java, $(TOP_SRC_DIRS))) \
-        $(patsubst %,%/$(strip $1)/module-info.java, $(IMPORT_MODULES_SRC))))
+        $(patsubst %,%/$(strip $1)/module-info.java, $(IMPORT_MODULES_SRC)))))
 
 # Find module-info.java files in the specific source dir
 # Param 1 - Src dir to find module-info.java files in
 FindModuleInfosForSrcDir = \
-    $(wildcard \
+    $(call HeadlessModuleInfos,$(wildcard \
         $(foreach sub, $(SRC_SUBDIRS), \
           $(patsubst %,%/*/$(sub)/module-info.java, $(strip $1)) \
         ) \
         $(patsubst %,%/*/module-info.java, $(strip $1)) \
-    )
+    ))
 
 # Extract the module names from the paths of module-info.java files. The
 # position of the module directory differs depending on if this is an imported
@@ -134,15 +143,18 @@ FindModulesForSrcDir = \
     ))
 
 FindImportedModules = \
-    $(filter-out $(MODULES_FILTER), \
+    $(filter-out $(MODULES_FILTER) $(if $(filter false,$(ENABLE_DESKTOP)),java.desktop), \
     $(if $(IMPORT_MODULES_CLASSES), $(notdir $(wildcard $(IMPORT_MODULES_CLASSES)/*))))
 
 # Find all source dirs for a particular module
 # $1 - Module to find source dirs for
 FindModuleSrcDirs = \
+    $(if $(and $(filter java.desktop,$(strip $1)),$(filter false,$(ENABLE_DESKTOP))), \
+        $(wildcard $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop \
+            $(addsuffix /java.desktop/headless/classes,$(TOP_SRC_DIRS))), \
     $(strip $(wildcard \
         $(addsuffix /$(strip $1), $(GENERATED_SRC_DIRS) $(IMPORT_MODULES_SRC)) \
-        $(foreach sub, $(SRC_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS)))))
+        $(foreach sub, $(SRC_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS))))))
 
 # Find all specs dirs for a particular module
 # $1 - Module to find specs dirs for
@@ -160,11 +172,11 @@ FindModuleManDirsForDocs = \
     $(strip $(wildcard \
         $(foreach sub, $(MAN_DOCS_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS)))))
 
-# Construct the complete module source path
-GetModuleSrcPath = \
-    $(call PathList, \
-        $(addsuffix /*, $(GENERATED_SRC_DIRS) $(IMPORT_MODULES_SRC)) \
-        $(foreach sub, $(SRC_SUBDIRS), $(addsuffix /*/$(sub), $(TOP_SRC_DIRS))))
+# Only expose included modules to javac/javadoc. -implicit:none alone does not
+# prevent javac from reading and attributing sources in other modules.
+GetModuleSourcePathFlags = \
+    $(foreach m, $(call FindAllModules), \
+        --module-source-path $(m)=$(call PathList, $(call FindModuleSrcDirs, $(m))))
 
 ################################################################################
 # Extract module dependencies from module-info.java files, both normal
@@ -267,11 +279,14 @@ LEGAL_SUBDIRS += share/legal
 
 # Find all legal src dirs for a particular module
 # $1 - Module to find legal dirs for
+# The restricted beans closure contains only OpenJDK code. Common JDK legal
+# notices are still packaged by CreateJmods.gmk; desktop third-party code is absent.
 FindModuleLegalSrcDirs = \
+    $(if $(and $(filter java.desktop,$(strip $1)),$(filter false,$(ENABLE_DESKTOP))),, \
     $(strip $(wildcard \
         $(addsuffix /$(strip $1), $(IMPORT_MODULES_LEGAL)) \
         $(foreach sub, $(LEGAL_SUBDIRS), $(addsuffix /$(strip $1)/$(sub), $(TOP_SRC_DIRS))) \
-    ))
+    )))
 
 ################################################################################
 

@@ -39,7 +39,7 @@ import java.security.Provider;
 public class TestShortBuffer {
     private static final String ALGO = "AES";
     private static final String[] MODES = {
-        "ECB", "CBC", "PCBC", "CFB16", "OFB8"
+        "ECB", "CBC", "CFB16", "OFB8"
     };
     private static final SecretKey KEY =
         new SecretKeySpec(new byte[16], ALGO);

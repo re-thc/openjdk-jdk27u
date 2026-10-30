@@ -35,11 +35,9 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidApplicationException extends Exception   {
 
-
-    /* Serial version */
-    private static final long serialVersionUID = -3048022274675537269L;
 
     /**
      * @serial The object representing the class of the MBean

@@ -1,4 +1,5 @@
 #  Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -53,6 +54,10 @@ tier1_part3 = \
     :jdk_svc_sanity \
     :jdk_foreign \
     :jdk_vector_sanity \
+    :jdk_headless_beans \
+    java/text/Format/DecimalFormat/DoubleFormattingTest.java \
+    java/text/Format/DecimalFormat/RoundingTiesNearZeroTest.java \
+    :jdk_security_serialization_sanity \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
     jdk/classfile \
@@ -262,6 +267,15 @@ jdk_security = \
     :jdk_security3 \
     :jdk_security4
 
+# Current security serialization, including field normalization.
+jdk_security_serialization_sanity = \
+    java/security/KeyRep/Serial.java \
+    java/security/KeyRep/SerialDSAPubKey.java \
+    java/security/BasicPermission/SerialVersion.java \
+    java/security/BasicPermission/PermClass.java \
+    java/security/SecureRandom/GetAlgorithm.java \
+    java/security/cert/CertPathValidatorException/Serial.java
+
 # Tests in this group are manual as they depend on external infra
 # and may fail with external reasons, for instance - change in CA test portal.
 jdk_security_infra = \
@@ -397,6 +411,8 @@ jdk_vector = \
 
 jdk_vector_sanity = \
     jdk/incubator/vector/PreferredSpeciesTest.java \
+    jdk/incubator/vector/ReinterpretContracts.java \
+    jdk/incubator/vector/SelfReinterpretAllocation.java \
     jdk/incubator/vector/VectorHash.java \
     jdk/incubator/vector/VectorRuns.java
 
@@ -415,6 +431,25 @@ jdk_awt = \
 jdk_2d = \
     javax/print \
     sun/java2d
+
+# Non-GUI beans regressions selected in ordinary tier1 CI.
+jdk_headless_beans = \
+    java/beans/Introspector/GenericPropertyType.java \
+    java/beans/Introspector/OverriddenGenericGetter.java \
+    java/beans/Introspector/OverriddenGenericSetter.java \
+    java/beans/Introspector/Test6707231.java \
+    java/beans/Introspector/Test8034164.java \
+    java/beans/Introspector/Test6868189.java \
+    java/beans/Introspector/FlushClassInfoCache.java \
+    java/beans/Introspector/Test6194788.java \
+    java/beans/Introspector/TestTypeResolver.java \
+    java/beans/PropertyEditor/TestStringClassValue.java \
+    java/beans/PropertyEditor/TestEnumClassValue.java \
+    java/beans/PropertyEditor/TestIntegerTypeValue.java \
+    java/beans/PropertyChangeSupport/TestSerialization.java \
+    java/beans/PropertyChangeSupport/TestListeners.java \
+    java/beans/VetoableChangeSupport/TestSerialization.java \
+    java/beans/VetoableChangeSupport/Test4425885.java
 
 jdk_beans = \
     java/beans
@@ -500,9 +535,14 @@ jdk_svc_sanity = \
 
 jdk_management_sanity =
 
-jdk_instrument_sanity =
+jdk_instrument_sanity = \
+    java/lang/instrument/GetObjectSizeClassMirrors.java
 
-jdk_jmx_sanity =
+jdk_jmx_sanity = \
+    javax/management/MBeanInfo/SerializationTest.java \
+    javax/management/MBeanInfo/SerializationTest1.java \
+    javax/management/descriptor/MBeanInfoInteropTest.java \
+    javax/management/openmbean/OpenTypeDescriptorTest.java
 
 jdk_jdi_sanity = \
     com/sun/jdi/AcceptTimeout.java \
@@ -628,7 +668,6 @@ jdk_core_manual_no_input = \
     com/sun/net/httpserver/simpleserver/CommandLinePortNotSpecifiedTest.java \
     com/sun/net/httpserver/simpleserver/jwebserver/CommandLinePortNotSpecifiedTest.java \
     com/sun/net/httpserver/simpleserver/DocRootDirPermissionsWinTest.java \
-    javax/xml/jaxp/datatype/8033980/GregorianCalAndDurSerDataUtil.java \
     java/util/zip/ZipFile/CenSizeMaximum.java
 
 jdk_security_manual_no_input = \

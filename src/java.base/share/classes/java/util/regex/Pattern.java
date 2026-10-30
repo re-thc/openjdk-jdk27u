@@ -804,6 +804,7 @@ import jdk.internal.util.regex.RustRegex;
  * @since       1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class Pattern
     implements java.io.Serializable
 {
@@ -967,10 +968,6 @@ public final class Pattern
      * and the flags, which are all that is needed to recompile the pattern
      * when it is deserialized.
      */
-
-    /** use serialVersionUID from Merlin b59 for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = 5073258162644648461L;
 
     /**
      * The original regular-expression pattern string.

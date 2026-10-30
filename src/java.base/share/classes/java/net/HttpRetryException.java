@@ -35,10 +35,8 @@ import java.io.IOException;
  * @author  Michael McMahon
  * @since   1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class HttpRetryException extends IOException {
-    @java.io.Serial
-    private static final long serialVersionUID = -9186022286469111381L;
-
     /**
      * @serial The response code.
      */

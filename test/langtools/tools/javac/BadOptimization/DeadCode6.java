@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 4073244
  * @summary nested classes:  Verify that overzealous dead-code elimination no
  * longer removes live code.

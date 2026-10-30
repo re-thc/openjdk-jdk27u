@@ -220,9 +220,9 @@ abstract class ConnectorImpl implements Connector {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     class BooleanArgumentImpl extends ConnectorImpl.ArgumentImpl
                               implements Connector.BooleanArgument {
-        private static final long serialVersionUID = 1624542968639361316L;
         BooleanArgumentImpl(String name, String label, String description,
                             boolean value,
                             boolean mustSpecify) {
@@ -275,9 +275,9 @@ abstract class ConnectorImpl implements Connector {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class IntegerArgumentImpl extends ConnectorImpl.ArgumentImpl
                               implements Connector.IntegerArgument {
-        private static final long serialVersionUID = 763286081923797770L;
         private final int min;
         private final int max;
 
@@ -376,9 +376,9 @@ abstract class ConnectorImpl implements Connector {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class StringArgumentImpl extends ConnectorImpl.ArgumentImpl
                              implements Connector.StringArgument {
-        private static final long serialVersionUID = 7500484902692107464L;
         StringArgumentImpl(String name, String label, String description,
                            String value, boolean mustSpecify) {
             super(name, label, description, value, mustSpecify);
@@ -393,9 +393,9 @@ abstract class ConnectorImpl implements Connector {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class SelectedArgumentImpl extends ConnectorImpl.ArgumentImpl
                               implements Connector.SelectedArgument {
-        private static final long serialVersionUID = -5689584530908382517L;
         @SuppressWarnings("serial") // Type of field is not Serializable
         private final List<String> choices;
 

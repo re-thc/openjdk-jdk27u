@@ -48,10 +48,8 @@ package java.lang;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NullPointerException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = 5162710183389028792L;
-
     /**
      * Constructs a {@code NullPointerException} with no detail message.
      */

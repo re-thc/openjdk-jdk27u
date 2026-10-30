@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 4306907
  * @summary Verify absence of bug in analysis of final initializers that caused crash.
  * @author maddox

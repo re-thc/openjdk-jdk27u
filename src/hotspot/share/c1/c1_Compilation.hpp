@@ -252,6 +252,10 @@ class Compilation: public StackObj {
     return env()->comp_level() == CompLevel_full_profile &&
       C1UpdateMethodData && MethodData::profile_return();
   }
+  bool profile_switches() {
+    return env()->comp_level() == CompLevel_full_profile &&
+      UseSwitchProfiling;
+  }
 
   // will compilation make optimistic assumptions that might lead to
   // deoptimization and that the runtime will account for?

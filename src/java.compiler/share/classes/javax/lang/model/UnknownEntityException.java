@@ -39,10 +39,8 @@ import java.io.Serial;
  * @see javax.lang.model.type.UnknownTypeException
  * @since 1.7
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnknownEntityException extends RuntimeException {
-
-    @Serial
-    private static final long serialVersionUID = 269L;
 
     /**
      * Creates a new {@code UnknownEntityException} with the specified

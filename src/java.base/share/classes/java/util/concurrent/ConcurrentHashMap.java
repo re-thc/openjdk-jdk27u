@@ -265,11 +265,10 @@ import jdk.internal.vm.annotation.Stable;
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @AOTSafeClassInitializer
 public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     implements ConcurrentMap<K,V>, Serializable {
-    private static final long serialVersionUID = 7249069246763182397L;
-
     /*
      * Overview:
      *
@@ -1402,8 +1401,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * Stripped-down version of helper class used in previous version,
      * declared for the sake of serialization compatibility.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class Segment<K,V> extends ReentrantLock implements Serializable {
-        private static final long serialVersionUID = 2249069246763182397L;
         final float loadFactor;
         Segment(float lf) { this.loadFactor = lf; }
     }
@@ -4443,9 +4442,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /**
      * Base class for views.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     abstract static sealed class CollectionView<K,V,E>
         implements Collection<E>, java.io.Serializable permits EntrySetView, KeySetView, ValuesView {
-        private static final long serialVersionUID = 7249069246763182397L;
         final ConcurrentHashMap<K,V> map;
         CollectionView(ConcurrentHashMap<K,V> map)  { this.map = map; }
 
@@ -4619,9 +4618,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      *
      * @since 1.8
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static final class KeySetView<K,V> extends CollectionView<K,V,K>
         implements Set<K>, java.io.Serializable {
-        private static final long serialVersionUID = 7249069246763182397L;
         /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final V value;
@@ -4744,9 +4743,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * values, in which additions are disabled. This class cannot be
      * directly instantiated. See {@link #values()}.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class ValuesView<K,V> extends CollectionView<K,V,V>
         implements Collection<V>, java.io.Serializable {
-        private static final long serialVersionUID = 2249069246763182397L;
         ValuesView(ConcurrentHashMap<K,V> map) { super(map); }
         public final boolean contains(Object o) {
             return map.containsValue(o);
@@ -4818,9 +4817,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * entries.  This class cannot be directly instantiated. See
      * {@link #entrySet()}.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class EntrySetView<K,V> extends CollectionView<K,V,Map.Entry<K,V>>
         implements Set<Map.Entry<K,V>>, java.io.Serializable {
-        private static final long serialVersionUID = 2249069246763182397L;
         EntrySetView(ConcurrentHashMap<K,V> map) { super(map); }
 
         public boolean contains(Object o) {

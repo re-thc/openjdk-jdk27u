@@ -35,8 +35,7 @@ import javax.crypto.SecretKey;
 /*
  * @test
  * @bug 8048621
- * @summary Test the basic operations of KeyStore entry, provided by SunJCE
- *  (jceks)
+ * @summary Test the basic operations of KeyStore entry (pkcs12)
  * @author Yu-Ching Valerie PENG
  */
 
@@ -47,7 +46,7 @@ public class TestKeyStoreEntry {
     private static final char[] PASSWDF = new String("guardian Angel")
             .toCharArray();
     private static final String[] KS_ALGOS = {
-            "DES", "DESede", "Blowfish", "AES"
+            "DES", "DESede", "AES"
     };
     private static final int NUM_ALGOS = KS_ALGOS.length;
 
@@ -70,10 +69,10 @@ public class TestKeyStoreEntry {
     }
 
     public void run() throws Exception {
-        try (FileOutputStream fos = new FileOutputStream("jceks");
-                FileInputStream fis = new FileInputStream("jceks");) {
+        try (FileOutputStream fos = new FileOutputStream("pkcs12");
+                FileInputStream fis = new FileInputStream("pkcs12");) {
 
-            KeyStore ks = KeyStore.getInstance("jceks");
+            KeyStore ks = KeyStore.getInstance("pkcs12");
             // create an empty key store
             ks.load(null, null);
 

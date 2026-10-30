@@ -37,9 +37,8 @@ import java.nio.file.Path;
 public class WeakSize {
 
     static OutputAnalyzer kt(String cmd) throws Exception {
-        // The sigalg used is MD2withRSA, which is obsolete.
         return SecurityTools.keytool("-storepass changeit -keypass changeit "
-                + "-keystore ks -keyalg rsa -sigalg MD2withRSA " + cmd);
+                + "-keystore ks -keyalg rsa " + cmd);
     }
 
     static void gencert(String owner, String cmd) throws Exception {
@@ -51,7 +50,7 @@ public class WeakSize {
     public static void main(String[] args) throws Exception {
 
         kt("-genkeypair -alias ca -dname CN=CA -ext bc");
-        kt("-genkeypair -alias signer -dname CN=Signer");
+        kt("-genkeypair -alias signer -dname CN=Signer -keysize 512");
         gencert("signer", "-alias ca -ext ku=dS -rfc");
 
         JarUtils.createJarFile(Path.of("a.jar"), Path.of("."), Path.of("ks"));

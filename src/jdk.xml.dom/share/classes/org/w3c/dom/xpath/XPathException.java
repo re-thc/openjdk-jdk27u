@@ -55,9 +55,8 @@ package org.w3c.dom.xpath;
  *
  * @since 1.4, DOM Level 3
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class XPathException extends RuntimeException {
-    private static final long serialVersionUID = 3471034171575979943L;
-
     public XPathException(short code, String message) {
        super(message);
        this.code = code;

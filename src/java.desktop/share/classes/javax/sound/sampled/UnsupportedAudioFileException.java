@@ -35,13 +35,8 @@ import java.io.Serial;
  * @author Kara Kytle
  * @since 1.3
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnsupportedAudioFileException extends Exception {
-
-    /**
-     * Use serialVersionUID from JDK 1.3 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -139127412623160368L;
 
     /**
      * Constructs an {@code UnsupportedAudioFileException} that has {@code null}

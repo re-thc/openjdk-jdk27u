@@ -33,10 +33,8 @@ package java.lang;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SecurityException extends RuntimeException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 6878364983674394167L;
 
     /**
      * Constructs a {@code SecurityException} with no detail message.

@@ -63,10 +63,8 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
  * @author  Andreas Sterbenz
  * @since   1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SunPKCS11 extends AuthProvider {
-
-    @Serial
-    private static final long serialVersionUID = -1354835039035306505L;
 
     static final Debug debug = Debug.getInstance("sunpkcs11");
     // the PKCS11 object through which we make the native calls
@@ -445,11 +443,6 @@ public final class SunPKCS11 extends AuthProvider {
         }
     }
 
-    // Map from mechanism to List of Descriptors that should be
-    // registered if the mechanism is supported
-    private static final Map<Integer,List<Descriptor>> descriptors =
-        new HashMap<Integer,List<Descriptor>>();
-
     private static int[] m(long m1) {
         return new int[] {(int)m1};
     }
@@ -498,7 +491,8 @@ public final class SunPKCS11 extends AuthProvider {
         for (int i = 0; i < d.mechanisms.length; i++) {
             int m = d.mechanisms[i];
             Integer key = Integer.valueOf(m);
-            List<Descriptor> list = descriptors.computeIfAbsent(key, k -> new ArrayList<>());
+            List<Descriptor> list = DescriptorRegistry.descriptors
+                    .computeIfAbsent(key, k -> new ArrayList<>());
             list.add(d);
         }
     }
@@ -529,7 +523,21 @@ public final class SunPKCS11 extends AuthProvider {
 
     private static final String KDF  = "KDF";
 
-    static {
+    // The descriptors are only needed by a configured provider, so they are
+    // registered when one is first used, not when the unconfigured provider
+    // is loaded.
+    private static final class DescriptorRegistry {
+        // Map from mechanism to List of Descriptors that should be
+        // registered if the mechanism is supported
+        static final Map<Integer,List<Descriptor>> descriptors =
+            new HashMap<Integer,List<Descriptor>>();
+
+        static {
+            registerDescriptors();
+        }
+    }
+
+    private static void registerDescriptors() {
         // names of all the implementation classes
         // use local variables, only used here
         String P11Digest           = "sun.security.pkcs11.P11Digest";
@@ -553,8 +561,6 @@ public final class SunPKCS11 extends AuthProvider {
 
         // XXX register all aliases
 
-        d(MD, "MD2",            P11Digest,
-                m(CKM_MD2));
         d(MD, "MD5",            P11Digest,
                 m(CKM_MD5));
         dA(MD, "SHA-1",           P11Digest,
@@ -605,10 +611,6 @@ public final class SunPKCS11 extends AuthProvider {
                 m(CKM_SHA3_384_HMAC));
         dA(MAC, "HmacSHA3-512",    P11Mac,
                 m(CKM_SHA3_512_HMAC));
-        d(MAC, "SslMacMD5",     P11Mac,
-                m(CKM_SSL3_MD5_MAC));
-        d(MAC, "SslMacSHA1",    P11Mac,
-                m(CKM_SSL3_SHA1_MAC));
 
         /*
         * PBA HMacs
@@ -976,10 +978,6 @@ public final class SunPKCS11 extends AuthProvider {
 
         d(SIG, "NONEwithRSA",    "sun.security.pkcs11.RSACipherAdaptor",
                 m(CKM_RSA_PKCS));
-        dA(SIG, "MD2withRSA",    P11Signature,
-                m(CKM_MD2_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
-        dA(SIG, "MD5withRSA",    P11Signature,
-                m(CKM_MD5_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
         dA(SIG, "SHA1withRSA",   P11Signature,
                 m(CKM_SHA1_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
         dA(SIG, "SHA224withRSA", P11Signature,
@@ -1019,26 +1017,12 @@ public final class SunPKCS11 extends AuthProvider {
         d(SIG, "SHA3-512withRSASSA-PSS", P11PSSSignature,
                 m(CKM_SHA3_512_RSA_PKCS_PSS));
 
-        d(KG, "SunTlsRsaPremasterSecret",
-                    "sun.security.pkcs11.P11TlsRsaPremasterSecretGenerator",
-                List.of("SunTls12RsaPremasterSecret"),
-                m(CKM_SSL3_PRE_MASTER_KEY_GEN, CKM_TLS_PRE_MASTER_KEY_GEN));
-        d(KG, "SunTlsMasterSecret",
-                    "sun.security.pkcs11.P11TlsMasterSecretGenerator",
-                m(CKM_SSL3_MASTER_KEY_DERIVE, CKM_TLS_MASTER_KEY_DERIVE,
-                    CKM_SSL3_MASTER_KEY_DERIVE_DH,
-                    CKM_TLS_MASTER_KEY_DERIVE_DH));
         d(KG, "SunTls12MasterSecret",
                 "sun.security.pkcs11.P11TlsMasterSecretGenerator",
-            m(CKM_TLS12_MASTER_KEY_DERIVE, CKM_TLS12_MASTER_KEY_DERIVE_DH));
-        d(KG, "SunTlsKeyMaterial",
-                    "sun.security.pkcs11.P11TlsKeyMaterialGenerator",
-                m(CKM_SSL3_KEY_AND_MAC_DERIVE, CKM_TLS_KEY_AND_MAC_DERIVE));
+            m(CKM_TLS12_MASTER_KEY_DERIVE_DH));
         d(KG, "SunTls12KeyMaterial",
                 "sun.security.pkcs11.P11TlsKeyMaterialGenerator",
             m(CKM_TLS12_KEY_AND_MAC_DERIVE));
-        d(KG, "SunTlsPrf", "sun.security.pkcs11.P11TlsPrfGenerator",
-                m(CKM_TLS_PRF, CKM_NSS_TLS_PRF_GENERAL));
         d(KG, "SunTls12Prf", "sun.security.pkcs11.P11TlsPrfGenerator",
                 m(CKM_TLS_MAC));
 
@@ -1286,7 +1270,8 @@ public final class SunPKCS11 extends AuthProvider {
             }
             int mech = (int)longMech;
             Integer integerMech = Integer.valueOf(mech);
-            List<Descriptor> ds = descriptors.get(integerMech);
+            List<Descriptor> ds =
+                    DescriptorRegistry.descriptors.get(integerMech);
             if (ds == null) {
                 continue;
             }
@@ -1448,19 +1433,13 @@ public final class SunPKCS11 extends AuthProvider {
                 return new P11SecretKeyFactory(token, algorithm);
             } else if (type == KG) {
                 // reference equality
-                if (algorithm == "SunTlsRsaPremasterSecret") {
-                    return new P11TlsRsaPremasterSecretGenerator(
-                        token, algorithm, mechanism);
-                } else if (algorithm == "SunTlsMasterSecret"
-                        || algorithm == "SunTls12MasterSecret") {
+                if (algorithm == "SunTls12MasterSecret") {
                     return new P11TlsMasterSecretGenerator(
                         token, algorithm, mechanism);
-                } else if (algorithm == "SunTlsKeyMaterial"
-                        || algorithm == "SunTls12KeyMaterial") {
+                } else if (algorithm == "SunTls12KeyMaterial") {
                     return new P11TlsKeyMaterialGenerator(
                         token, algorithm, mechanism);
-                } else if (algorithm == "SunTlsPrf"
-                        || algorithm == "SunTls12Prf") {
+                } else if (algorithm == "SunTls12Prf") {
                     return new P11TlsPrfGenerator(token, algorithm, mechanism);
                 } else {
                     return new P11KeyGenerator(token, algorithm, mechanism);

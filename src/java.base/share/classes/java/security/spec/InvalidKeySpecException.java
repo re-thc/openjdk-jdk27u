@@ -38,10 +38,8 @@ import java.security.GeneralSecurityException;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidKeySpecException extends GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 3546139293998810778L;
 
     /**
      * Constructs an InvalidKeySpecException with no detail message. A

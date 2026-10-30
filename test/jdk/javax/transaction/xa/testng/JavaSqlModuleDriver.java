@@ -26,8 +26,7 @@
  * @modules java.sql
  * @compile
  *   test/transaction/XAExceptionTests.java
- *   util/SerializedTransactionExceptions.java
- * @run testng/othervm JavaSqlModuleDriver
+ * * @run testng/othervm JavaSqlModuleDriver
  */
 public class JavaSqlModuleDriver  extends test.transaction.XAExceptionTests {
 }

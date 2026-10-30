@@ -49,9 +49,8 @@ import javax.xml.crypto.dsig.keyinfo.KeyInfoFactory;
  * @see XMLSignatureFactory#getInstance XMLSignatureFactory.getInstance
  * @see KeyInfoFactory#getInstance KeyInfoFactory.getInstance
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NoSuchMechanismException extends RuntimeException {
-
-    private static final long serialVersionUID = 4189669069570660166L;
 
     /**
      * The throwable that caused this exception to get thrown, or null if this

@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.security.*;
 
+import jdk.internal.access.SharedSecrets;
 import sun.security.util.*;
 
 
@@ -56,11 +57,8 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AlgorithmId implements Serializable, DerEncoder {
-
-    /** use serialVersionUID from JDK 1.1. for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = 7205873507486557157L;
 
     /**
      * The object identifier being used for this algorithm.
@@ -161,18 +159,18 @@ public class AlgorithmId implements Serializable, DerEncoder {
     protected void decodeParams() throws IOException {
         String algidName = getName();
         try {
-            algParams = AlgorithmParameters.getInstance(algidName);
+            algParams = SharedSecrets.getJavaSecurityAlgorithmParametersAccess()
+                    .getInstanceOrNull(algidName);
         } catch (NoSuchAlgorithmException e) {
-            /*
-             * This algorithm parameter type is not supported, so we cannot
-             * parse the parameters.
-             */
+            // An advertised service could not be constructed.
             algParams = null;
             return;
         }
 
         // Decode (parse) the parameters
-        algParams.init(encodedParams.clone());
+        if (algParams != null) {
+            algParams.init(encodedParams.clone());
+        }
     }
 
     /**
@@ -597,9 +595,6 @@ public class AlgorithmId implements Serializable, DerEncoder {
         return t;
     }
 
-    public static final ObjectIdentifier MD2_oid =
-            ObjectIdentifier.of(KnownOIDs.MD2);
-
     public static final ObjectIdentifier MD5_oid =
             ObjectIdentifier.of(KnownOIDs.MD5);
 
@@ -666,7 +661,6 @@ public class AlgorithmId implements Serializable, DerEncoder {
     private static final Set<String> OIDS_REQUIRING_NULL = Set.of(
             // MessageDigest algorithms usually have a NULL parameters even
             // if most RFCs suggested absent.
-            KnownOIDs.MD2.value(),
             KnownOIDs.MD5.value(),
             KnownOIDs.SHA_1.value(),
             KnownOIDs.SHA_224.value(),
@@ -689,8 +683,6 @@ public class AlgorithmId implements Serializable, DerEncoder {
             KnownOIDs.SHA512withRSA.value(),
             KnownOIDs.SHA512$224withRSA.value(),
             KnownOIDs.SHA512$256withRSA.value(),
-            KnownOIDs.MD2withRSA.value(),
-            KnownOIDs.MD5withRSA.value(),
             KnownOIDs.SHA3_224withRSA.value(),
             KnownOIDs.SHA3_256withRSA.value(),
             KnownOIDs.SHA3_384withRSA.value(),

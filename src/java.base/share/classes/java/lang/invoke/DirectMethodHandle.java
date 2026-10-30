@@ -135,11 +135,16 @@ sealed class DirectMethodHandle extends MethodHandle {
         return make(member.getDeclaringClass(), member);
     }
     static DirectMethodHandle makeAllocator(Class<?> instanceClass, MemberName ctor) {
+        return makeAllocator(instanceClass, ctor, ctor.getMethodType().changeReturnType(instanceClass));
+    }
+    // The return type of mtype may be a supertype of the instance class
+    static DirectMethodHandle makeAllocator(Class<?> instanceClass, MemberName ctor, MethodType mtype) {
         assert(ctor.isConstructor() && ctor.getName().equals("<init>"));
+        assert(mtype.returnType().isAssignableFrom(instanceClass));
+        assert(mtype.changeReturnType(void.class).equals(ctor.getMethodType()));
         ctor = ctor.asConstructor();
         assert(ctor.isConstructor() && ctor.getReferenceKind() == REF_newInvokeSpecial) : ctor;
-        MethodType mtype = ctor.getMethodType().changeReturnType(instanceClass);
-        LambdaForm lform = preparedLambdaForm(ctor);
+        LambdaForm lform = preparedLambdaForm(mtype.basicType(), LF_NEWINVSPECIAL);
         MemberName init = ctor.asSpecial();
         assert(init.getMethodType().returnType() == void.class);
         return new Constructor(mtype, lform, ctor, true, init, instanceClass);

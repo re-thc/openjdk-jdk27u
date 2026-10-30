@@ -32,10 +32,8 @@ package java.lang.module;
  * @see Configuration
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ResolutionException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = -1031186845316729450L;
-
     /**
      * Constructs a {@code ResolutionException} with no detail message.
      */

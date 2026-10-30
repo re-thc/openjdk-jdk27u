@@ -47,11 +47,9 @@ package java.util.concurrent.locks;
  * @since 1.6
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class AbstractOwnableSynchronizer
     implements java.io.Serializable {
-
-    /** Use serial ID even though all fields transient. */
-    private static final long serialVersionUID = 3737899427754241961L;
 
     /**
      * Empty constructor for use by subclasses.

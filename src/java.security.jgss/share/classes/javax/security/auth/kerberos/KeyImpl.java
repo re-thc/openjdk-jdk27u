@@ -48,10 +48,8 @@ import sun.security.util.DerValue;
  *
  * @serial include
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class KeyImpl implements SecretKey, Destroyable, Serializable {
-
-    @Serial
-    private static final long serialVersionUID = -7889313790214321193L;
 
     private transient byte[] keyBytes;
     private transient int keyType;
@@ -78,8 +76,7 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
      * @param password the password that should be used to compute the
      * key.
      * @param algorithm the name for the algorithm that this key will be
-     * used for. This parameter may be null in which case "DES" will be
-     * assumed.
+     * used for.
      */
     public KeyImpl(KerberosPrincipal principal,
                    char[] password,

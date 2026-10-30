@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @summary StringConcatFactory MH_INLINE_SIZED_EXACT strategy does not work with -XX:-CompactStrings
+ * @summary String concat initial coders handle Latin1 and genuine UTF16 inputs
  * @bug 8148869
  *
  * @compile -XDstringConcat=indy CompactStringsInitialCoder.java
@@ -32,11 +32,6 @@
  * @compile -XDstringConcat=indyWithConstants CompactStringsInitialCoder.java
  * @run main/othervm -Xverify:all -XX:+CompactStrings CompactStringsInitialCoder
  *
- * @compile -XDstringConcat=indy CompactStringsInitialCoder.java
- * @run main/othervm -Xverify:all -XX:-CompactStrings CompactStringsInitialCoder
- *
- * @compile -XDstringConcat=indyWithConstants CompactStringsInitialCoder.java
- * @run main/othervm -Xverify:all -XX:-CompactStrings CompactStringsInitialCoder
 */
 import java.lang.StringBuilder;
 

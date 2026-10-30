@@ -136,10 +136,6 @@ public class CertChecking {
         // no digital signature bit set
         usageTestCase(enabled, kmAlg, "RSASSA-PSS", NO_DS_USAGE, true, false);
 
-        // Both client and server should be checked with DSA algorithm and no
-        // digital signature bit set
-        usageTestCase(enabled, kmAlg, "DSA", NO_DS_USAGE, true, true);
-
         // Both client and server should be checked with EC algorithm and no
         // digital signature bit set
         usageTestCase(enabled, kmAlg, "EC", NO_DS_USAGE, true, true);

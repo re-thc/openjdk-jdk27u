@@ -184,8 +184,6 @@ public abstract class ComponentContext extends PartialCompositeContext {
                         public Object getContent() {
                             return obj;
                         }
-                        private static final long serialVersionUID =
-                            -8831204798861786362L;
                     };
                     Reference ref = new Reference("java.lang.Object", addr);
 
@@ -324,8 +322,6 @@ public abstract class ComponentContext extends PartialCompositeContext {
                 public Object getContent() {
                     return ComponentContext.this;
                 }
-                private static final long serialVersionUID =
-                    -1389472957988053402L;
             };
             Reference ref = new Reference("java.lang.Object", addr);
 

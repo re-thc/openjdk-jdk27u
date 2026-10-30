@@ -63,14 +63,9 @@ import javax.print.attribute.PrintRequestAttribute;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class OrientationRequested extends EnumSyntax
     implements DocAttribute, PrintRequestAttribute, PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4447437289862822276L;
 
     /**
      * The content will be imaged across the short edge of the medium.

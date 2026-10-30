@@ -39,9 +39,8 @@ import java.io.PrintWriter;
  *
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class XMLSignatureException extends Exception {
-
-    private static final long serialVersionUID = -3438102491013869995L;
 
     /**
      * The throwable that caused this exception to get thrown, or null if this

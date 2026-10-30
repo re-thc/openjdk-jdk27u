@@ -32,10 +32,6 @@
  * @summary Support TLS Server Name Indication (SNI) Extension in JSSE Server
  * @library ../SSLEngine ../templates
  * @build SSLEngineService SSLCapabilities SSLExplorer
- * @run main/othervm SSLEngineExplorer SSLv2Hello,SSLv3
- * @run main/othervm SSLEngineExplorer SSLv3
- * @run main/othervm SSLEngineExplorer TLSv1
- * @run main/othervm SSLEngineExplorer TLSv1.1
  * @run main/othervm SSLEngineExplorer TLSv1.2
  */
 
@@ -80,7 +76,7 @@ public class SSLEngineExplorer extends SSLEngineService {
         // create SSLEngine.
         SSLEngine ssle = createSSLEngine(false);
 
-        // Enable all supported protocols on server side to test SSLv3
+        // Enable all supported protocols on server side
         ssle.setEnabledProtocols(ssle.getSupportedProtocols());
 
         // Create a server socket channel.

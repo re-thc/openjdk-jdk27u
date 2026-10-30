@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,6 +302,11 @@
                                                                             \
   product(bool, UseFPUForSpilling, false,                                   \
           "Spill integer registers to FPU instead of stack when possible")  \
+                                                                            \
+  product(bool, UseColdCallSpillDeferral,                                    \
+          LINUX_ONLY(AMD64_ONLY(true) NOT_AMD64(false)) NOT_LINUX(false),      \
+          "Defer initial scalar spills and reuse Java-state homes at cold " \
+          "calls")                                                          \
                                                                             \
   develop_pd(intx, RegisterCostAreaRatio,                                   \
           "Spill selection in reg allocator: scale area by (X/64K) before " \
@@ -803,6 +809,9 @@
                                                                             \
   product(bool, IncrementalInlineForceCleanup, false, DIAGNOSTIC,           \
           "do cleanup after every iteration of incremental inlining")       \
+                                                                            \
+  product(bool, IncrementalInlineVector, true, DIAGNOSTIC,                  \
+          "Inline fallback implementation of failed vector intrinsics")     \
                                                                             \
   product(intx, LiveNodeCountInliningCutoff, 40000,                         \
           "max number of live nodes in a method")                           \

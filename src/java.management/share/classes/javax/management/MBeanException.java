@@ -34,11 +34,9 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MBeanException extends JMException   {
 
-
-    /* Serial version */
-    private static final long serialVersionUID = 4066342430588744142L;
 
     /**
      * @serial Encapsulated {@link Exception}

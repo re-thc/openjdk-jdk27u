@@ -31,7 +31,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-//import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.cert.Certificate;
@@ -60,11 +60,8 @@ public class Serial {
             new CertPathValidatorException
                 ("Test", new Exception("Expired"), cp, 0, BasicReason.EXPIRED);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//        FileOutputStream fos = new FileOutputStream("jdk7.serial");
         ObjectOutputStream oos = new ObjectOutputStream(baos);
-//        ObjectOutputStream foos = new ObjectOutputStream(fos);
         oos.writeObject(cpve1);
-//        foos.writeObject(cpve1);
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
         ObjectInputStream ois = new ObjectInputStream(bais);
         CertPathValidatorException cpve2 =
@@ -82,9 +79,27 @@ public class Serial {
         oos.close();
         ois.close();
 
-        f = new File(System.getProperty("test.src", "."), "jdk6.serial");
-        fis = new FileInputStream(f);
-        ois = new ObjectInputStream(fis);
+        // A null serialized reason must normalize to UNSPECIFIED.
+        baos = new ByteArrayOutputStream();
+        boolean[] replacedReason = {false};
+        try (ObjectOutputStream out = new ObjectOutputStream(baos) {
+            {
+                enableReplaceObject(true);
+            }
+
+            @Override
+            protected Object replaceObject(Object value) throws IOException {
+                if (value == BasicReason.EXPIRED) {
+                    replacedReason[0] = true;
+                    return null;
+                }
+                return value;
+            }
+        }) {
+            out.writeObject(cpve1);
+        }
+        check(!replacedReason[0], "Reason was not replaced in the current stream");
+        ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));
         cpve2 = (CertPathValidatorException) ois.readObject();
         check(!cpve1.getMessage().equals(cpve2.getMessage()),
             "CertPathValidatorException messages not equal");
@@ -94,7 +109,6 @@ public class Serial {
             "CertPathValidatorException certpaths not equal");
         check(cpve1.getIndex() != cpve2.getIndex(),
             "CertPathValidatorException indexes not equal");
-//      System.out.println(cpve2.getReason());
         check(cpve2.getReason() != BasicReason.UNSPECIFIED,
             "CertPathValidatorException reasons not equal");
         oos.close();

@@ -29,6 +29,7 @@ package java.rmi.dgc;
  * Lease object is used to request and grant leases to remote object
  * references.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class Lease implements java.io.Serializable {
 
     /**
@@ -42,9 +43,6 @@ public final class Lease implements java.io.Serializable {
      * @see #getValue
      */
     private long value;
-    /** indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = -5713411624328831948L;
-
     /**
      * Constructs a lease with a specific VMID and lease duration. The
      * vmid may be null.

@@ -41,6 +41,7 @@ import sun.util.logging.PlatformLogger;
  * @see Component#setCursor
  * @author      Amy Fowler
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Cursor implements java.io.Serializable {
 
     /**
@@ -171,12 +172,6 @@ public class Cursor implements java.io.Serializable {
     private static final String DOT_FILE_SUFFIX = ".File";
     private static final String DOT_HOTSPOT_SUFFIX = ".HotSpot";
     private static final String DOT_NAME_SUFFIX = ".Name";
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 8028237497568985504L;
 
     private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.Cursor");
 

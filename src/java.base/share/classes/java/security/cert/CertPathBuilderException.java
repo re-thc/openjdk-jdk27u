@@ -48,10 +48,8 @@ import java.security.GeneralSecurityException;
  * @since       1.4
  * @author      Sean Mullan
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CertPathBuilderException extends GeneralSecurityException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 5316471420178794402L;
 
     /**
      * Creates a {@code CertPathBuilderException} with {@code null}

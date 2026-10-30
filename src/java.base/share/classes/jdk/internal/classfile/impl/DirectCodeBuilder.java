@@ -874,9 +874,8 @@ public final class DirectCodeBuilder
     }
 
     //ToDo: consolidate and open all exceptions
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static final class LabelOverflowException extends IllegalArgumentException {
-
-        private static final long serialVersionUID = 1L;
 
         public LabelOverflowException() {
             super("Label target offset overflow");

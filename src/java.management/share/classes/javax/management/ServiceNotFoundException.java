@@ -34,10 +34,8 @@ import javax.management.OperationsException;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ServiceNotFoundException extends OperationsException   {
-
-    /* Serial version */
-    private static final long serialVersionUID = -3990675661956646827L;
 
     /**
      * Default constructor.

@@ -34,12 +34,10 @@ package java.nio.charset;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnmappableCharacterException
     extends CharacterCodingException
 {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -7026962371537706123L;
 
     /**
      * @serial The length of the input character (or byte) sequence.

@@ -214,9 +214,10 @@ import sun.reflect.annotation.*;
  * Class<String>}.  Use {@code Class<?>} if the class being modeled is
  * unknown.
  *
- * @see     java.lang.ClassLoader#defineClass(byte[], int, int)
+ * @see     java.lang.ClassLoader#defineClass(String, byte[], int, int)
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @AOTSafeClassInitializer
 public final class Class<T> implements java.io.Serializable,
                               GenericDeclaration,
@@ -3262,17 +3263,19 @@ public final class Class<T> implements java.io.Serializable,
      * Helper method to get the method name from arguments.
      */
     private String methodToString(String name, Class<?>[] argTypes) {
-        return getName() + '.' + name +
-                ((argTypes == null || argTypes.length == 0) ?
-                "()" :
-                Arrays.stream(argTypes)
-                        .map(c -> c == null ? "null" : c.getName())
-                        .collect(Collectors.joining(",", "(", ")")));
+        StringBuilder sb = new StringBuilder(getName()).append('.').append(name);
+        if (argTypes == null || argTypes.length == 0) {
+            return sb.append("()").toString();
+        }
+        sb.append('(');
+        for (int i = 0; i < argTypes.length; i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append(argTypes[i] == null ? "null" : argTypes[i].getName());
+        }
+        return sb.append(')').toString();
     }
-
-    /** use serialVersionUID from JDK 1.1 for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = 3206093459760846163L;
 
 
     /**
@@ -3437,16 +3440,14 @@ public final class Class<T> implements java.io.Serializable,
             if (!isEnum()) return null;
             try {
                 final Method values = getMethod("values");
-                values.setAccessible(true);
                 @SuppressWarnings("unchecked")
-                T[] temporaryConstants = (T[])values.invoke(null);
+                T[] temporaryConstants = (T[])getReflectionFactory().invokeStatic(values);
                 enumConstants = constants = temporaryConstants;
             }
             // These can happen when users concoct enum-like classes
             // that don't comply with the enum spec.
             catch (InvocationTargetException | NoSuchMethodException |
-                   IllegalAccessException | NullPointerException |
-                   ClassCastException ex) { return null; }
+                   NullPointerException | ClassCastException ex) { return null; }
         }
         return constants;
     }
@@ -3656,6 +3657,10 @@ public final class Class<T> implements java.io.Serializable,
             }
             // null or stale annotationData -> optimistically create new instance
             AnnotationData newAnnotationData = createAnnotationData(classRedefinedCount);
+            // Retry enum constants parsed before their initialization completes.
+            if (AnnotationParser.hasUnresolvedEnumConstant(newAnnotationData.annotations.values())) {
+                return newAnnotationData;
+            }
             // try to install it
             if (Atomic.casAnnotationData(this, annotationData, newAnnotationData)) {
                 // successfully installed new AnnotationData

@@ -40,11 +40,9 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @since 27
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public final class CryptoException extends RuntimeException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -6824337376392797817L;
 
     /**
      * Constructs a new {@code CryptoException} with {@code null} as its detail

@@ -95,14 +95,9 @@ import javax.print.attribute.SetOfIntegerSyntax;
  * @author David Mendenhall
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class PageRanges   extends SetOfIntegerSyntax
         implements DocAttribute, PrintRequestAttribute, PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 8639895197656148392L;
 
     /**
      * Construct a new page ranges attribute with the given members. The members

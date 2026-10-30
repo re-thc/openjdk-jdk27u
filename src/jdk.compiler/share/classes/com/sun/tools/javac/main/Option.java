@@ -878,9 +878,8 @@ public enum Option {
      * The detail string gives a detailed, localized message, suitable for use
      * in error messages reported to the user.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class InvalidValueException extends Exception {
-        private static final long serialVersionUID = -1;
-
         public InvalidValueException(String msg) {
             super(msg);
         }

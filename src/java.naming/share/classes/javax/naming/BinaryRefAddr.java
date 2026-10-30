@@ -60,6 +60,7 @@ package javax.naming;
   * name String and a byte array containing its "contents".
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class BinaryRefAddr extends RefAddr {
     /**
      * Contains the bytes of the address.
@@ -175,8 +176,4 @@ public class BinaryRefAddr extends RefAddr {
         return (str.toString());
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = -3415254970957330361L;
 }

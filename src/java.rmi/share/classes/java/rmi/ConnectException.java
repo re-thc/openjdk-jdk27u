@@ -32,10 +32,8 @@ package java.rmi;
  * @author  Ann Wollrath
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ConnectException extends RemoteException {
-
-    /* indicate compatibility with JDK 1.1.x version of class */
-     private static final long serialVersionUID = 4863550261346652506L;
 
     /**
      * Constructs a <code>ConnectException</code> with the specified

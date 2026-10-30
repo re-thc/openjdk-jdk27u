@@ -27,10 +27,8 @@ package jdk.internal.net.http.quic;
 /**
  * Used internally to indicate Quic stream limit has been reached
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class QuicStreamLimitException extends Exception {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 4181770819022847041L;
 
     public QuicStreamLimitException(String message) {
         super(message);

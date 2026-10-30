@@ -26,12 +26,12 @@
  * @bug 8244336
  * @summary Test JCE layer algorithm restriction
  * @library /test/lib
- * @run main/othervm TestDisabledAlgorithms KEYSTORE.JKs true
+ * @run main/othervm TestDisabledAlgorithms KEYSTORE.PKcs12 true
  * @run main/othervm TestDisabledAlgorithms keySTORE.what false
- * @run main/othervm TestDisabledAlgorithms kEYstoRe.jceKS false
- * @run main/othervm -Djdk.crypto.disabledAlgorithms="keystore.jkS" TestDisabledAlgorithms keySTORE.jceKs true
- * @run main/othervm -Djdk.crypto.disabledAlgorithms="KEYstORE.what" TestDisabledAlgorithms KeYStore.JKs false
- * @run main/othervm -Djdk.crypto.disabledAlgorithms="keystOre.jceKS" TestDisabledAlgorithms KEysTORE.JKS false
+ * @run main/othervm TestDisabledAlgorithms kEYstoRe.dKs false
+ * @run main/othervm -Djdk.crypto.disabledAlgorithms="keystore.pkcS12" TestDisabledAlgorithms keySTORE.dKs true
+ * @run main/othervm -Djdk.crypto.disabledAlgorithms="KEYstORE.what" TestDisabledAlgorithms KeYStore.PKcs12 false
+ * @run main/othervm -Djdk.crypto.disabledAlgorithms="keystOre.dKS" TestDisabledAlgorithms KEysTORE.PKCS12 false
  */
 import java.io.File;
 import java.util.List;
@@ -45,10 +45,10 @@ public class TestDisabledAlgorithms {
 
     private static final String PROP_NAME = "jdk.crypto.disabledAlgorithms";
 
-    // reuse existing JKS test keystore
+    // reuse existing PKCS12 test keystore
     private final static String DIR = System.getProperty("test.src", ".");
     private static final char[] PASSWD = "passphrase".toCharArray();
-    private static final String JKS_FN = "keystore.jks";
+    private static final String P12_FN = "keystore.p12";
 
     private static void test(List<String> algos, Provider p,
             boolean shouldThrow) throws Exception {
@@ -61,11 +61,11 @@ public class TestDisabledAlgorithms {
                     Utils.runAndCheckException(() -> KeyStore.getInstance(a),
                             KeyStoreException.class);
                     Utils.runAndCheckException(
-                            () -> KeyStore.getInstance(new File(DIR, JKS_FN),
+                            () -> KeyStore.getInstance(new File(DIR, P12_FN),
                                 PASSWD),
                             KeyStoreException.class);
                     Utils.runAndCheckException(
-                            () -> KeyStore.getInstance(new File(DIR, JKS_FN),
+                            () -> KeyStore.getInstance(new File(DIR, P12_FN),
                                 () -> {
                                     return new KeyStore.PasswordProtection(PASSWD);
                                 }),
@@ -82,9 +82,9 @@ public class TestDisabledAlgorithms {
                 if (p == null) {
                     k = KeyStore.getInstance(a);
                     System.out.println("Got KeyStore w/ algo " + k.getType());
-                    k = KeyStore.getInstance(new File(DIR, JKS_FN), PASSWD);
+                    k = KeyStore.getInstance(new File(DIR, P12_FN), PASSWD);
                     System.out.println("Got KeyStore w/ algo " + k.getType());
-                    k = KeyStore.getInstance(new File(DIR, JKS_FN),
+                    k = KeyStore.getInstance(new File(DIR, P12_FN),
                         () -> {
                             return new KeyStore.PasswordProtection(PASSWD);
                         });
@@ -107,12 +107,12 @@ public class TestDisabledAlgorithms {
 
         boolean shouldThrow = Boolean.valueOf(args[1]);
 
-        List<String> algos = List.of("JKS", "jkS");
+        List<String> algos = List.of("PKCS12", "pkcS12");
         // test w/o provider
         test(algos, null, shouldThrow);
 
         // test w/ provider
-        Provider[] providers = Security.getProviders("KeyStore.JKS");
+        Provider[] providers = Security.getProviders("KeyStore.PKCS12");
         for (Provider p : providers) {
             test(algos, p, shouldThrow);
         }

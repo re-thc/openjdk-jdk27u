@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,6 +181,7 @@ public class TransPatterns extends TreeTranslator {
     private MethodSymbol currentMethodSym = null;
     private VarSymbol currentValue = null;
     private Map<RecordComponent, MethodSymbol> component2Proxy = null;
+    private Map<List<Type>, MethodSymbol> referenceSwitches = null;
     private Set<JCMethodInvocation> deconstructorCalls;
     private int variableIndex = 0;
 
@@ -469,6 +471,8 @@ public class TransPatterns extends TreeTranslator {
             // restarted from the next index.
             //-case null is always desugared to case -1, as the typeSwitch bootstrap method will
             // return -1 when the input is null
+            //-small reference-only classifiers use a private static method instead of a bootstrap,
+            // with the same case-index and restart protocol
             //
             //note the selector is evaluated only once and stored in a temporary variable
             ListBuffer<JCCase> newCases = new ListBuffer<>();
@@ -516,13 +520,6 @@ public class TransPatterns extends TreeTranslator {
                     currentMethodSym);
             statements.append(make.at(tree.pos).VarDef(index, makeLit(syms.intType, 0)));
 
-            List<Type> staticArgTypes = List.of(syms.methodHandleLookupType,
-                                                syms.stringType,
-                                                syms.methodTypeType,
-                                                types.makeArrayType(new ClassType(syms.classType.getEnclosingType(),
-                                                                    List.of(new WildcardType(syms.objectType, BoundKind.UNBOUND,
-                                                                                             syms.boundClass)),
-                                                                    syms.classType.tsym)));
             LoadableConstant[] staticArgValues =
                     cases.stream()
                          .flatMap(c -> c.labels.stream())
@@ -531,29 +528,40 @@ public class TransPatterns extends TreeTranslator {
                          .toArray(s -> new LoadableConstant[s]);
 
             boolean enumSelector = seltype.tsym.isEnum();
-            Name bootstrapName = enumSelector ? names.enumSwitch : names.typeSwitch;
-            MethodSymbol bsm = rs.resolveInternalMethod(tree.pos(), env, syms.switchBootstrapsType,
-                    bootstrapName, staticArgTypes, List.nil());
+            if (canUseDirectTypeSwitch(seltype, staticArgValues)) {
+                selector = makeDirectTypeSwitch(temp, index, staticArgValues, hasNullCase);
+            } else {
+                List<Type> staticArgTypes = List.of(syms.methodHandleLookupType,
+                                                    syms.stringType,
+                                                    syms.methodTypeType,
+                                                    types.makeArrayType(new ClassType(syms.classType.getEnclosingType(),
+                                                                        List.of(new WildcardType(syms.objectType, BoundKind.UNBOUND,
+                                                                                                 syms.boundClass)),
+                                                                        syms.classType.tsym)));
+                Name bootstrapName = enumSelector ? names.enumSwitch : names.typeSwitch;
+                MethodSymbol bsm = rs.resolveInternalMethod(tree.pos(), env, syms.switchBootstrapsType,
+                        bootstrapName, staticArgTypes, List.nil());
 
-            MethodType indyType = new MethodType(
-                    List.of(seltype, syms.intType),
-                    syms.intType,
-                    List.nil(),
-                    syms.methodClass
-            );
-            DynamicMethodSymbol dynSym = new DynamicMethodSymbol(bootstrapName,
-                    syms.noSymbol,
-                    bsm.asHandle(),
-                    indyType,
-                    staticArgValues);
+                MethodType indyType = new MethodType(
+                        List.of(seltype, syms.intType),
+                        syms.intType,
+                        List.nil(),
+                        syms.methodClass
+                );
+                DynamicMethodSymbol dynSym = new DynamicMethodSymbol(bootstrapName,
+                        syms.noSymbol,
+                        bsm.asHandle(),
+                        indyType,
+                        staticArgValues);
 
-            JCFieldAccess qualifier = make.Select(make.QualIdent(bsm.owner), dynSym.name);
-            qualifier.sym = dynSym;
-            qualifier.type = syms.intType;
-            selector = make.Apply(List.nil(),
-                                  qualifier,
-                                  List.of(make.Ident(temp), make.Ident(index)))
-                           .setType(syms.intType);
+                JCFieldAccess qualifier = make.Select(make.QualIdent(bsm.owner), dynSym.name);
+                qualifier.sym = dynSym;
+                qualifier.type = syms.intType;
+                selector = make.Apply(List.nil(),
+                                      qualifier,
+                                      List.of(make.Ident(temp), make.Ident(index)))
+                               .setType(syms.intType);
+            }
 
             int i = 0;
             boolean previousCompletesNormally = false;
@@ -692,6 +700,97 @@ public class TransPatterns extends TreeTranslator {
         } else {
             super.visitSwitchExpression((JCSwitchExpression) tree);
         }
+    }
+
+    // Bound classifier size so the type tests remain small enough for inlining.
+    private static final int MAX_DIRECT_TYPE_SWITCH_LABELS = 4;
+
+    private boolean canUseDirectTypeSwitch(Type selectorType, LoadableConstant[] labels) {
+        // Adding methods to a marker interface can change its default serialVersionUID.
+        if (selectorType.isPrimitive() || selectorType.tsym.isEnum() ||
+                labels.length > MAX_DIRECT_TYPE_SWITCH_LABELS ||
+                (labels.length > 0 && currentClass.isInterface())) {
+            return false;
+        }
+        for (LoadableConstant label : labels) {
+            if (!(label instanceof Type type) || !type.isReference()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Compute the same case index as typeSwitch without linking a call site.
+     * Share a private classifier for repeated selector types and label sequences in the same class.
+     * Keep the call in the switch's selector expression so a failed guard
+     * restarts it using the updated index, without evaluating the original selector again.
+     * The generated caller supplies a restart in [0, labels.length], so the private
+     * classifier does not need the public bootstrap's restart bounds check.
+     */
+    private JCExpression makeDirectTypeSwitch(VarSymbol selector, VarSymbol index,
+                                             LoadableConstant[] labels, boolean hasNullCase) {
+        if (labels.length == 0) {
+            JCExpression result = makeLit(syms.intType, 0);
+            if (hasNullCase) {
+                JCExpression isNull = makeBinary(Tag.EQ, make.Ident(selector),
+                        make.Literal(BOT, null).setType(syms.botType));
+                result = make.Conditional(isNull, makeLit(syms.intType, -1), result).setType(syms.intType);
+            }
+            return result;
+        }
+        Type selectorType = types.erasure(selector.type);
+        ListBuffer<Type> labelTypes = new ListBuffer<>();
+        labelTypes.append(selectorType);
+        for (LoadableConstant label : labels) {
+            labelTypes.append(types.erasure((Type) label));
+        }
+        List<Type> key = labelTypes.toList();
+        if (referenceSwitches == null) {
+            referenceSwitches = new HashMap<>();
+        }
+        MethodSymbol method = referenceSwitches.get(key);
+        if (method == null) {
+            int suffix = pendingMethods.size();
+            Name name;
+            do {
+                name = names.fromString("typeSwitch" + target.syntheticNameChar() + suffix++);
+            } while (types.membersClosure(currentClass.type, false).getSymbolsByName(name).iterator().hasNext());
+            method = new MethodSymbol(Flags.PRIVATE | Flags.STATIC | Flags.SYNTHETIC, name,
+                    new MethodType(List.of(syms.objectType, syms.intType), syms.intType,
+                                   List.nil(), syms.methodClass), currentClass);
+            VarSymbol value = new VarSymbol(Flags.PARAMETER | Flags.SYNTHETIC,
+                    names.fromString("selector"), syms.objectType, method);
+            VarSymbol restart = new VarSymbol(Flags.PARAMETER | Flags.SYNTHETIC,
+                    names.fromString("restart"), syms.intType, method);
+            method.params = List.of(value, restart);
+            JCExpression isNull = makeBinary(Tag.EQ, make.Ident(value),
+                    make.Literal(BOT, null).setType(syms.botType));
+            ListBuffer<JCCase> cases = new ListBuffer<>();
+            for (int i = 0; i < labels.length; i++) {
+                boolean unconditional = types.isSameType(selectorType, key.get(i + 1));
+                JCStatement match = make.Return(makeLit(syms.intType, i));
+                if (!unconditional) {
+                    JCExpression test = makeTypeTest(make.Ident(value), make.Type(key.get(i + 1)));
+                    match = make.If(test, match, null);
+                }
+                JCCase c = make.Case(CaseKind.STATEMENT,
+                        List.of(make.ConstantCaseLabel(makeLit(syms.intType, i))), null,
+                        List.of(match), null);
+                c.completesNormally = !unconditional;
+                cases.append(c);
+            }
+            cases.append(make.Case(CaseKind.STATEMENT, List.of(make.DefaultCaseLabel()), null,
+                    List.of(make.Return(makeLit(syms.intType, labels.length))), null));
+            JCBlock body = make.Block(0, List.of(
+                    make.If(isNull, make.Return(makeLit(syms.intType, -1)), null),
+                    make.Switch(make.Ident(restart), cases.toList())));
+            currentClass.members().enter(method);
+            pendingMethods.append(make.MethodDef(method, body));
+            referenceSwitches.put(key, method);
+        }
+        return make.App(make.Ident(method), List.of(make.Ident(selector), make.Ident(index)))
+                   .setType(syms.intType);
     }
 
     // Duplicates the block statement where needed.
@@ -1328,12 +1427,14 @@ public class TransPatterns extends TreeTranslator {
         ListBuffer<JCTree> prevPendingMethods = pendingMethods;
         MethodSymbol prevMethodSym = currentMethodSym;
         Map<RecordComponent, MethodSymbol> prevAccessor2Proxy = component2Proxy;
+        Map<List<Type>, MethodSymbol> prevReferenceSwitches = referenceSwitches;
         try {
             currentClass = tree.sym;
             currentClassTree = tree;
             pendingMethods = new ListBuffer<>();
             currentMethodSym = null;
             component2Proxy = new HashMap<>();
+            referenceSwitches = null;
             super.visitClassDef(tree);
             tree.defs = tree.defs.prependList(pendingMethods.toList());
         } finally {
@@ -1342,6 +1443,7 @@ public class TransPatterns extends TreeTranslator {
             pendingMethods = prevPendingMethods;
             currentMethodSym = prevMethodSym;
             component2Proxy = prevAccessor2Proxy;
+            referenceSwitches = prevReferenceSwitches;
         }
     }
 

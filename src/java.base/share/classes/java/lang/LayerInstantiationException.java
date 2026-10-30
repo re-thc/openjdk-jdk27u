@@ -31,10 +31,8 @@ package java.lang;
  * @see ModuleLayer
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LayerInstantiationException extends RuntimeException {
-    @java.io.Serial
-    private static final long serialVersionUID = -906239691613568347L;
-
     /**
      * Constructs a {@code LayerInstantiationException} with no detail message.
      */

@@ -34,10 +34,8 @@ import java.util.function.Supplier;
  * The message supplier is accepted not to control when to obtain a message,
  * but to abstract how to obtain it.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ParseException extends Exception {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 1;
 
     private final int index;
 

@@ -1271,9 +1271,15 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
 
   LabelObj* L_done = new LabelObj();
   LabelObj* L_array = new LabelObj();
+  LabelObj* L_mirror = new LabelObj();
 
   __ cmp(lir_cond_lessEqual, layout, 0);
   __ branch(lir_cond_lessEqual, L_array->label());
+
+  LIR_Opr kind = new_register(T_INT);
+  __ move(new LIR_Address(klass, Klass::kind_offset_in_bytes(), T_CHAR), kind);
+  __ cmp(lir_cond_equal, kind, LIR_OprFact::intConst(Klass::InstanceMirrorKlassKind));
+  __ branch(lir_cond_equal, L_mirror->label());
 
   // Instance case: the layout helper gives us instance size almost directly,
   // but we need to mask out the _lh_instance_slow_path_bit.
@@ -1284,6 +1290,22 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
   __ logical_and(layout, mask, layout);
   __ convert(Bytecodes::_i2l, layout, result_reg);
 
+  __ branch(lir_cond_always, L_done->label());
+
+  // Mirrors include static fields, so use their stored size in HeapWords.
+  __ branch_destination(L_mirror->label());
+  LIR_Opr mirror_words = new_register(T_INT);
+  LIR_Opr mirror_size = new_register(T_LONG);
+  __ move(new LIR_Address(value.result(), java_lang_Class::oop_size_offset(), T_INT), mirror_words);
+#ifdef _LP64
+  __ convert(Bytecodes::_i2l, mirror_words, mirror_size);
+  __ shift_left(mirror_size, LogHeapWordSize, mirror_size);
+#else
+  // Mirror static fields are bounded by the classfile's u2 field count.
+  __ shift_left(mirror_words, LogHeapWordSize, mirror_words);
+  __ convert(Bytecodes::_i2l, mirror_words, mirror_size);
+#endif
+  __ move(mirror_size, result_reg);
   __ branch(lir_cond_always, L_done->label());
 
   // Array case: size is round(header + element_size*arraylength).
@@ -2227,7 +2249,7 @@ void LIRGenerator::do_TableSwitch(TableSwitch* x) {
   assert(lo_key <= (lo_key + (len - 1)), "integer overflow");
   LIR_Opr value = tag.result();
 
-  if (compilation()->env()->comp_level() == CompLevel_full_profile && UseSwitchProfiling) {
+  if (compilation()->profile_switches()) {
     ciMethod* method = x->state()->scope()->method();
     ciMethodData* md = method->method_data_or_null();
     assert(md != nullptr, "Sanity");
@@ -2285,7 +2307,7 @@ void LIRGenerator::do_LookupSwitch(LookupSwitch* x) {
   LIR_Opr value = tag.result();
   int len = x->length();
 
-  if (compilation()->env()->comp_level() == CompLevel_full_profile && UseSwitchProfiling) {
+  if (compilation()->profile_switches()) {
     ciMethod* method = x->state()->scope()->method();
     ciMethodData* md = method->method_data_or_null();
     assert(md != nullptr, "Sanity");

@@ -50,6 +50,7 @@ import java.util.Locale;
  * @see java.net.ServerSocket
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InetSocketAddress
     extends SocketAddress
 {
@@ -144,9 +145,6 @@ public class InetSocketAddress
     }
 
     private final transient InetSocketAddressHolder holder;
-
-    @java.io.Serial
-    private static final long serialVersionUID = 5076001401234631237L;
 
     private static int checkPort(int port) {
         if (port < 0 || port > 0xFFFF)

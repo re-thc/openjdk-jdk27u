@@ -41,9 +41,10 @@ import static sun.security.util.SecurityProviderConstants.getAliases;
  * @since 1.6
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SunMSCAPI extends Provider {
 
-    private static final long serialVersionUID = 8622598936488630849L; //TODO
+ //TODO
 
     private static final String INFO = "Sun's Microsoft Crypto API provider";
 
@@ -109,10 +110,6 @@ public final class SunMSCAPI extends Provider {
                         return new CSignature.SHA384withRSA();
                     } else if (algo.equals("SHA512withRSA")) {
                         return new CSignature.SHA512withRSA();
-                    } else if (algo.equals("MD5withRSA")) {
-                        return new CSignature.MD5withRSA();
-                    } else if (algo.equals("MD2withRSA")) {
-                        return new CSignature.MD2withRSA();
                     } else if (algo.equals("RSASSA-PSS")) {
                         return new CSignature.PSS();
                     } else if (algo.equals("SHA1withECDSA")) {
@@ -206,12 +203,6 @@ public final class SunMSCAPI extends Provider {
         putService(new ProviderServiceA(p, "Signature",
                    "RSASSA-PSS", "sun.security.mscapi.CSignature$PSS",
                    attrs));
-        putService(new ProviderService(p, "Signature",
-                   "MD5withRSA", "sun.security.mscapi.CSignature$MD5withRSA",
-                   null, attrs));
-        putService(new ProviderService(p, "Signature",
-                   "MD2withRSA", "sun.security.mscapi.CSignature$MD2withRSA",
-                   null, attrs));
         putService(new ProviderServiceA(p, "Signature",
                    "SHA1withECDSA",
                    "sun.security.mscapi.CSignature$SHA1withECDSA",

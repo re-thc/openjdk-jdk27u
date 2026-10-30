@@ -36,7 +36,7 @@ public class GenerateKeypair {
 
     public static void main(String[] args) throws Exception {
 
-        String kpgAlgorithm = "DSA";
+        String kpgAlgorithm = "EC";
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm);
         kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
 

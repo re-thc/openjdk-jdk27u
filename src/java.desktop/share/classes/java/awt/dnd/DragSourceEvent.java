@@ -57,13 +57,8 @@ import java.util.EventObject;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DragSourceEvent extends EventObject {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -763287114604032641L;
 
     /**
      * The {@code boolean} indicating whether the cursor location

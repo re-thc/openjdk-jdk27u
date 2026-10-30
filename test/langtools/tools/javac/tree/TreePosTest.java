@@ -98,6 +98,7 @@ import static com.sun.tools.javac.util.Position.NOPOS;
 
 /*
  * @test
+ * @requires vm.hasAWT
  * @bug 6919889 8344706
  * @summary assorted position errors in compiler syntax trees
  * OLD: -q -r -ef ./tools/javac/typeAnnotations -ef ./tools/javap/typeAnnotations -et ANNOTATED_TYPE .

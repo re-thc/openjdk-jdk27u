@@ -64,10 +64,9 @@ import java.util.Vector;
   *
   * @author Vincent Ryan
   */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class LdapReferralException extends
     javax.naming.ldap.LdapReferralException {
-    private static final long serialVersionUID = 627059076356906399L;
-
         // ----------- fields initialized in constructor ---------------
     private int handleReferrals;
     private Hashtable<?,?> envprops;

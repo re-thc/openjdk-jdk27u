@@ -34,10 +34,8 @@ package javax.security.auth.callback;
  * @since 1.4
  * @see javax.security.auth.callback.CallbackHandler
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class TextOutputCallback implements Callback, java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 1689502495511663102L;
 
     /** Information message. */
     public static final int INFORMATION         = 0;

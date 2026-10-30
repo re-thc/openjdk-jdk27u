@@ -248,7 +248,7 @@ public class DNSName implements GeneralNameInterface {
 
             if (inName.equals(thisName) || (matchWildcard
                     && inName.contains("*")
-                    && HOSTNAME_CHECKER.isMatched(thisName, inName, false)))
+                    && HOSTNAME_CHECKER.isMatched(thisName, inName, null)))
                 constraintType = NAME_MATCH;
             else if (thisName.endsWith(inName)) {
                 int inNdx = thisName.lastIndexOf(inName);

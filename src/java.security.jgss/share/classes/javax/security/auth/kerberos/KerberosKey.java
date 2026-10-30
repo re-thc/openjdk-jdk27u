@@ -69,18 +69,16 @@ import javax.security.auth.DestroyFailedException;
  *
  * @implNote Old algorithm names used before JDK 9 are supported in the
  * {@link #KerberosKey(KerberosPrincipal, char[], String)} constructor in this
- * implementation for compatibility reasons, which are "DES" (and null) for
- * "des-cbc-md5", "DESede" for "des3-cbc-sha1-kd", "ArcFourHmac" for "rc4-hmac",
- * "AES128" for "aes128-cts-hmac-sha1-96", and "AES256" for
- * "aes256-cts-hmac-sha1-96".
+ * implementation for compatibility reasons, which are "AES128" for
+ * "aes128-cts-hmac-sha1-96", and "AES256" for "aes256-cts-hmac-sha1-96".
+ * The "des-cbc-crc", "des-cbc-md5", "des3-cbc-sha1-kd", and "rc4-hmac"
+ * algorithms are not supported.
  *
  * @author Mayank Upadhyay
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class KerberosKey implements SecretKey {
-
-    @Serial
-    private static final long serialVersionUID = -4625402278148246993L;
 
     /**
      * The principal that this secret key belongs to.

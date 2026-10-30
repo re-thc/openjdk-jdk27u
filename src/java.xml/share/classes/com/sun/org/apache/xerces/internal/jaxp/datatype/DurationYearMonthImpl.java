@@ -44,10 +44,9 @@ import javax.xml.datatype.DatatypeConstants;
  * @see XMLGregorianCalendar#add(Duration)
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class DurationYearMonthImpl
         extends DurationImpl {
-    private static final long serialVersionUID = -4430140662861507958L;
-
     /**
      * <p>Constructs a new Duration object by specifying each field individually.</p>
      *

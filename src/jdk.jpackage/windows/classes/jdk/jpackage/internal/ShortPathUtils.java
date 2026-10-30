@@ -72,13 +72,13 @@ final class ShortPathUtils {
                         "error.short-path-conv-fail"), effectivePath)));
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class ShortPathException extends RuntimeException {
 
         ShortPathException(String msg) {
             super(msg);
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
     private static native String getShortPath(String longPath);

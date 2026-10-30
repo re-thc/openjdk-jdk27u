@@ -32,10 +32,8 @@ import java.io.IOException;
  *
  * @author Benjamin Renaud
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ParsingException extends IOException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -6316569918966181883L;
 
     public ParsingException() {
         super();

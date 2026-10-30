@@ -40,9 +40,8 @@ import org.xml.sax.SAXException;
  *
  * @LastModified: Oct 2017
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class WrappedSAXException extends RuntimeException {
-    private static final long serialVersionUID = -3201986204982729962L;
-
     public final SAXException exception;
 
     WrappedSAXException( SAXException e ) {

@@ -36,9 +36,8 @@ import javax.management.JMException;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class OpenDataException extends JMException {
-
-    private static final long serialVersionUID = 8346311255433349870L;
 
     /**
      * An OpenDataException with no detail message.

@@ -39,9 +39,8 @@ import javax.management.Notification;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class TargetedNotification implements Serializable {
-
-    private static final long serialVersionUID = 7676132089779300926L;
 
 // If we replace Integer with int...
 //     /**

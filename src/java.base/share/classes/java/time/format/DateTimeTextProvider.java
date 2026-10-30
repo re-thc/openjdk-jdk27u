@@ -75,6 +75,7 @@ import java.time.temporal.TemporalField;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -329,140 +330,111 @@ class DateTimeTextProvider {
     }
 
     private Object createStore(TemporalField field, Locale locale) {
-        Map<TextStyle, Map<Long, String>> styleMap = new HashMap<>();
-        if (field == ERA) {
-            for (TextStyle textStyle : TextStyle.values()) {
-                if (textStyle.isStandalone()) {
-                    // Stand-alone isn't applicable to era names.
-                    continue;
-                }
-                Map<String, Integer> displayNames = CalendarDataUtility.retrieveJavaTimeFieldValueNames(
-                        "gregory", Calendar.ERA, textStyle.toCalendarStyle(), locale);
-                if (displayNames != null) {
-                    Map<Long, String> map = new HashMap<>();
-                    for (Entry<String, Integer> entry : displayNames.entrySet()) {
-                        map.put((long) entry.getValue(), entry.getKey());
-                    }
-                    if (!map.isEmpty()) {
-                        styleMap.put(textStyle, map);
-                    }
+        if (field == ERA || field == MONTH_OF_YEAR || field == DAY_OF_WEEK
+                || field == AMPM_OF_DAY || field == IsoFields.QUARTER_OF_YEAR) {
+            // The texts of a style are looked up when it is first used
+            return new LocaleStore(field, locale);
+        }
+        return "";  // null marker for map
+    }
+
+    /**
+     * Creates the map of the texts of a field in a style.
+     *
+     * @param field  the field, one of those that createStore creates a store for
+     * @param textStyle  the style
+     * @param locale  the locale
+     * @return the map of the values to their texts, null if the field has no texts in the style
+     */
+    private static Map<Long, String> createStyleMap(TemporalField field, TextStyle textStyle, Locale locale) {
+        Map<Long, String> map = new HashMap<>();
+        if (field == ERA || field == AMPM_OF_DAY) {
+            if (textStyle.isStandalone()) {
+                // Stand-alone isn't applicable to era names and AM/PM.
+                return null;
+            }
+            Map<String, Integer> displayNames = CalendarDataUtility.retrieveJavaTimeFieldValueNames(
+                    "gregory", field == ERA ? Calendar.ERA : Calendar.AM_PM,
+                    textStyle.toCalendarStyle(), locale);
+            if (displayNames != null) {
+                for (Entry<String, Integer> entry : displayNames.entrySet()) {
+                    map.put((long) entry.getValue(), entry.getKey());
                 }
             }
-            return new LocaleStore(styleMap);
-        }
-
-        if (field == MONTH_OF_YEAR) {
-            for (TextStyle textStyle : TextStyle.values()) {
-                Map<Long, String> map = new HashMap<>();
-                // Narrow names may have duplicated names, such as "J" for January, June, July.
-                // Get names one by one in that case.
-                if ((textStyle.equals(TextStyle.NARROW) ||
-                        textStyle.equals(TextStyle.NARROW_STANDALONE))) {
+        } else if (field == MONTH_OF_YEAR) {
+            // Narrow names may have duplicated names, such as "J" for January, June, July.
+            // Get names one by one in that case.
+            if ((textStyle.equals(TextStyle.NARROW) ||
+                    textStyle.equals(TextStyle.NARROW_STANDALONE))) {
+                for (int month = Calendar.JANUARY; month <= Calendar.DECEMBER; month++) {
+                    String name;
+                    name = CalendarDataUtility.retrieveJavaTimeFieldValueName(
+                            "gregory", Calendar.MONTH,
+                            month, textStyle.toCalendarStyle(), locale);
+                    if (name == null) {
+                        break;
+                    }
+                    map.put((month + 1L), name);
+                }
+            } else {
+                Map<String, Integer> displayNames = CalendarDataUtility.retrieveJavaTimeFieldValueNames(
+                        "gregory", Calendar.MONTH, textStyle.toCalendarStyle(), locale);
+                if (displayNames != null) {
+                    for (Entry<String, Integer> entry : displayNames.entrySet()) {
+                        map.put((long)(entry.getValue() + 1), entry.getKey());
+                    }
+                } else {
+                    // Although probability is very less, but if other styles have duplicate names.
+                    // Get names one by one in that case.
                     for (int month = Calendar.JANUARY; month <= Calendar.DECEMBER; month++) {
                         String name;
                         name = CalendarDataUtility.retrieveJavaTimeFieldValueName(
-                                "gregory", Calendar.MONTH,
-                                month, textStyle.toCalendarStyle(), locale);
+                                "gregory", Calendar.MONTH, month, textStyle.toCalendarStyle(), locale);
                         if (name == null) {
                             break;
                         }
                         map.put((month + 1L), name);
                     }
-                } else {
-                    Map<String, Integer> displayNames = CalendarDataUtility.retrieveJavaTimeFieldValueNames(
-                            "gregory", Calendar.MONTH, textStyle.toCalendarStyle(), locale);
-                    if (displayNames != null) {
-                        for (Entry<String, Integer> entry : displayNames.entrySet()) {
-                            map.put((long)(entry.getValue() + 1), entry.getKey());
-                        }
-                    } else {
-                        // Although probability is very less, but if other styles have duplicate names.
-                        // Get names one by one in that case.
-                        for (int month = Calendar.JANUARY; month <= Calendar.DECEMBER; month++) {
-                            String name;
-                            name = CalendarDataUtility.retrieveJavaTimeFieldValueName(
-                                    "gregory", Calendar.MONTH, month, textStyle.toCalendarStyle(), locale);
-                            if (name == null) {
-                                break;
-                            }
-                            map.put((month + 1L), name);
-                        }
-                    }
-                }
-                if (!map.isEmpty()) {
-                    styleMap.put(textStyle, map);
                 }
             }
-            return new LocaleStore(styleMap);
-        }
-
-        if (field == DAY_OF_WEEK) {
-            for (TextStyle textStyle : TextStyle.values()) {
-                Map<Long, String> map = new HashMap<>();
-                // Narrow names may have duplicated names, such as "S" for Sunday and Saturday.
-                // Get names one by one in that case.
-                if ((textStyle.equals(TextStyle.NARROW) ||
-                        textStyle.equals(TextStyle.NARROW_STANDALONE))) {
+        } else if (field == DAY_OF_WEEK) {
+            // Narrow names may have duplicated names, such as "S" for Sunday and Saturday.
+            // Get names one by one in that case.
+            if ((textStyle.equals(TextStyle.NARROW) ||
+                    textStyle.equals(TextStyle.NARROW_STANDALONE))) {
+                for (int wday = Calendar.SUNDAY; wday <= Calendar.SATURDAY; wday++) {
+                    String name;
+                    name = CalendarDataUtility.retrieveJavaTimeFieldValueName(
+                            "gregory", Calendar.DAY_OF_WEEK,
+                            wday, textStyle.toCalendarStyle(), locale);
+                    if (name == null) {
+                        break;
+                    }
+                    map.put((long)toWeekDay(wday), name);
+                }
+            } else {
+                Map<String, Integer> displayNames = CalendarDataUtility.retrieveJavaTimeFieldValueNames(
+                        "gregory", Calendar.DAY_OF_WEEK, textStyle.toCalendarStyle(), locale);
+                if (displayNames != null) {
+                    for (Entry<String, Integer> entry : displayNames.entrySet()) {
+                        map.put((long)toWeekDay(entry.getValue()), entry.getKey());
+                    }
+                } else {
+                    // Although probability is very less, but if other styles have duplicate names.
+                    // Get names one by one in that case.
                     for (int wday = Calendar.SUNDAY; wday <= Calendar.SATURDAY; wday++) {
                         String name;
                         name = CalendarDataUtility.retrieveJavaTimeFieldValueName(
-                                "gregory", Calendar.DAY_OF_WEEK,
-                                wday, textStyle.toCalendarStyle(), locale);
+                                "gregory", Calendar.DAY_OF_WEEK, wday, textStyle.toCalendarStyle(), locale);
                         if (name == null) {
                             break;
                         }
                         map.put((long)toWeekDay(wday), name);
                     }
-                } else {
-                    Map<String, Integer> displayNames = CalendarDataUtility.retrieveJavaTimeFieldValueNames(
-                            "gregory", Calendar.DAY_OF_WEEK, textStyle.toCalendarStyle(), locale);
-                    if (displayNames != null) {
-                        for (Entry<String, Integer> entry : displayNames.entrySet()) {
-                            map.put((long)toWeekDay(entry.getValue()), entry.getKey());
-                        }
-                    } else {
-                        // Although probability is very less, but if other styles have duplicate names.
-                        // Get names one by one in that case.
-                        for (int wday = Calendar.SUNDAY; wday <= Calendar.SATURDAY; wday++) {
-                            String name;
-                            name = CalendarDataUtility.retrieveJavaTimeFieldValueName(
-                                    "gregory", Calendar.DAY_OF_WEEK, wday, textStyle.toCalendarStyle(), locale);
-                            if (name == null) {
-                                break;
-                            }
-                            map.put((long)toWeekDay(wday), name);
-                        }
-                    }
-                }
-                if (!map.isEmpty()) {
-                    styleMap.put(textStyle, map);
                 }
             }
-            return new LocaleStore(styleMap);
-        }
-
-        if (field == AMPM_OF_DAY) {
-            for (TextStyle textStyle : TextStyle.values()) {
-                if (textStyle.isStandalone()) {
-                    // Stand-alone isn't applicable to AM/PM.
-                    continue;
-                }
-                Map<String, Integer> displayNames = CalendarDataUtility.retrieveJavaTimeFieldValueNames(
-                        "gregory", Calendar.AM_PM, textStyle.toCalendarStyle(), locale);
-                if (displayNames != null) {
-                    Map<Long, String> map = new HashMap<>();
-                    for (Entry<String, Integer> entry : displayNames.entrySet()) {
-                        map.put((long) entry.getValue(), entry.getKey());
-                    }
-                    if (!map.isEmpty()) {
-                        styleMap.put(textStyle, map);
-                    }
-                }
-            }
-            return new LocaleStore(styleMap);
-        }
-
-        if (field == IsoFields.QUARTER_OF_YEAR) {
+        } else {
+            // IsoFields.QUARTER_OF_YEAR
             // The order of keys must correspond to the TextStyle.values() order.
             final String[] keys = {
                 "QuarterNames",
@@ -472,20 +444,16 @@ class DateTimeTextProvider {
                 "QuarterNarrows",
                 "standalone.QuarterNarrows",
             };
-            for (int i = 0; i < keys.length; i++) {
-                String[] names = getLocalizedResource(keys[i], locale);
-                if (names != null) {
-                    Map<Long, String> map = new HashMap<>();
-                    for (int q = 0; q < names.length; q++) {
-                        map.put((long) (q + 1), names[q]);
-                    }
-                    styleMap.put(TextStyle.values()[i], map);
-                }
+            String[] names = getLocalizedResource(keys[textStyle.ordinal()], locale);
+            if (names == null) {
+                return null;
             }
-            return new LocaleStore(styleMap);
+            for (int q = 0; q < names.length; q++) {
+                map.put((long) (q + 1), names[q]);
+            }
+            return map;
         }
-
-        return "";  // null marker for map
+        return map.isEmpty() ? null : map;
     }
 
     /**
@@ -528,13 +496,24 @@ class DateTimeTextProvider {
      */
     static final class LocaleStore {
         /**
+         * Marks the styles that have no text.
+         */
+        private static final Map<Long, String> NO_TEXT =
+                Collections.unmodifiableMap(new HashMap<>());
+        /**
          * Map of value to text.
          */
         private final Map<TextStyle, Map<Long, String>> valueTextMap;
         /**
-         * Parsable data.
+         * The field and locale of the texts that are looked up when a style is
+         * first used, null if all the texts are in the map of value to text.
          */
-        private final Map<TextStyle, List<Entry<String, Long>>> parsable;
+        private final TemporalField field;
+        private final Locale locale;
+        /**
+         * Parsable data, created when first parsing.
+         */
+        private volatile Map<TextStyle, List<Entry<String, Long>>> parsable;
 
         /**
          * Constructor.
@@ -543,11 +522,54 @@ class DateTimeTextProvider {
          */
         LocaleStore(Map<TextStyle, Map<Long, String>> valueTextMap) {
             this.valueTextMap = valueTextMap;
+            this.field = null;
+            this.locale = null;
+        }
+
+        /**
+         * Constructor of a store of the texts of a field in a locale, which
+         * looks them up for each style when it is first used.
+         *
+         * @param field  the field to get texts for, not null
+         * @param locale  the locale to get texts for, not null
+         */
+        LocaleStore(TemporalField field, Locale locale) {
+            this.valueTextMap = new ConcurrentHashMap<>();
+            this.field = field;
+            this.locale = locale;
+        }
+
+        /**
+         * Gets the map of value to text of a style.
+         *
+         * @param style  the style, not null
+         * @return the map, null if the style has no text
+         */
+        private Map<Long, String> styleMap(TextStyle style) {
+            Map<Long, String> map = valueTextMap.get(style);
+            if (map == null && field != null) {
+                map = createStyleMap(field, style, locale);
+                if (map == null) {
+                    map = NO_TEXT;  // look up only once
+                }
+                var existing = valueTextMap.putIfAbsent(style, map);
+                if (existing != null) {
+                    map = existing;
+                }
+            }
+            return map == NO_TEXT ? null : map;
+        }
+
+        private Map<TextStyle, List<Entry<String, Long>>> createParsable() {
             Map<TextStyle, List<Entry<String, Long>>> map = new HashMap<>();
             List<Entry<String, Long>> allList = new ArrayList<>();
-            for (Map.Entry<TextStyle, Map<Long, String>> vtmEntry : valueTextMap.entrySet()) {
+            for (TextStyle style : TextStyle.values()) {
+                Map<Long, String> textMap = styleMap(style);
+                if (textMap == null) {
+                    continue;
+                }
                 Map<String, Entry<String, Long>> reverse = new HashMap<>();
-                for (Map.Entry<Long, String> entry : vtmEntry.getValue().entrySet()) {
+                for (Map.Entry<Long, String> entry : textMap.entrySet()) {
                     if (reverse.put(entry.getValue(), createEntry(entry.getValue(), entry.getKey())) != null) {
                         // TODO: BUG: this has no effect
                         continue;  // not parsable, try next style
@@ -555,12 +577,12 @@ class DateTimeTextProvider {
                 }
                 List<Entry<String, Long>> list = new ArrayList<>(reverse.values());
                 list.sort(COMPARATOR);
-                map.put(vtmEntry.getKey(), list);
+                map.put(style, list);
                 allList.addAll(list);
                 map.put(null, allList);
             }
             allList.sort(COMPARATOR);
-            this.parsable = map;
+            return map;
         }
 
         /**
@@ -572,7 +594,7 @@ class DateTimeTextProvider {
          * @return the text for the field value, null if no text found
          */
         String getText(long value, TextStyle style) {
-            Map<Long, String> map = valueTextMap.get(style);
+            Map<Long, String> map = styleMap(style);
             return map != null ? map.get(value) : null;
         }
 
@@ -586,6 +608,10 @@ class DateTimeTextProvider {
          *  null if the style is not parsable
          */
         Iterator<Entry<String, Long>> getTextIterator(TextStyle style) {
+            Map<TextStyle, List<Entry<String, Long>>> parsable = this.parsable;
+            if (parsable == null) {
+                this.parsable = parsable = createParsable();
+            }
             List<Entry<String, Long>> list = parsable.get(style);
             return list != null ? list.iterator() : null;
         }

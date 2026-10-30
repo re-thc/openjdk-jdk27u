@@ -47,26 +47,26 @@ public class KeyStoreBuilder {
     private static final char[] wrongPassword = "wrong".toCharArray();
 
     public static void main(String[] args) throws Exception {
-        File KSFILE = new File(DIR, "keystore.jks");
+        File KSFILE = new File(DIR, "keystore.p12");
         KeyStore ks;
         String alias = "vajra";
         Entry entry = null;
 
         Builder builder;
-        builder = Builder.newInstance("JKS", null, KSFILE, new PasswordProtection(password));
+        builder = Builder.newInstance("PKCS12", null, KSFILE, new PasswordProtection(password));
         ks = builder.getKeyStore();
         System.out.println("-KeyStore: " + ks.size());
         entry = ks.getEntry(alias, builder.getProtectionParameter(alias));
         showEntry(entry);
 
-        builder = Builder.newInstance("JKS", Security.getProvider("Sun"), KSFILE,
+        builder = Builder.newInstance("PKCS12", Security.getProvider("Sun"), KSFILE,
                 new CallbackHandlerProtection(new DummyHandler()));
         ks = builder.getKeyStore();
         System.out.println("-KeyStore: " + ks.size());
         entry = ks.getEntry(alias, builder.getProtectionParameter(alias));
         showEntry(entry);
 
-        builder = Builder.newInstance("JKS", null, new PasswordProtection(password));
+        builder = Builder.newInstance("PKCS12", null, new PasswordProtection(password));
         ks = builder.getKeyStore();
         int k = ks.size();
         System.out.println("-KeyStore: " + k);
@@ -77,14 +77,14 @@ public class KeyStoreBuilder {
         DummyHandler handler = new DummyHandler();
 
         handler.useWrongPassword = 2;
-        builder = Builder.newInstance("JKS", null, KSFILE, new CallbackHandlerProtection(handler));
+        builder = Builder.newInstance("PKCS12", null, KSFILE, new CallbackHandlerProtection(handler));
         ks = builder.getKeyStore();
         System.out.println("-KeyStore: " + ks.size());
         entry = ks.getEntry(alias, builder.getProtectionParameter(alias));
         showEntry(entry);
 
         handler.useWrongPassword = 3;
-        builder = Builder.newInstance("JKS", null, KSFILE, new CallbackHandlerProtection(handler));
+        builder = Builder.newInstance("PKCS12", null, KSFILE, new CallbackHandlerProtection(handler));
         try {
             ks = builder.getKeyStore();
             throw new Exception("should not succeed");

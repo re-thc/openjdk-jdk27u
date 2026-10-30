@@ -46,12 +46,10 @@ import sun.util.logging.PlatformLogger;
  * @author Stephen R. Pietrowicz (NCSA)
  * @author Dave Brown
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class KeepAliveCache
     extends HashMap<KeepAliveKey, KeepAliveCache.ClientVector>
     implements Runnable {
-    @java.io.Serial
-    private static final long serialVersionUID = -2937172892064557949L;
-
     // Keep alive time set according to priority specified here:
     // 1. If server specifies a time with a Keep-Alive header
     // 2. If user specifies a time with system property below
@@ -290,10 +288,8 @@ public class KeepAliveCache
     /* LIFO order for reusing HttpClients. Most recent entries at the front.
      * If > maxConns are in use, discard oldest.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     class ClientVector extends ArrayDeque<KeepAliveEntry> {
-        @java.io.Serial
-        private static final long serialVersionUID = -8680532108106489459L;
-
         // sleep time in milliseconds, before cache clear
         int nap;
 

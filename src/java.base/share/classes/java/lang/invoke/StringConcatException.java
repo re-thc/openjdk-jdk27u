@@ -31,10 +31,8 @@ package java.lang.invoke;
  *
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class StringConcatException extends Exception {
-    @java.io.Serial
-    private static final long serialVersionUID = 292L + 9L;
-
     /**
      * Constructs an exception with a message
      * @param msg exception message

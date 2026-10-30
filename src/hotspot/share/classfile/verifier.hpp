@@ -269,7 +269,8 @@ class sig_as_verification_types : public ResourceObj {
 };
 
 // This hashtable is indexed by the Utf8 constant pool indexes pointed to
-// by constant pool (Interface)Method_refs' NameAndType signature entries.
+// by constant pool (Interface)Method_refs' and Field_refs' NameAndType
+// signature entries.
 typedef HashTable<int, sig_as_verification_types*, 1007>
                           method_signatures_table_type;
 
@@ -278,7 +279,9 @@ class ClassVerifier : public StackObj {
  private:
   Thread* _thread;
 
-  Symbol* _previous_symbol;          // cache of the previously looked up symbol
+  // Direct-mapped cache of class and array name symbols.
+  Symbol** _name_cache;
+  unsigned _name_cache_mask;
   GrowableArray<Symbol*>* _symbols;  // keep a list of symbols created
 
   Symbol* _exception_type;
@@ -302,6 +305,27 @@ class ClassVerifier : public StackObj {
   bool is_protected_access(
     InstanceKlass* this_class, Klass* target_class,
     Symbol* field_name, Symbol* field_sig, bool is_method);
+
+  void init_name_cache();
+  Symbol** name_cache_slot(const char* name, int length) {
+    if (_name_cache == nullptr) {
+      init_name_cache();
+    }
+    // Class names differ the most in their last characters.
+    unsigned hash = length;
+    for (int i = MAX2(length - 8, 0); i < length; i++) {
+      hash = hash * 31 + (u1)name[i];
+    }
+    return &_name_cache[hash & _name_cache_mask];
+  }
+
+  // Keeps a reference to sym, which is released when the verifier is destroyed.
+  void keep_symbol(Symbol* sym) {
+    if (_symbols == nullptr) {
+      _symbols = new GrowableArray<Symbol*>(50, 0, nullptr);
+    }
+    _symbols->push(sym);
+  }
 
   void verify_cp_index(int bci, const constantPoolHandle& cp, u2 index, TRAPS);
   void verify_cp_type(int bci, u2 index, const constantPoolHandle& cp,
@@ -364,6 +388,8 @@ class ClassVerifier : public StackObj {
 
   InstanceKlass*      _klass;  // the class being verified
   methodHandle        _method; // current method being verified
+  // Last successfully matched locals version and flags for each handler.
+  uint64_t*           _handler_states;
   VerificationType    _this_type; // the verification type of the current class
 
   // Some recursive calls from the verifier to the name resolver
@@ -408,6 +434,8 @@ class ClassVerifier : public StackObj {
   // Initializes a sig_as_verification_types entry and puts it in the hash table.
   void create_method_sig_entry(sig_as_verification_types* sig_verif_types, int sig_index);
 
+  GrowableArray<VerificationType>* field_sig_verif_types(int sig_index);
+
   // Return status modes
   Symbol* result() const { return _exception_type; }
   bool has_error() const { return result() != nullptr; }
@@ -441,20 +469,7 @@ class ClassVerifier : public StackObj {
   // goes out of scope.  Since these symbols escape the scope in which they're
   // created, we can't use a TempNewSymbol.
   Symbol* create_temporary_symbol(const char *s, int length);
-  Symbol* create_temporary_symbol(Symbol* s) {
-    if (s == _previous_symbol) {
-      return s;
-    }
-    if (!s->is_permanent()) {
-      s->increment_refcount();
-      if (_symbols == nullptr) {
-        _symbols = new GrowableArray<Symbol*>(50, 0, nullptr);
-      }
-      _symbols->push(s);
-    }
-    _previous_symbol = s;
-    return s;
-  }
+  Symbol* create_temporary_symbol(SignatureStream* sig_stream);
 
   TypeOrigin ref_ctx(const char* str);
 
@@ -466,15 +481,9 @@ inline int ClassVerifier::change_sig_to_verificationType(
   switch (bt) {
     case T_OBJECT:
     case T_ARRAY:
-      {
-        Symbol* name = sig_type->as_symbol();
-        // Create another symbol to save as signature stream unreferences this symbol.
-        Symbol* name_copy = create_temporary_symbol(name);
-        assert(name_copy == name, "symbols don't match");
-        *inference_type =
-          VerificationType::reference_type(name_copy);
-        return 1;
-      }
+      *inference_type =
+        VerificationType::reference_type(create_temporary_symbol(sig_type));
+      return 1;
     case T_LONG:
       *inference_type = VerificationType::long_type();
       *++inference_type = VerificationType::long2_type();

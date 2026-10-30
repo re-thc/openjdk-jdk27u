@@ -31,10 +31,8 @@ package java.lang;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class StackOverflowError extends VirtualMachineError {
-    @java.io.Serial
-    private static final long serialVersionUID = 8609175038441759607L;
-
     /**
      * Constructs a {@code StackOverflowError} with no detail message.
      */

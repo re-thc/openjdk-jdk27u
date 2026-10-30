@@ -47,13 +47,8 @@ import java.util.EventObject;
  *
  * @serial exclude
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LineEvent extends EventObject {
-
-    /**
-     * Use serialVersionUID from JDK 1.3 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -1274246333383880410L;
 
     /**
      * The kind of line event ({@code OPEN}, {@code CLOSE}, {@code START}, or

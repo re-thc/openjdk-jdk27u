@@ -67,6 +67,7 @@ import sun.awt.InputMethodSupport;
  * @since       1.0
  * @sealedGraph
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public sealed class TextComponent extends Component implements Accessible
      permits TextArea,
              TextField {
@@ -125,12 +126,6 @@ public sealed class TextComponent extends Component implements Accessible
      * A list of listeners that will receive events from this object.
      */
     protected transient TextListener textListener;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -2214773872412987419L;
 
     /**
      * Constructs a new text component initialized with the
@@ -861,15 +856,10 @@ public sealed class TextComponent extends Component implements Accessible
      * elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTTextComponent extends AccessibleAWTComponent
         implements AccessibleText, TextListener
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 3631432373506317811L;
-
         /**
          * Constructs an AccessibleAWTTextComponent.  Adds a listener to track
          * caret change.

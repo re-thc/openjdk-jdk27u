@@ -110,12 +110,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Andreas Sterbenz
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class Provider extends Properties {
 
     // Declare serialVersionUID to be compatible with JDK1.1
-    @java.io.Serial
-    private static final long serialVersionUID = -4298000515446427739L;
-
     private static final sun.security.util.Debug debug =
         sun.security.util.Debug.getInstance("provider", "Provider");
 
@@ -1168,8 +1166,15 @@ public abstract class Provider extends Properties {
     // re-use will occur e.g. as the framework traverses the provider
     // list and queries each provider with the same values until it finds
     // a matching service
+    // (not ThreadLocal.withInitial, so that no lambda is linked when the
+    // first provider is used)
     private static final ThreadLocal<ServiceKey> previousKey =
-        ThreadLocal.withInitial(() -> new ServiceKey("","", false));
+        new ThreadLocal<>() {
+            @Override
+            protected ServiceKey initialValue() {
+                return new ServiceKey("","", false);
+            }
+        };
 
     /**
      * Get an unmodifiable Set of all services supported by
