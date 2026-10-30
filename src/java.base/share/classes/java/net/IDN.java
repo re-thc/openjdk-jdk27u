@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,6 +293,12 @@ public final class IDN {
                 throw new IllegalArgumentException(e);
             }
         } else {
+            // Without STD3 checks, an ASCII label in range is already final.
+            if ((flag & USE_STD3_ASCII_RULES) == 0
+                    && !label.isEmpty()
+                    && label.length() <= MAX_LABEL_LENGTH) {
+                return label;
+            }
             dest = new StringBuffer(label);
         }
 

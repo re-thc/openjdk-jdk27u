@@ -58,6 +58,7 @@ tier1_part3 = \
     java/text/Format/DecimalFormat/DoubleFormattingTest.java \
     java/text/Format/DecimalFormat/RoundingTiesNearZeroTest.java \
     :jdk_security_serialization_sanity \
+    java/net/IDN/ToASCII.java \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
     jdk/classfile \
@@ -86,7 +87,8 @@ tier2_part2 = \
     :jdk_time
 
 tier2_part3 = \
-    :jdk_net
+    :jdk_net \
+    -java/net/IDN/ToASCII.java
 
 # These sub groups of tier3 allow for running certain tests separately from the
 # rest. When adding tests to tier3, in most cases they should be added to
