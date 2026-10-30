@@ -36,6 +36,7 @@ import java.io.Serial;
  * @author      Sami Shaio
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Point extends Point2D implements java.io.Serializable {
     /**
      * The X coordinate of this {@code Point}.
@@ -58,12 +59,6 @@ public class Point extends Point2D implements java.io.Serializable {
      * @since 1.0
      */
     public int y;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -5276940640259749850L;
 
     /**
      * Constructs and initializes a point at the origin

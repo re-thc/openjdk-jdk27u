@@ -33,13 +33,8 @@ import javax.print.DocPrintJob;
  * Class {@code PrintJobEvent} encapsulates common events a print job reports to
  * let a listener know of progress in the processing of the {@link DocPrintJob}.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PrintJobEvent extends PrintEvent {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -1711656903622072997L;
 
     /**
      * @serial The reason of this event.

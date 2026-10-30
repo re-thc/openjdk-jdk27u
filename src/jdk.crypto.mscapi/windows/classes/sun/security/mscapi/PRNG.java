@@ -35,10 +35,9 @@ import java.security.SecureRandomSpi;
  * @since 1.6
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class PRNG extends SecureRandomSpi
     implements java.io.Serializable {
-
-    private static final long serialVersionUID = 4129268715132691532L;
 
     /*
      * The CryptGenRandom function fills a buffer with cryptographically random

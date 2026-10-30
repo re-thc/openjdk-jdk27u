@@ -69,14 +69,9 @@ import javax.print.attribute.PrintJobAttribute;
  * @see JobImpressionsCompleted
  * @see JobMediaSheetsCompleted
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class JobKOctetsProcessed extends IntegerSyntax
         implements PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -6265238509657881806L;
 
     /**
      * Construct a new job K octets processed attribute with the given integer

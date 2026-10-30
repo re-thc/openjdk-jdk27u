@@ -272,7 +272,7 @@ public class TestBug4179766 extends RBTestFmwk {
                 return loadFromSystem(className);
             }
 
-            result = defineClass(classData, 0, classData.length);
+            result = defineClass(null, classData, 0, classData.length);
             if (result == null) {
                 //there was an error defining the class
                 return loadFromSystem(className);

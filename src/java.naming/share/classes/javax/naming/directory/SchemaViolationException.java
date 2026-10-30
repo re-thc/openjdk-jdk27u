@@ -51,6 +51,7 @@ import javax.naming.NamingException;
   * @see DirContext#modifyAttributes
   * @since 1.3
   */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SchemaViolationException extends NamingException {
     /**
      * Constructs a new instance of SchemaViolationException.
@@ -70,8 +71,4 @@ public class SchemaViolationException extends NamingException {
         super(explanation);
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = -3041762429525049663L;
 }

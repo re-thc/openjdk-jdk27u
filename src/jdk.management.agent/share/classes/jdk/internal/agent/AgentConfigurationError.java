@@ -28,6 +28,7 @@ package jdk.internal.agent;
 /**
  * Configuration Error thrown by a management agent.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AgentConfigurationError extends Error {
     public static final String AGENT_EXCEPTION =
         "agent.err.exception";
@@ -127,5 +128,4 @@ public class AgentConfigurationError extends Error {
         return params.clone();
     }
 
-    private static final long serialVersionUID = 1211605593516195475L;
 }

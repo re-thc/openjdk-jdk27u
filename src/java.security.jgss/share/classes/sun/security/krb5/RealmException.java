@@ -33,10 +33,8 @@ package sun.security.krb5;
 
 import java.io.Serial;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RealmException extends KrbException {
-
-    @Serial
-    private static final long serialVersionUID = -9100385213693792864L;
 
     public RealmException(int i) {
         super(i);

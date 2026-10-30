@@ -52,10 +52,8 @@ import java.security.Principal;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NTSid implements Principal, java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 4412290580770249885L;
 
     /**
      * @serial

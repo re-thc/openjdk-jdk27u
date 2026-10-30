@@ -503,9 +503,9 @@ public class DocumentImpl
      * is probably short in most cases, it might not be worth spending
      * the space. ***** REVISIT WHEN WE HAVE MORE EXPERIENCE.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     class LEntry implements Serializable {
 
-        private static final long serialVersionUID = -8426757059492421631L;
         String type;
         @SuppressWarnings("serial") // Type of field is not Serializable
         EventListener listener;
@@ -894,8 +894,8 @@ public class DocumentImpl
      * (two values, the Attr node affected (if any) and its previous
      * string value. Simple struct, no methods.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     class EnclosingAttr implements Serializable {
-        private static final long serialVersionUID = 5208387723391647216L;
         AttrImpl node;
         String oldvalue;
     }

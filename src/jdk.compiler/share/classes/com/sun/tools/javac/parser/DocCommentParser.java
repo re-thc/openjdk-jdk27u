@@ -69,9 +69,8 @@ import static com.sun.tools.javac.util.LayoutCharacters.EOI;
  *  deletion without notice.</b>
  */
 public class DocCommentParser {
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class ParseException extends Exception {
-        @Serial
-        private static final long serialVersionUID = 0;
         final int pos;
 
         ParseException(String key) {

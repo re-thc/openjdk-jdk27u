@@ -56,10 +56,8 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
  * @author Mayank Upadhyay
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SunProvider extends Provider {
-
-    @Serial
-    private static final long serialVersionUID = -238911724858694198L;
 
     private static final String INFO = "Sun " +
         "(Kerberos v5, SPNEGO)";

@@ -224,9 +224,8 @@ final class StreamCreationPermit {
      * The {@code limit} can be {@linkplain #tryIncreaseLimitTo(long) increased} but cannot be
      * reduced from the previous set limit.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static final class InternalSemaphore extends AbstractQueuedLongSynchronizer {
-        private static final long serialVersionUID = 4280985311770761500L;
-
         private final AtomicLong limit;
 
         /**

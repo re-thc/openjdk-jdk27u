@@ -32,9 +32,8 @@ import jdk.javadoc.internal.tool.Main.Result;
  * decoding issue.
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class OptionException extends Exception {
-
-    private static final long serialVersionUID = 0;
 
     public final Result result;
     public final String message;

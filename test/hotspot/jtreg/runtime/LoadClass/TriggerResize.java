@@ -81,7 +81,7 @@ public class TriggerResize extends ClassLoader
       bytes[INDEX1+4] = bytes[INDEX2+4] = (byte)(BASE+byte1);
     }
 
-    Class generatedClass = defineClass(bytes, 0, bytes.length);
+    Class generatedClass = defineClass(null, bytes, 0, bytes.length);
     resolveClass(generatedClass);
   }
 

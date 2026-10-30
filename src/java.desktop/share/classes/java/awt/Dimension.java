@@ -52,6 +52,7 @@ import java.io.Serial;
  * @see         java.awt.LayoutManager
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Dimension extends Dimension2D implements java.io.Serializable {
 
     /**
@@ -73,12 +74,6 @@ public class Dimension extends Dimension2D implements java.io.Serializable {
      * @since 1.0
      */
     public int height;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = 4723952579491349524L;
 
     /**
      * Initialize JNI field and method IDs

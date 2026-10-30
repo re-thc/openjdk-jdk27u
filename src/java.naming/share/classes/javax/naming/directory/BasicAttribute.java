@@ -69,6 +69,7 @@ import javax.naming.OperationNotSupportedException;
   * @author Scott Seligman
   * @since 1.3
   */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class BasicAttribute implements Attribute {
     /**
      * Holds the attribute's id. It is initialized by the public constructor and
@@ -570,9 +571,4 @@ public class BasicAttribute implements Attribute {
         }
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 6743528196119291326L;
 }

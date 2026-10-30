@@ -38,13 +38,8 @@ import java.io.Serial;
  * @see AppForegroundListener#appMovedToBackground(AppForegroundEvent)
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class AppForegroundEvent extends AppEvent {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -5513582555740533911L;
 
     /**
      * Constructs an {@code AppForegroundEvent}.

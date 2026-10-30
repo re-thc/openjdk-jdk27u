@@ -39,13 +39,8 @@ import java.io.Serial;
  * @author  Michael Martak
  * @see GraphicsEnvironment#isHeadless
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class HeadlessException extends UnsupportedOperationException {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 167183644944358563L;
 
     /**
      * Constructs a new {@code HeadlessException} with {@code null} as its detail message.

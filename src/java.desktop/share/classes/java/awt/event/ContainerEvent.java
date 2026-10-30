@@ -59,6 +59,7 @@ import java.io.Serial;
  * @author Amy Fowler
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ContainerEvent extends ComponentEvent {
 
     /**
@@ -89,12 +90,6 @@ public class ContainerEvent extends ComponentEvent {
      * @see #getChild()
      */
     Component child;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4114942250539772041L;
 
     /**
      * Constructs a {@code ContainerEvent} object.

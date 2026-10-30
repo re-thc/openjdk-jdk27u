@@ -57,14 +57,9 @@ import javax.print.attribute.PrintRequestAttribute;
  *
  * @author Phil Race
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class Media extends EnumSyntax
     implements DocAttribute, PrintRequestAttribute, PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -2823970704630722439L;
 
     /**
      * Constructs a new media attribute specified by name.

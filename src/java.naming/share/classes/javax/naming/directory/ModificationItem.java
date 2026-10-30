@@ -44,6 +44,7 @@ package javax.naming.directory;
   * modification op (and int) and the corresponding Attribute.
 */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ModificationItem implements java.io.Serializable {
     /**
      * Contains an integer identify the modification
@@ -126,8 +127,4 @@ public class ModificationItem implements java.io.Serializable {
         return "";      // should never happen
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = 7573258562534746850L;
 }

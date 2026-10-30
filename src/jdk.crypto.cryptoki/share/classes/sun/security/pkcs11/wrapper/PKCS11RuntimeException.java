@@ -58,10 +58,8 @@ import java.io.Serial;
  * @author <a href="mailto:Karl.Scheibelhofer@iaik.at"> Karl Scheibelhofer </a>
  * @invariants
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PKCS11RuntimeException extends RuntimeException {
-    @Serial
-    private static final long serialVersionUID = 7889842162743590564L;
-
     /**
      * Empty constructor.
      *

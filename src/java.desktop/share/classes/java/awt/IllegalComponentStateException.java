@@ -33,13 +33,8 @@ import java.io.Serial;
  *
  * @author      Jonni Kanerva
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IllegalComponentStateException extends IllegalStateException {
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = -1889339587208144238L;
 
     /**
      * Constructs an IllegalComponentStateException with no detail message.

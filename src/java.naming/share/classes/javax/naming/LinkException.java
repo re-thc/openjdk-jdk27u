@@ -63,6 +63,7 @@ package javax.naming;
 */
 
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LinkException extends NamingException {
     /**
      * Contains the part of the link that has been successfully resolved.
@@ -298,8 +299,4 @@ public class LinkException extends NamingException {
             this.linkResolvedObj;
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = -7967662604076777712L;
 };

@@ -36,6 +36,7 @@ import jdk.javadoc.internal.doclets.toolkit.DocletException;
  * @apiNote This exception should be thrown by a doclet when an IO exception occurs
  *  and the file is known that was in use when the exception occurred.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ResourceIOException extends DocletException {
 
     /**
@@ -43,8 +44,6 @@ public class ResourceIOException extends DocletException {
      */
     @SuppressWarnings("serial") // Type of field is not Serializable
     public final DocPath resource;
-
-    private static final long serialVersionUID = 1L;
 
     /**
      * Creates an exception to wrap an IO exception, the resource which caused it.

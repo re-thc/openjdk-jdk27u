@@ -33,9 +33,8 @@ package javax.xml.transform;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class TransformerFactoryConfigurationError extends Error {
-    private static final long serialVersionUID = -6527718720676281516L;
-
     /**
      * @serial <code>Exception</code> for the
      *  <code>TransformerFactoryConfigurationError</code>.

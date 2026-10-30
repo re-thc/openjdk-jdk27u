@@ -36,13 +36,8 @@ import java.util.EventObject;
  * @see FlavorListener
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class FlavorEvent extends EventObject {
-
-    /**
-     * Use serialVersionUID from JDK 1.5 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -5842664112252414548L;
 
     /**
      * Constructs a {@code FlavorEvent} object.

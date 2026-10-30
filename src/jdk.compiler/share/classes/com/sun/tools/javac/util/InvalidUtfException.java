@@ -36,9 +36,8 @@ package com.sun.tools.javac.util;
  * @see Convert#utf2chars
  * @see Convert#utfValidate
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidUtfException extends Exception {
-
-    private static final long serialVersionUID = 0;
 
     private final int offset;
 

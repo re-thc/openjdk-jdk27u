@@ -35,6 +35,7 @@ package java.sql;
  * @since 1.6
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SQLTimeoutException extends SQLTransientException {
         /**
          * Constructs a {@code SQLTimeoutException} object.
@@ -169,5 +170,4 @@ public class SQLTimeoutException extends SQLTransientException {
         super(reason, SQLState, vendorCode, cause);
     }
 
-    private static final long serialVersionUID = -4487171280562520262L;
 }

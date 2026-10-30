@@ -48,10 +48,8 @@ import javax.naming.ldap.LdapName;
  *
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class LdapPrincipal implements Principal, java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 6820120005580754861L;
 
     /**
      * The principal's string name

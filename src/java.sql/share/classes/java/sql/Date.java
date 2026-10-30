@@ -232,6 +232,7 @@ public class Date extends java.util.Date {
     * This method is deprecated and should not be used because SQL Date
     * values do not have a time component.
     *
+    * @param i ignored; this operation is unsupported
     * @deprecated
     * @throws java.lang.IllegalArgumentException if this method is invoked
     * @see #getHours
@@ -245,6 +246,7 @@ public class Date extends java.util.Date {
     * This method is deprecated and should not be used because SQL Date
     * values do not have a time component.
     *
+    * @param i ignored; this operation is unsupported
     * @deprecated
     * @throws java.lang.IllegalArgumentException if this method is invoked
     * @see #getMinutes
@@ -258,6 +260,7 @@ public class Date extends java.util.Date {
     * This method is deprecated and should not be used because SQL Date
     * values do not have a time component.
     *
+    * @param i ignored; this operation is unsupported
     * @deprecated
     * @throws java.lang.IllegalArgumentException if this method is invoked
     * @see #getSeconds

@@ -27,9 +27,8 @@ package sun.management.jdp;
 /**
  * An Exception thrown if a JDP implementation encounters a problem.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class JdpException extends Exception {
-
-    private static final long serialVersionUID = 1L;
 
     /**
      * Construct a new JDP exception with a meaningful message

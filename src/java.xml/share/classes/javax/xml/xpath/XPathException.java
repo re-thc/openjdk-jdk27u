@@ -39,6 +39,7 @@ import java.io.InvalidClassException;
  * @author Jeff Suttor
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class XPathException extends Exception {
     /**
      * Serializable fields.
@@ -50,8 +51,6 @@ public class XPathException extends Exception {
     /**
      * Stream Unique Identifier.
      */
-    private static final long serialVersionUID = -1837080260374986980L;
-
     /**
      * Constructs a new {@code XPathException}
      * with the specified detail {@code message}.

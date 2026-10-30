@@ -29,6 +29,7 @@ import sun.management.counter.*;
 import java.nio.LongBuffer;
 import java.nio.ReadOnlyBufferException;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PerfLongCounter extends AbstractCounter
        implements LongCounter {
 
@@ -64,5 +65,4 @@ public class PerfLongCounter extends AbstractCounter
                                        longValue());
     }
 
-    private static final long serialVersionUID = 857711729279242948L;
 }

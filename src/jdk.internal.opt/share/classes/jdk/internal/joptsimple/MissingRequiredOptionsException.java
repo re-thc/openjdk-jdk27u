@@ -62,9 +62,8 @@ import java.util.List;
  *
  * @author <a href="https://github.com/TC1">Emils Solmanis</a>
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class MissingRequiredOptionsException extends OptionException {
-    private static final long serialVersionUID = -1L;
-
     protected MissingRequiredOptionsException( List<? extends OptionSpec<?>> missingRequiredOptions ) {
         super( missingRequiredOptions );
     }

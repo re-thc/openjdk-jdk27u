@@ -80,13 +80,8 @@ import java.io.Serializable;
  * @author David Mendenhall
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class ResolutionSyntax implements Serializable, Cloneable {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 2706743076526672017L;
 
     /**
      * Cross feed direction resolution in units of dots per 100 inches (dphi).

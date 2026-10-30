@@ -66,13 +66,8 @@ import sun.awt.AWTAccessor.ComponentAccessor;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DropTarget implements DropTargetListener, Serializable {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -6283860791671019047L;
 
     /**
      * Creates a new DropTarget given the {@code Component}

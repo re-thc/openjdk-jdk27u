@@ -40,13 +40,8 @@ import java.util.Set;
  * the current node) may be queried.
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class DigraphNode<E> implements Cloneable, Serializable {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 5308261378582246841L;
 
     /** The data associated with this node. */
     @SuppressWarnings("serial") // Not statically typed as Serializable

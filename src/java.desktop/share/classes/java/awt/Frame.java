@@ -136,6 +136,7 @@ import sun.awt.SunToolkit;
  * @see Window#addWindowListener
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Frame extends Window implements MenuContainer {
 
     /* Note: These are being obsoleted;  programs should use the Cursor class
@@ -364,12 +365,6 @@ public class Frame extends Window implements MenuContainer {
 
     private static final String base = "frame";
     private static int nameCounter = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = 2673458971256075116L;
 
     static {
         /* ensure that the necessary native libraries are loaded */
@@ -1296,14 +1291,9 @@ public class Frame extends Window implements MenuContainer {
      * Java Accessibility API appropriate to frame user-interface elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTFrame extends AccessibleAWTWindow
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -6172960752956030250L;
-
         /**
          * Constructs an {@code AccessibleAWTFrame}.
          */

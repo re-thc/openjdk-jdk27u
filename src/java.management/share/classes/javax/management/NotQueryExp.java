@@ -33,11 +33,9 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class NotQueryExp extends QueryEval implements QueryExp {
 
-
-    /* Serial version */
-    private static final long serialVersionUID = 5269643775896723397L;
 
     /**
      * @serial The negated {@link QueryExp}

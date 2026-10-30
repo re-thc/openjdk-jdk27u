@@ -36,13 +36,8 @@ import javax.print.attribute.standard.Media;
  * by size and media by source. Values are expected to be MediaTray
  * instances, but this is not enforced by API.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SunAlternateMedia implements PrintRequestAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.5 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -8878868345472850201L;
 
     private Media media;
 

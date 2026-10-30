@@ -36,13 +36,8 @@ import javax.print.attribute.PrintServiceAttributeSet;
  * Service instance reports to let the client know of changes in the print
  * service state.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PrintServiceAttributeEvent extends PrintEvent {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -7565987018140326600L;
 
     /**
      * @serial The printing service attributes that changed.

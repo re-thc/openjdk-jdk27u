@@ -586,8 +586,8 @@ public abstract class PathFileObject implements JavaFileObject {
 
     /** Used when URLSyntaxException is thrown unexpectedly during
      *  implementations of FileObject.toURI(). */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class CannotCreateUriError extends Error {
-        private static final long serialVersionUID = 9101708840997613546L;
         public CannotCreateUriError(String value, Throwable cause) {
             super(value, cause);
         }

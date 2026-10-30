@@ -68,13 +68,13 @@ interface OptionValueConverter<T, U> {
     /**
      * Thrown to indicate an error in the normal execution of the converter.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class ConverterException extends RuntimeException {
 
         private ConverterException(Throwable cause) {
             super(cause);
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
     static <T> Builder<T> build() {

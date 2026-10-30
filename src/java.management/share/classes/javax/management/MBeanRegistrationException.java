@@ -32,10 +32,8 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MBeanRegistrationException extends MBeanException   {
-
-    /* Serial version */
-    private static final long serialVersionUID = 4482382455277067805L;
 
     /**
      * Creates an <CODE>MBeanRegistrationException</CODE> that wraps

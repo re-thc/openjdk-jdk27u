@@ -809,6 +809,7 @@ public final class StandardOption {
     }
 
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     @SelfContainedException
     static class AddLauncherIllegalArgumentException extends IllegalArgumentException {
 
@@ -816,36 +817,35 @@ public final class StandardOption {
             super(message);
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class AddLauncherInvalidNameException extends AddLauncherIllegalArgumentException {
 
         AddLauncherInvalidNameException(String message) {
             super(message);
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class AddLauncherInvalidPropertyFileException extends AddLauncherIllegalArgumentException {
 
         AddLauncherInvalidPropertyFileException(String msg) {
             super(msg);
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static final class AddLauncherSyntaxException extends IllegalArgumentException {
 
         AddLauncherSyntaxException() {
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
 
