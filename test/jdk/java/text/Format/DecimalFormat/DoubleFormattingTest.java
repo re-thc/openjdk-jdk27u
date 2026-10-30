@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +25,7 @@
 /*
  * @test
  * @bug 8362448
- * @summary Verify DecimalFormat::format on doubles.
+ * @summary Verify DecimalFormat::format on doubles, ignoring the former compatibility property.
  * @run junit DoubleFormattingTest
  * @run junit/othervm -Djdk.compat.DecimalFormat=true DoubleFormattingTest
  */
@@ -42,8 +43,6 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class DoubleFormattingTest {
-
-    private static final boolean COMPAT = Boolean.getBoolean("jdk.compat.DecimalFormat");
 
     static Stream<Arguments> testFormat() {
         return Stream.of(
@@ -64,11 +63,7 @@ public class DoubleFormattingTest {
         Formatter fmt = new Formatter(Locale.ROOT);
         fmt.format("%." + minFractionDigits + "f", v);
         String expected = fmt.toString();
-        if (COMPAT) {
-            assertNotEquals(expected, actual);
-        } else {
-            assertEquals(expected, actual);
-        }
+        assertEquals(expected, actual);
     }
 
 }
