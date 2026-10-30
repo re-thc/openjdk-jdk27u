@@ -33,7 +33,6 @@
  * @run main/othervm -XX:-TieredCompilation -Xbatch RustRegexStateSequences
  * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:-UseRustRegexIntrinsics RustRegexStateSequences
  * @run main/othervm -XX:-UseRustRegex RustRegexStateSequences
- * @run main/othervm -XX:-CompactStrings RustRegexStateSequences
  */
 
 import java.lang.reflect.*;

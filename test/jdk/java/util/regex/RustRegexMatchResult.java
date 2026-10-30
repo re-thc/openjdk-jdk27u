@@ -31,7 +31,6 @@
  * @run main/othervm -Xint RustRegexMatchResult
  * @run main/othervm -XX:TieredStopAtLevel=1 -Xbatch RustRegexMatchResult
  * @run main/othervm -XX:-TieredCompilation -Xbatch RustRegexMatchResult
- * @run main/othervm -XX:-CompactStrings RustRegexMatchResult
  */
 
 import java.lang.reflect.Constructor;
@@ -70,9 +69,18 @@ public class RustRegexMatchResult {
         snapshots("(a*)", "!a!", true);
         // These captures extend outside group zero; preserve its text snapshot too.
         snapshots("(?<=(?<before>a))(?<main>b)(?=(?<after>c))", "!abc!", false);
+        snapshots("(?<=(?<before>\u0100))(?<main>b)(?=(?<after>c))", "!\u0100bc!", false);
+        // Wide text outside the active Latin1 region forces UTF16-backed input.
+        String wide = "\u0100!ab!b!abb!\u0100";
+        snapshots("(?<optional>a)?(?<tail>b+)", wide, true, 1, wide.length() - 1);
     }
 
     private static void snapshots(String expression, String input, boolean nativeSubset) throws Exception {
+        snapshots(expression, input, nativeSubset, 0, input.length());
+    }
+
+    private static void snapshots(String expression, String input, boolean nativeSubset,
+                                  int from, int to) throws Exception {
         Pattern pattern = Pattern.compile(expression);
         Pattern reference = JAVA.newInstance(expression, 0, false);
         Object backend = BACKEND.get(pattern);
@@ -80,8 +88,8 @@ public class RustRegexMatchResult {
             throw new AssertionError("snapshot fixture did not select the native backend");
         for (boolean mutable : new boolean[]{false, true}) {
             StringBuilder builder = new StringBuilder(input);
-            Matcher actual = pattern.matcher(mutable ? builder : input);
-            Matcher expected = reference.matcher(input);
+            Matcher actual = pattern.matcher(mutable ? builder : input).region(from, to);
+            Matcher expected = reference.matcher(input).region(from, to);
             compare(actual.toMatchResult(), expected.toMatchResult());
             List<MatchResult> copies = new ArrayList<>(), references = new ArrayList<>();
             while (expected.find()) {
@@ -93,7 +101,7 @@ public class RustRegexMatchResult {
             }
             if (actual.find()) throw new AssertionError("extra match");
             MatchResult last = copies.getLast();
-            if (last.start() == input.length() && last.end() == input.length()) {
+            if (last.start() == to && last.end() == to) {
                 // Check unmatched snapshots after reset for terminal empty matches.
                 actual.reset();
                 expected.reset();
@@ -104,9 +112,9 @@ public class RustRegexMatchResult {
             builder.replace(0, builder.length(), "changed");
             for (int i = 0; i < copies.size(); i++) compare(copies.get(i), references.get(i));
         }
-        Matcher stream = pattern.matcher(input);
+        Matcher stream = pattern.matcher(input).region(from, to);
         List<MatchResult> copies = stream.results().toList();
-        List<MatchResult> references = reference.matcher(input).results().toList();
+        List<MatchResult> references = reference.matcher(input).region(from, to).results().toList();
         if (copies.size() != references.size()) throw new AssertionError("stream match count");
         unchangedBackend(pattern, backend);
         stream.reset("bbb").find();

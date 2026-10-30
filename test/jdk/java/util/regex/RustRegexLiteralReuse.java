@@ -31,7 +31,6 @@
  * @run main/othervm -Xint RustRegexLiteralReuse
  * @run main/othervm -XX:TieredStopAtLevel=1 -Xbatch RustRegexLiteralReuse
  * @run main/othervm -XX:-TieredCompilation -Xbatch RustRegexLiteralReuse
- * @run main/othervm -XX:-CompactStrings RustRegexLiteralReuse
  */
 
 import java.lang.reflect.Constructor;

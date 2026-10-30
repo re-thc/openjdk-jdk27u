@@ -33,7 +33,6 @@
  * @run main/othervm -XX:-TieredCompilation -Xbatch RustRegexSafepoint
  * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:-UseRustRegexIntrinsics RustRegexSafepoint
  * @run main/othervm -XX:-UseRustRegex RustRegexSafepoint
- * @run main/othervm -XX:-CompactStrings RustRegexSafepoint
  */
 
 import java.lang.reflect.Field;
@@ -72,46 +71,51 @@ public class RustRegexSafepoint {
         for (String regex : new String[]{"[ab]{1000}[cd]", "([ab]{32,64})+([cd]+)", "([^x]{32,64})+(x+)"}) {
             String body = regex.startsWith("[ab]") ? "a".repeat(1000) + "c"
                     : regex.startsWith("([^x]") ? "\u00ff".repeat(2048) + "x" : "a".repeat(2048) + "c";
-            String input = "!!" + body + "?";
-            for (int mode = 0; mode < 3; mode++) {
-                Pattern p = Pattern.compile(regex), ref = Pattern.compile(regex);
-                JAVA.invoke(ref);
-                Matcher a = p.matcher(input).region(2, input.length()-1);
-                Matcher b = ref.matcher(input).region(2, input.length()-1);
-                byte[] bytes = SharedSecrets.getJavaLangAccess().getLatin1Bytes(input);
-                if (bytes != null) System.identityHashCode(bytes);
-                System.identityHashCode(GROUPS.get(a));
-                System.gc();
-                boolean av = mode == 0 ? a.find() : mode == 1 ? a.lookingAt() : a.matches();
-                boolean bv = mode == 0 ? b.find() : mode == 1 ? b.lookingAt() : b.matches();
-                equal(a, b, av, bv);
-                if (RustRegex.ENABLED && BACKEND.get(p) == null) throw new AssertionError("native copying route promoted");
+            for (String prefix : new String[]{"!!", "\u0100!"}) {
+                String input = prefix + body + "?";
+                for (int mode = 0; mode < 3; mode++) {
+                    Pattern p = Pattern.compile(regex), ref = Pattern.compile(regex);
+                    JAVA.invoke(ref);
+                    Matcher a = p.matcher(input).region(2, input.length()-1);
+                    Matcher b = ref.matcher(input).region(2, input.length()-1);
+                    byte[] bytes = SharedSecrets.getJavaLangAccess().getLatin1Bytes(input);
+                    if (bytes != null) System.identityHashCode(bytes);
+                    System.identityHashCode(GROUPS.get(a));
+                    System.gc();
+                    boolean av = mode == 0 ? a.find() : mode == 1 ? a.lookingAt() : a.matches();
+                    boolean bv = mode == 0 ? b.find() : mode == 1 ? b.lookingAt() : b.matches();
+                    equal(a, b, av, bv);
+                    if (RustRegex.ENABLED && BACKEND.get(p) == null) throw new AssertionError("native copying route promoted");
+                }
             }
         }
         if (!RustRegex.ENABLED) return;
-        Pattern slow = Pattern.compile("(?:[ab]{0,500})*[bc]");
-        Matcher matcher = slow.matcher("a".repeat(65536));
-        System.identityHashCode(GROUPS.get(matcher));
-        CountDownLatch go = new CountDownLatch(1);
-        AtomicReference<Throwable> failure = new AtomicReference<>();
-        Thread worker = new Thread(() -> {
-            try { go.countDown(); if (matcher.find()) throw new AssertionError("slow miss"); }
-            catch (Throwable t) { failure.set(t); }
-        });
-        worker.start(); go.await();
-        boolean observed = false;
-        while (worker.isAlive()) {
-            for (StackTraceElement frame : worker.getStackTrace()) {
-                if (frame.getMethodName().equals("matchSafepoint0")) observed = true;
+        for (String prefix : new String[]{"", "\u0100"}) {
+            Pattern slow = Pattern.compile("(?:[ab]{0,500})*[bc]");
+            String input = prefix + "a".repeat(65536);
+            Matcher matcher = slow.matcher(input).region(prefix.length(), input.length());
+            System.identityHashCode(GROUPS.get(matcher));
+            CountDownLatch go = new CountDownLatch(1);
+            AtomicReference<Throwable> failure = new AtomicReference<>();
+            Thread worker = new Thread(() -> {
+                try { go.countDown(); if (matcher.find()) throw new AssertionError("slow miss"); }
+                catch (Throwable t) { failure.set(t); }
+            });
+            worker.start(); go.await();
+            boolean observed = false;
+            while (worker.isAlive()) {
+                for (StackTraceElement frame : worker.getStackTrace()) {
+                    if (frame.getMethodName().equals("matchSafepoint0")) observed = true;
+                }
+                if (observed) break;
+                Thread.sleep(1);
             }
-            if (observed) break;
-            Thread.sleep(1);
+            if (!observed) throw new AssertionError("safepoint-capable native frame was not observed");
+            JAVA.invoke(slow); // Drop the Pattern's engine reference while its call is in flight.
+            for (int i = 0; i < 4; i++) System.gc();
+            worker.join();
+            if (failure.get() != null) throw new AssertionError(failure.get());
         }
-        if (!observed) throw new AssertionError("safepoint-capable native frame was not observed");
-        JAVA.invoke(slow); // Drop the Pattern's engine reference while its call is in flight.
-        for (int i = 0; i < 4; i++) System.gc();
-        worker.join();
-        if (failure.get() != null) throw new AssertionError(failure.get());
         System.out.println("Native copies, capture offsets, GC and in-flight promotion passed");
     }
 }

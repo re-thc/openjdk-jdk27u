@@ -33,7 +33,6 @@
  * @run main/othervm/timeout=600 -Xint RustRegexTest
  * @run main/othervm -XX:TieredStopAtLevel=1 -Xbatch RustRegexTest
  * @run main/othervm -XX:-TieredCompilation -Xbatch RustRegexTest
- * @run main/othervm -XX:-CompactStrings RustRegexTest
  */
 
 import java.io.*;

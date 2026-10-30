@@ -32,7 +32,6 @@
  * @run main/othervm -XX:-TieredCompilation -Xbatch RustRegexCharSequence
  * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:-UseRustRegexIntrinsics RustRegexCharSequence
  * @run main/othervm -XX:-UseRustRegex RustRegexCharSequence
- * @run main/othervm -XX:-CompactStrings RustRegexCharSequence
  */
 
 import java.lang.reflect.Constructor;

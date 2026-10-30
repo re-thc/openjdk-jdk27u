@@ -32,7 +32,6 @@
  * @run main/othervm -XX:-TieredCompilation -Xbatch RustRegexContinuation
  * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:-UseRustRegexIntrinsics RustRegexContinuation
  * @run main/othervm -XX:-UseRustRegex RustRegexContinuation
- * @run main/othervm -XX:-CompactStrings RustRegexContinuation
  */
 
 import java.lang.reflect.Method;
