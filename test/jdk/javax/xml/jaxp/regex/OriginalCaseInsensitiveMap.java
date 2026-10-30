@@ -19,12 +19,15 @@
  * limitations under the License.
  */
 
-package com.sun.org.apache.xerces.internal.impl.xpath.regex;
+/*
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+ */
 
 /**
  */
 
-final class CaseInsensitiveMap {
+// Retain the pre-generation algorithm as an independent target-runtime oracle.
+final class OriginalCaseInsensitiveMap {
 
     private static final int CHUNK_SHIFT = 10;           /* 2^10 = 1k */
     private static final int CHUNK_SIZE = (1<<CHUNK_SHIFT);

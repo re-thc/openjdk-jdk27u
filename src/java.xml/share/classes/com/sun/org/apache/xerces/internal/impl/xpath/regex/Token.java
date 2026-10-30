@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -751,76 +752,9 @@ class Token implements java.io.Serializable {
                     Map<String, Token> tmpCat = new HashMap<>();
                     Map<String, Token> tmpCat2 = new HashMap<>();
 
-                    Token[] ranges = new Token[Token.categoryNames.length];
-                    for (int i = 0;  i < ranges.length;  i ++) {
-                        ranges[i] = Token.createRange();
-                    }
-                    int type;
-                    for (int i = 0;  i < 0x10000;  i ++) {
-                        type = Character.getType((char)i);
-                        if (type == Character.START_PUNCTUATION ||
-                            type == Character.END_PUNCTUATION) {
-                            //build table of Pi values
-                            if (i == 0x00AB || i == 0x2018 || i == 0x201B || i == 0x201C ||
-                                i == 0x201F || i == 0x2039) {
-                                type = CHAR_INIT_QUOTE;
-                            }
-                            //build table of Pf values
-                            if (i == 0x00BB || i == 0x2019 || i == 0x201D || i == 0x203A ) {
-                                type = CHAR_FINAL_QUOTE;
-                            }
-                        }
-                        ranges[type].addRange(i, i);
-                        switch (type) {
-                          case Character.UPPERCASE_LETTER:
-                          case Character.LOWERCASE_LETTER:
-                          case Character.TITLECASE_LETTER:
-                          case Character.MODIFIER_LETTER:
-                          case Character.OTHER_LETTER:
-                            type = CHAR_LETTER;
-                            break;
-                          case Character.NON_SPACING_MARK:
-                          case Character.COMBINING_SPACING_MARK:
-                          case Character.ENCLOSING_MARK:
-                            type = CHAR_MARK;
-                            break;
-                          case Character.DECIMAL_DIGIT_NUMBER:
-                          case Character.LETTER_NUMBER:
-                          case Character.OTHER_NUMBER:
-                            type = CHAR_NUMBER;
-                            break;
-                          case Character.SPACE_SEPARATOR:
-                          case Character.LINE_SEPARATOR:
-                          case Character.PARAGRAPH_SEPARATOR:
-                            type = CHAR_SEPARATOR;
-                            break;
-                          case Character.CONTROL:
-                          case Character.FORMAT:
-                          case Character.SURROGATE:
-                          case Character.PRIVATE_USE:
-                          case Character.UNASSIGNED:
-                            type = CHAR_OTHER;
-                            break;
-                          case Character.CONNECTOR_PUNCTUATION:
-                          case Character.DASH_PUNCTUATION:
-                          case Character.START_PUNCTUATION:
-                          case Character.END_PUNCTUATION:
-                          case CHAR_INIT_QUOTE:
-                          case CHAR_FINAL_QUOTE:
-                          case Character.OTHER_PUNCTUATION:
-                            type = CHAR_PUNCTUATION;
-                            break;
-                          case Character.MATH_SYMBOL:
-                          case Character.CURRENCY_SYMBOL:
-                          case Character.MODIFIER_SYMBOL:
-                          case Character.OTHER_SYMBOL:
-                            type = CHAR_SYMBOL;
-                            break;
-                          default:
-                            throw new RuntimeException("org.apache.xerces.utils.regex.Token#getRange(): Unknown Unicode category: "+type);
-                        }
-                        ranges[type].addRange(i, i);
-                    } // for all characters
+                    // Generated from the target JDK's Unicode data. Keep this lazy:
+                    // literal and simple range patterns do not need category tables.
+                    Token[] ranges = UnicodeRanges.create();
                     ranges[Character.UNASSIGNED].addRange(0x10000, Token.UTF16_MAX);
 
                     for (int i = 0;  i < ranges.length;  i ++) {
