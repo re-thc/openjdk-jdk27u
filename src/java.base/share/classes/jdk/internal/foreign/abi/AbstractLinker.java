@@ -176,8 +176,14 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     }
 
     private void checkLayouts(FunctionDescriptor descriptor) {
-        descriptor.returnLayout().ifPresent(this::checkLayout);
-        descriptor.argumentLayouts().forEach(this::checkLayout);
+        var returnLayout = descriptor.returnLayout();
+        if (returnLayout.isPresent()) {
+            checkLayout(returnLayout.get());
+        }
+        var argumentLayouts = descriptor.argumentLayouts();
+        for (int i = 0; i < argumentLayouts.size(); i++) {
+            checkLayout(argumentLayouts.get(i));
+        }
     }
 
     private void checkLayout(MemoryLayout layout) {
@@ -317,34 +323,67 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     private static MemoryLayout stripNames(MemoryLayout ml) {
         // we don't care about transferring alignment and byte order here
         // since the linker already restricts those such that they will always be the same
-        return switch (ml) {
-            case StructLayout sl -> MemoryLayout.structLayout(stripNames(sl.memberLayouts()));
-            case UnionLayout ul -> MemoryLayout.unionLayout(stripNames(ul.memberLayouts()));
-            case SequenceLayout sl -> MemoryLayout.sequenceLayout(sl.elementCount(), stripNames(sl.elementLayout()));
-            case AddressLayout al -> {
-                var stripped = al.withoutName();
-                var target = al.targetLayout();
-                if (target.isPresent())
-                    stripped = stripped.withTargetLayout(stripNames(target.get()));
-                yield stripped;
+        Objects.requireNonNull(ml);
+        if (ml instanceof StructLayout sl) {
+            var members = stripNames(sl.memberLayouts());
+            if (members == null && ((AbstractLayout<?>) sl).hasNaturalAlignment()) {
+                return sl.withoutName();
             }
-            default -> ml.withoutName(); // ValueLayout and PaddingLayout
-        };
+            return MemoryLayout.structLayout(members != null ? members : sl.memberLayouts().toArray(new MemoryLayout[sl.memberLayouts().size()]));
+        } else if (ml instanceof UnionLayout ul) {
+            var members = stripNames(ul.memberLayouts());
+            if (members == null && ((AbstractLayout<?>) ul).hasNaturalAlignment()) {
+                return ul.withoutName();
+            }
+            return MemoryLayout.unionLayout(members != null ? members : ul.memberLayouts().toArray(new MemoryLayout[ul.memberLayouts().size()]));
+        } else if (ml instanceof SequenceLayout sl) {
+            var element = stripNames(sl.elementLayout());
+            if (element == sl.elementLayout() && ((AbstractLayout<?>) sl).hasNaturalAlignment()) {
+                return sl.withoutName();
+            }
+            return MemoryLayout.sequenceLayout(sl.elementCount(), element);
+        } else if (ml instanceof AddressLayout al) {
+            var stripped = al.withoutName();
+            var target = al.targetLayout();
+            if (target.isPresent()) {
+                var normalized = stripNames(target.get());
+                if (normalized != target.get()) {
+                    stripped = stripped.withTargetLayout(normalized);
+                }
+            }
+            return stripped;
+        } else {
+            return ml.withoutName(); // ValueLayout and PaddingLayout
+        }
     }
 
     private static MemoryLayout[] stripNames(List<MemoryLayout> layouts) {
-        var ret = new MemoryLayout[layouts.size()];
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = stripNames(layouts.get(i));
+        // A null result means that every immutable child was already normalized.
+        MemoryLayout[] ret = null;
+        for (int i = 0; i < layouts.size(); i++) {
+            var original = layouts.get(i);
+            var normalized = stripNames(original);
+            if (normalized != original) {
+                if (ret == null) {
+                    ret = layouts.toArray(new MemoryLayout[layouts.size()]);
+                }
+                ret[i] = normalized;
+            }
         }
         return ret;
     }
 
     private static FunctionDescriptor stripNames(FunctionDescriptor function) {
         var retLayout = function.returnLayout();
-        if (retLayout.isEmpty()) {
-            return FunctionDescriptor.ofVoid(stripNames(function.argumentLayouts()));
+        var originalReturn = retLayout.orElse(null);
+        var normalizedReturn = originalReturn == null ? null : stripNames(originalReturn);
+        var arguments = stripNames(function.argumentLayouts());
+        if (normalizedReturn == originalReturn && arguments == null) {
+            return function;
         }
-        return FunctionDescriptor.of(stripNames(retLayout.get()), stripNames(function.argumentLayouts()));
+        if (arguments == null) {
+            arguments = function.argumentLayouts().toArray(new MemoryLayout[function.argumentLayouts().size()]);
+        }
+        return normalizedReturn == null ? FunctionDescriptor.ofVoid(arguments) : FunctionDescriptor.of(normalizedReturn, arguments);
     }
 }

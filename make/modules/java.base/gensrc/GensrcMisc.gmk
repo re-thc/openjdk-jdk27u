@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -83,6 +84,18 @@ $(eval $(call SetupTextFileProcessing, BUILD_PLATFORMPROPERTIES_JAVA, \
 ))
 
 TARGETS += $(BUILD_VERSION_JAVA) $(BUILD_PLATFORMPROPERTIES_JAVA)
+
+# Bind the template producer to the configured target, source inputs and current
+# compiler JDK before java.base compilation. Only content changes update the file.
+FFM_VERSION_SOURCE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/foreign/abi/DowncallTemplateVersion.java
+FFM_TARGET_CONFIG := $(OPENJDK_TARGET_OS)|$(OPENJDK_TARGET_CPU)|$(OPENJDK_TARGET_CPU_ENDIAN)|$(OPENJDK_TARGET_CPU_BITS)|$(VERSION_CLASSFILE_MAJOR)
+.PHONY: ffm-version-inputs
+ffm-version-inputs: $(BUILD_TOOLS_JDK)
+	$(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+	    build.tools.foreign.GenerateDowncallTemplates source $(TOPDIR) \
+	    $(FFM_VERSION_SOURCE) '$(FFM_TARGET_CONFIG)' $(BOOT_JDK)
+
+TARGETS += ffm-version-inputs
 ################################################################################
 
 ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )

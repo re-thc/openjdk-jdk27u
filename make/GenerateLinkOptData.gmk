@@ -52,6 +52,7 @@ TARGETS += $(CLASSLIST_JAR)
 LINK_OPT_DIR := $(SUPPORT_OUTPUTDIR)/link_opt
 CLASSLIST_FILE := $(LINK_OPT_DIR)/classlist
 JLI_TRACE_FILE := $(LINK_OPT_DIR)/default_jli_trace.txt
+EXTRA_JLI_TRACE := $(TOPDIR)/make/data/jli-trace/ffm-exact-invokers.txt
 
 # If an external buildjdk has been supplied, we don't build a separate interim
 # image, so just use the external build jdk instead.
@@ -72,7 +73,8 @@ CLASSLIST_FILE_VM_OPTS = \
 # something goes wrong.
 # The classlists must be generated with -Xint to avoid non-determinism
 # introduced by JIT compiled code
-$(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXECUTABLE_SUFFIX) $(CLASSLIST_JAR)
+$(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXECUTABLE_SUFFIX) $(CLASSLIST_JAR) \
+    $(EXTRA_JLI_TRACE) $(TOPDIR)/make/GenerateLinkOptData.gmk
 	$(call MakeDir, $(LINK_OPT_DIR))
 	$(call LogInfo, Generating $(patsubst $(OUTPUTDIR)/%, %, $@))
 	$(call LogInfo, Generating $(patsubst $(OUTPUTDIR)/%, %, $(JLI_TRACE_FILE)))
@@ -107,7 +109,10 @@ $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXECUTABLE_SUFFIX) $(CLASSLIST
 	        $(CAT) $(LINK_OPT_DIR)/stderr $(JLI_TRACE_FILE) ; \
 	        exit $$exitcode \
 	    )
+	$(CAT) $(EXTRA_JLI_TRACE) >> $(JLI_TRACE_FILE)
 	$(GREP) -v HelloClasslist $@.raw.2 > $@.raw.3
+	$(SED) -n '/^\[LF_RESOLVE\] /s/^/@lambda-form-invoker /p' \
+	    $(EXTRA_JLI_TRACE) >> $@.raw.3
 	$(GREP) -v @cp $@.raw.3 > $@.raw.4
 	$(FIXPATH) $(INTERIM_IMAGE_DIR)/bin/java \
 	    -Xlog:aot=off \
@@ -119,7 +124,8 @@ $(CLASSLIST_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXECUTABLE_SUFFIX) $(CLASSLIST
 # dependencies, make will correctly rebuild both jli trace and classlist
 # incrementally using the single recipe above.
 $(CLASSLIST_FILE): $(JLI_TRACE_FILE)
-$(JLI_TRACE_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXECUTABLE_SUFFIX) $(CLASSLIST_JAR)
+$(JLI_TRACE_FILE): $(INTERIM_IMAGE_DIR)/bin/java$(EXECUTABLE_SUFFIX) $(CLASSLIST_JAR) \
+    $(EXTRA_JLI_TRACE) $(TOPDIR)/make/GenerateLinkOptData.gmk
 
 TARGETS += $(CLASSLIST_FILE) $(JLI_TRACE_FILE)
 
