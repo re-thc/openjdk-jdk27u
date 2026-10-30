@@ -118,6 +118,7 @@ import javax.accessibility.AccessibleStateSet;
  * @see         java.awt.event.ActionListener
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class List extends Component implements ItemSelectable, Accessible {
     /**
      * A vector created to contain items which will become
@@ -180,12 +181,6 @@ public class List extends Component implements ItemSelectable, Accessible {
 
     private static final String base = "list";
     private static int nameCounter = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = -3304312411574666869L;
 
     /**
      * Creates a new scrolling list.
@@ -1340,15 +1335,10 @@ public class List extends Component implements ItemSelectable, Accessible {
      * Java Accessibility API appropriate to list user-interface elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTList extends AccessibleAWTComponent
         implements AccessibleSelection, ItemListener, ActionListener
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 7924617370136012829L;
-
         /**
          * Constructs new {@code AccessibleAWTList}
          */
@@ -1540,15 +1530,10 @@ public class List extends Component implements ItemSelectable, Accessible {
         * user-interface elements.
         * @since 1.3
         */
+        @SuppressWarnings("serial") // Serial version compatibility is not maintained.
         protected class AccessibleAWTListChild extends AccessibleAWTComponent
             implements Accessible
         {
-            /**
-             * Use serialVersionUID from JDK 1.3 for interoperability.
-             */
-            @Serial
-            private static final long serialVersionUID = 4412022926028300317L;
-
         // [[[FIXME]]] need to finish implementing this!!!
 
            /**

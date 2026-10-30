@@ -43,14 +43,9 @@ import javax.print.attribute.TextSyntax;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class PrinterLocation extends TextSyntax
     implements PrintServiceAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -1598610039865566337L;
 
     /**
      * Constructs a new printer location attribute with the given location and

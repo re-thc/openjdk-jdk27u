@@ -31,9 +31,8 @@ import jdk.javadoc.internal.doclets.toolkit.DocletException;
 /**
  * An exception with a user-friendly detail message for an unexpected/internal exception.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InternalException extends DocletException {
-
-    private static final long serialVersionUID = 1L;
 
     /**
      * Creates an exception with a user-friendly detail message, and underlying cause.

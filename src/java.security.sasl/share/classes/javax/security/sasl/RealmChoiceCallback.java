@@ -38,6 +38,7 @@ import javax.security.auth.callback.ChoiceCallback;
  * @author Rosanna Lee
  * @author Rob Weltman
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RealmChoiceCallback extends ChoiceCallback {
 
     /**
@@ -60,6 +61,4 @@ public class RealmChoiceCallback extends ChoiceCallback {
         super(prompt, choices, defaultChoice, multiple);
     }
 
-    @Serial
-    private static final long serialVersionUID = -8588141348846281332L;
 }

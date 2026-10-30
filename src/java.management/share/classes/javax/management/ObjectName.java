@@ -213,13 +213,13 @@ import java.util.Map;
  * domains such as <code>com.example.MyDomain</code>.  This is essentially
  * the same convention as for Java-language package names.</p>
  *
- * <p>The <b>serialVersionUID</b> of this class is <code>1081892073854801359L</code>.
  *
  * @since 1.5
  *
  * @implNote The maximum allowed length of the domain name in this implementation
  *           is {@code Integer.MAX_VALUE/4}
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ObjectName implements Comparable<ObjectName>, QueryExp {
     private static final int DOMAIN_PATTERN = 0x8000_0000;
     private static final int PROPLIST_PATTERN = 0x4000_0000;
@@ -290,8 +290,6 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
 
     // Private fields ---------------------------------------->
 
-
-    private static final long serialVersionUID = 1081892073854801359L;
 
     // Class private fields ----------------------------------->
 

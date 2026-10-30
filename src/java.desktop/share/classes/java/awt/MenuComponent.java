@@ -54,6 +54,7 @@ import sun.awt.ComponentFactory;
  * @author      Arthur van Hoff
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class MenuComponent implements java.io.Serializable {
 
     transient volatile MenuComponentPeer peer;
@@ -99,12 +100,6 @@ public abstract class MenuComponent implements java.io.Serializable {
      */
     static final String actionListenerK = Component.actionListenerK;
     static final String itemListenerK = Component.itemListenerK;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4536902356223894379L;
 
     static {
         AWTAccessor.setMenuComponentAccessor(
@@ -450,17 +445,12 @@ public abstract class MenuComponent implements java.io.Serializable {
      * The class used to obtain the accessible role for this object.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected abstract class AccessibleAWTMenuComponent
         extends AccessibleContext
         implements java.io.Serializable, AccessibleComponent,
                    AccessibleSelection
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -4269533416223798698L;
-
         /**
          * Although the class is abstract, this should be called by
          * all sub-classes.

@@ -96,6 +96,7 @@ import sun.awt.SunToolkit;
  * @author      Amy Fowler
  * @author      Tim Prinzing
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ScrollPane extends Container implements Accessible {
 
 
@@ -178,12 +179,6 @@ public class ScrollPane extends Container implements Accessible {
      * @since 1.4
      */
     private boolean wheelScrollingEnabled = defaultWheelScroll;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 7956609840827222915L;
 
     /**
      * Create a new scrollpane container with a scrollbar display
@@ -739,13 +734,8 @@ public class ScrollPane extends Container implements Accessible {
     /**
      * Invoked when the value of the adjustable has changed.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class PeerFixer implements AdjustmentListener, java.io.Serializable {
-        /**
-         * Use serialVersionUID from JDK 1.1.1 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 1043664721353696630L;
-
         PeerFixer(ScrollPane scroller) {
             this.scroller = scroller;
         }
@@ -807,14 +797,9 @@ public class ScrollPane extends Container implements Accessible {
      * elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTScrollPane extends AccessibleAWTContainer
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 6100703663886637L;
-
         /**
          * Constructs an {@code AccessibleAWTScrollPane}.
          */

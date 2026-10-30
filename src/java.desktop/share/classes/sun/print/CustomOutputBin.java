@@ -31,6 +31,7 @@ import java.util.ArrayList;
 
 import javax.print.attribute.standard.OutputBin;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class CustomOutputBin extends OutputBin {
     private static ArrayList<String> customStringTable = new ArrayList<>();
     private static ArrayList<CustomOutputBin> customEnumTable = new ArrayList<>();
@@ -62,9 +63,6 @@ public final class CustomOutputBin extends OutputBin {
         }
         return new CustomOutputBin(name, choice);
     }
-
-    @Serial
-    private static final long serialVersionUID = 3018751086294120717L;
 
     /**
      * Returns the command string for this media tray.

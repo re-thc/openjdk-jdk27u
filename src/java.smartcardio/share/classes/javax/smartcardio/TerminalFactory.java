@@ -130,9 +130,9 @@ public final class TerminalFactory {
         defaultFactory = factory;
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static final class NoneProvider extends Provider {
 
-        private static final long serialVersionUID = 2745808869881593918L;
         static final Provider INSTANCE = new NoneProvider();
         private NoneProvider() {
             super("None", "1.0", "none");

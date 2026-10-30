@@ -73,15 +73,14 @@ import javax.management.RuntimeOperationsException;
  * ModelMBeanNotificationInfo, ModelMBeanOperationInfo and ModelMBean
  * classes.
  *
- * <p>The <b>serialVersionUID</b> of this class is <code>-6292969195866300415L</code>.
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DescriptorSupport
          implements javax.management.Descriptor
 {
 
-    private static final long serialVersionUID = -6292969195866300415L;
     /**
      * @serialField descriptor HashMap The collection of fields representing this descriptor
      */

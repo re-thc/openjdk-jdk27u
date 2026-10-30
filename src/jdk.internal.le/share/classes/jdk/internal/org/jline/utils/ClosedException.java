@@ -10,9 +10,8 @@ package jdk.internal.org.jline.utils;
 
 import java.io.IOException;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ClosedException extends IOException {
-
-    private static final long serialVersionUID = 3085420657077696L;
 
     public ClosedException() {}
 

@@ -35,9 +35,8 @@ import static sun.security.smartcardio.PCSC.*;
  * @since   1.6
  * @author  Andreas Sterbenz
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class PCSCException extends Exception {
-
-    private static final long serialVersionUID = 4181137171979130432L;
 
     final int code;
 

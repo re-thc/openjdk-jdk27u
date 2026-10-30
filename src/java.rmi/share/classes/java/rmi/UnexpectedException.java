@@ -34,10 +34,8 @@ package java.rmi;
  * @author  Roger Riggs
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnexpectedException extends RemoteException {
-
-    /* indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = 1800467484195073863L;
 
     /**
      * Constructs an <code>UnexpectedException</code> with the specified

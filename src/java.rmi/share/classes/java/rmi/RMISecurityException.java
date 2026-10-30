@@ -36,11 +36,9 @@ package java.rmi;
  * <code>RMISecurityManager</code> no longer throws this subclass of
  * <code>java.lang.SecurityException</code>.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated
 public class RMISecurityException extends java.lang.SecurityException {
-
-    /* indicate compatibility with JDK 1.1.x version of class */
-     private static final long serialVersionUID = -8433406075740433514L;
 
     /**
      * Construct an <code>RMISecurityException</code> with a detail message.

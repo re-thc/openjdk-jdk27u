@@ -28,9 +28,8 @@ package jdk.tools.jlink.plugin;
  * An unchecked exception thrown by jlink plugin API for unrecoverable
  * conditions.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class PluginException extends RuntimeException {
-
-    private static final long serialVersionUID = 7117982019443100395L;
 
     public PluginException() {
 

@@ -36,6 +36,7 @@ import java.security.SecureRandom;
  * @author      Ann Wollrath
  * @author      Peter Jones
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class VMID implements java.io.Serializable {
     /** Array of bytes uniquely identifying this host */
     private static final byte[] randomBytes;
@@ -49,9 +50,6 @@ public final class VMID implements java.io.Serializable {
      * @serial unique identifier with respect to host created on
      */
     private UID uid;
-
-    /** indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = -538642295484486218L;
 
     static {
         // Generate 8 bytes of random data.

@@ -44,6 +44,7 @@ package javax.naming;
   * @see Context#destroySubcontext
   * @since 1.3
   */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ContextNotEmptyException extends NamingException {
     /**
      * Constructs a new instance of ContextNotEmptyException using an
@@ -65,8 +66,4 @@ public class ContextNotEmptyException extends NamingException {
         super();
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = 1090963683348219877L;
 }

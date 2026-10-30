@@ -52,14 +52,9 @@ import javax.print.attribute.URISyntax;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class PrinterMoreInfoManufacturer extends URISyntax
         implements PrintServiceAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 3323271346485076608L;
 
     /**
      * Constructs a new printer more info manufacturer attribute with the

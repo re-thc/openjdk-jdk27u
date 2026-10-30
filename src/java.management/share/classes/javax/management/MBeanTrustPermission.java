@@ -51,10 +51,9 @@ import java.io.ObjectInputStream;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public class MBeanTrustPermission extends BasicPermission {
-
-    private static final long serialVersionUID = -2952178077029018140L;
 
     /** <p>Create a new MBeanTrustPermission with the given name.</p>
         <p>This constructor is equivalent to

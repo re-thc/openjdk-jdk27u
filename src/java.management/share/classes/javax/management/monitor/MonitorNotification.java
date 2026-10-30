@@ -70,6 +70,7 @@ import javax.management.ObjectName;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MonitorNotification extends javax.management.Notification {
 
 
@@ -155,9 +156,6 @@ public class MonitorNotification extends javax.management.Notification {
      *  PRIVATE VARIABLES
      * ------------------------------------------
      */
-
-    /* Serial version */
-    private static final long serialVersionUID = -4608189663661929204L;
 
     /**
      * @serial Monitor notification observed object.

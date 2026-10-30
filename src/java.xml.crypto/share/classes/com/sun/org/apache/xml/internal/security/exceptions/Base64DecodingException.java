@@ -26,9 +26,8 @@ package com.sun.org.apache.xml.internal.security.exceptions;
  * This Exception is thrown if decoding of Base64 data fails.
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Base64DecodingException extends XMLSecurityException {
-
-    private static final long serialVersionUID = 1L;
 
     /**
      * Constructor Base64DecodingException

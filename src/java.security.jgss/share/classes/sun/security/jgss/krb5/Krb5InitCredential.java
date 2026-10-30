@@ -47,12 +47,10 @@ import javax.security.auth.login.LoginException;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Krb5InitCredential
     extends KerberosTicket
     implements Krb5CredElement {
-
-    @Serial
-    private static final long serialVersionUID = 7723415700837898232L;
 
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private final Krb5NameElement name;

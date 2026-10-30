@@ -194,6 +194,7 @@ public abstract sealed class Path2D implements Shape, Cloneable
      *
      * @since 1.6
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static non-sealed class Float extends Path2D implements Serializable {
         transient float[] floatCoords;
 
@@ -850,12 +851,6 @@ public abstract sealed class Path2D implements Shape, Cloneable
         }
 
         /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 6990832515060788886L;
-
-        /**
          * Writes the default serializable fields to the
          * {@code ObjectOutputStream} followed by an explicit
          * serialization of the path segments stored in this
@@ -1083,6 +1078,7 @@ public abstract sealed class Path2D implements Shape, Cloneable
      *
      * @since 1.6
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static non-sealed class Double extends Path2D implements Serializable {
         transient double[] doubleCoords;
 
@@ -1627,12 +1623,6 @@ public abstract sealed class Path2D implements Shape, Cloneable
             // REMIND: Can we do both somehow?
             return new Path2D.Double(this);
         }
-
-        /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 1826762518450014216L;
 
         /**
          * Writes the default serializable fields to the

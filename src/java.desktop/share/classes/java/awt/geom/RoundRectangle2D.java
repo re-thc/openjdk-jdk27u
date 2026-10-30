@@ -49,6 +49,7 @@ public abstract class RoundRectangle2D extends RectangularShape {
      * corners all specified in {@code float} coordinates.
      * @since 1.2
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Float extends RoundRectangle2D
         implements Serializable
     {
@@ -251,11 +252,6 @@ public abstract class RoundRectangle2D extends RectangularShape {
             return new Rectangle2D.Float(x, y, width, height);
         }
 
-        /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -3423150618393866922L;
     }
 
     /**
@@ -263,6 +259,7 @@ public abstract class RoundRectangle2D extends RectangularShape {
      * corners all specified in {@code double} coordinates.
      * @since 1.2
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Double extends RoundRectangle2D
         implements Serializable
     {
@@ -435,11 +432,6 @@ public abstract class RoundRectangle2D extends RectangularShape {
             return new Rectangle2D.Double(x, y, width, height);
         }
 
-        /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 1048939333485206117L;
     }
 
     /**

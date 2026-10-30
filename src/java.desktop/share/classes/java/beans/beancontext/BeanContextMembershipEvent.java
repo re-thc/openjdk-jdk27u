@@ -51,15 +51,9 @@ import java.util.Iterator;
  * @see         java.beans.beancontext.BeanContextMembershipListener
  */
 
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "serial"})
 @Deprecated(since = "23", forRemoval = true)
 public class BeanContextMembershipEvent extends BeanContextEvent {
-
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 3499346510334590959L;
 
     /**
      * Construct a BeanContextMembershipEvent

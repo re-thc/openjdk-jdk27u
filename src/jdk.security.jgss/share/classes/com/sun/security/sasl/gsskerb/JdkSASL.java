@@ -36,9 +36,8 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
  * provides client and server support for GSSAPI/Kerberos v5
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class JdkSASL extends Provider {
-
-    private static final long serialVersionUID = 8622590901641830849L;
 
     private static final String info = "JDK SASL provider" +
         "(implements client and server mechanisms for GSSAPI)";

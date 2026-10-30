@@ -24,9 +24,8 @@ package com.sun.org.apache.bcel.internal.classfile;
 /**
  * Thrown when the BCEL attempts to read a class file and determines that a class is malformed or otherwise cannot be interpreted as a class file.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ClassFormatException extends RuntimeException {
-
-    private static final long serialVersionUID = -3569097343160139969L;
 
     /**
      * Constructs a new instance with {@code null} as its detail message. The cause is not initialized, and may subsequently be initialized by a call to

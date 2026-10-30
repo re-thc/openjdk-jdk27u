@@ -30,9 +30,8 @@ package jdk.security.jarsigner;
  *
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class JarSignerException extends RuntimeException {
-
-    private static final long serialVersionUID = -4732217075689309530L;
 
     /**
      * Constructs a new {@code JarSignerException} with the specified detail

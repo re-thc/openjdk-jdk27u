@@ -65,19 +65,19 @@ final record FileAssociationGroup(List<FileAssociation> items) {
         return new Builder();
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class FileAssociationException extends Exception {
 
-        private static final long serialVersionUID = 1L;
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class FileAssociationNoMimesException extends FileAssociationException {
 
-        private static final long serialVersionUID = 1L;
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class FileAssociationNoExtensionsException extends FileAssociationException {
 
-        private static final long serialVersionUID = 1L;
     }
 
     static final class Builder {

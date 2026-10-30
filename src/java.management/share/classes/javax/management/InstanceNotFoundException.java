@@ -31,10 +31,8 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InstanceNotFoundException extends OperationsException   {
-
-    /* Serial version */
-    private static final long serialVersionUID = -882579438394773049L;
 
     /**
      * Default constructor.

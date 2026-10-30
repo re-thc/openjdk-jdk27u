@@ -46,6 +46,7 @@ import java.io.IOException;
  * @see EntryChangeResponseControl
  * @author Vincent Ryan
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class PersistentSearchControl extends BasicControl {
 
     /**
@@ -100,8 +101,6 @@ public final class PersistentSearchControl extends BasicControl {
      * @serial
      */
     private boolean returnControls = true;
-
-    private static final long serialVersionUID = 6335140491154854116L;
 
     /**
      * Constructs a persistent search non-critical control.

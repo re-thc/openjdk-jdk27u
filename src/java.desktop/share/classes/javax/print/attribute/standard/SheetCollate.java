@@ -141,14 +141,9 @@ import javax.print.attribute.PrintRequestAttribute;
  * @author Alan Kaminsky
  * @see MultipleDocumentHandling
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SheetCollate extends EnumSyntax
     implements DocAttribute, PrintRequestAttribute, PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 7080587914259873003L;
 
     /**
      * Sheets within a document appear in uncollated order when multiple copies

@@ -59,6 +59,7 @@ import javax.swing.border.LineBorder;
  */
 
 // This class is final due to the 6607310 fix. Refer to the CR for details.
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class CompositionArea extends JPanel implements InputMethodListener {
 
     @SuppressWarnings("serial") // Type of field is not Serializable
@@ -318,9 +319,4 @@ public final class CompositionArea extends JPanel implements InputMethodListener
           compositionWindow.pack();
     }
 
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -1057247068746557444L;
 }

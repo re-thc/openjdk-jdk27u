@@ -38,13 +38,11 @@ import javax.management.NotCompliantMBeanException;
 /**
  * A RoleInfo object summarises a role in a relation type.
  *
- * <p>The <b>serialVersionUID</b> of this class is {@code 2504952983494636987L}.
- *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RoleInfo implements Serializable {
 
-    private static final long serialVersionUID = 2504952983494636987L;
     /**
      * @serialField name String Role name
      * @serialField isReadable boolean Read access mode: {@code true} if role is readable

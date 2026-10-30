@@ -37,6 +37,7 @@ import java.io.Serial;
  * @author Rob Weltman
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SaslException extends IOException {
     /**
      * The possibly null root cause exception.
@@ -125,7 +126,4 @@ public class SaslException extends IOException {
         return answer;
     }
 
-    /** Use serialVersionUID from JSR 28 RI for interoperability */
-    @Serial
-    private static final long serialVersionUID = 4579784287983423626L;
 }

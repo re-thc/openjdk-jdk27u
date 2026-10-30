@@ -1968,8 +1968,8 @@ class Http2Connection implements Closeable {
     /**
      * Thrown when https handshake negotiates http/1.1 alpn instead of h2
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class ALPNException extends IOException {
-        private static final long serialVersionUID = 0L;
         final transient AbstractAsyncSSLConnection connection;
 
         ALPNException(String msg, AbstractAsyncSSLConnection connection) {

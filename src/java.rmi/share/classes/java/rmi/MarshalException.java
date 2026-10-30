@@ -41,10 +41,8 @@ package java.rmi;
  * @author  Ann Wollrath
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MarshalException extends RemoteException {
-
-    /* indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = 6223554758134037936L;
 
     /**
      * Constructs a <code>MarshalException</code> with the specified

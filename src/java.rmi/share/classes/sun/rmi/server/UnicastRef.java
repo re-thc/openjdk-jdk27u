@@ -50,7 +50,7 @@ import sun.rmi.transport.StreamRemoteCall;
  * class's getLiveRef method (as it is inherited by UnicastRef2) in
  * the implementation of javax.management.remote.rmi.RMIConnector.
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation", "serial"})
 public class UnicastRef implements RemoteRef {
 
     /**
@@ -65,8 +65,6 @@ public class UnicastRef implements RemoteRef {
     public static final Log clientCallLog =
         Log.getLog("sun.rmi.client.call", "RMI",
                    Boolean.getBoolean("sun.rmi.client.logCalls"));
-    private static final long serialVersionUID = 8258372400816541186L;
-
     @SuppressWarnings("serial") // Type of field is not Serializable
     protected LiveRef ref;
 

@@ -51,14 +51,9 @@ import javax.print.attribute.PrintRequestAttribute;
  * @spec https://www.rfc-editor.org/info/rfc2911
  *      RFC 2911: Internet Printing Protocol/1.1: Model and Semantics
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class Fidelity extends EnumSyntax
         implements PrintJobAttribute, PrintRequestAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 6320827847329172308L;
 
     /**
      * The job must be printed exactly as specified. or else rejected.

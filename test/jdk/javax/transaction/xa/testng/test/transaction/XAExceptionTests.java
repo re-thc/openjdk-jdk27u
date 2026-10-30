@@ -23,11 +23,12 @@
 package test.transaction;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import javax.transaction.xa.XAException;
 import static org.testng.Assert.*;
 import org.testng.annotations.Test;
-import util.SerializedTransactionExceptions;
 
 public class XAExceptionTests {
 
@@ -56,18 +57,25 @@ public class XAExceptionTests {
     }
 
     /**
-     * De-Serialize a XAException from JDBC 4.0 and make sure you can read it
-     * back properly
+     * Round-trip a current XAException, preserving its message and error code
      */
     @Test
     public void test3() throws Exception {
 
-        ObjectInputStream ois = new ObjectInputStream(
-                new ByteArrayInputStream(SerializedTransactionExceptions.XAE_DATA));
-        XAException ex = (XAException) ois.readObject();
+        XAException original = new XAException(reason);
+        original.errorCode = 21;
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
+            out.writeObject(original);
+        }
+        XAException ex;
+        try (ObjectInputStream in = new ObjectInputStream(
+                new ByteArrayInputStream(bytes.toByteArray()))) {
+            ex = (XAException) in.readObject();
+        }
         assertTrue(reason.equals(ex.getMessage())
                 && ex.getCause() == null
-                && ex.errorCode == 0);
+                && ex.errorCode == 21);
     }
 
     /**

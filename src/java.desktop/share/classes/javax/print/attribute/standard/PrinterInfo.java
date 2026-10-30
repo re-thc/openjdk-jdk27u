@@ -47,14 +47,9 @@ import javax.print.attribute.TextSyntax;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class PrinterInfo extends TextSyntax
         implements PrintServiceAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 7765280618777599727L;
 
     /**
      * Constructs a new printer info attribute with the given information string

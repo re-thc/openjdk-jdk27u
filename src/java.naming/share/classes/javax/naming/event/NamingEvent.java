@@ -70,6 +70,7 @@ import javax.naming.Binding;
   * @see EventContext
   * @since 1.3
   */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NamingEvent extends java.util.EventObject {
     /**
      * Naming event type for indicating that a new object has been added.
@@ -297,5 +298,4 @@ public class NamingEvent extends java.util.EventObject {
             break;
         }
     }
-    private static final long serialVersionUID = -7126752885365133499L;
 }

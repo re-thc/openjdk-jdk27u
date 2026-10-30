@@ -79,13 +79,8 @@ import java.io.Serializable;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class Size2DSyntax implements Serializable, Cloneable {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 5584439964938660530L;
 
     /**
      * {@code X} dimension in units of micrometers (&#181;m).

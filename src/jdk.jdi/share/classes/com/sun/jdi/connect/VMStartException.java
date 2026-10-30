@@ -34,9 +34,8 @@ package com.sun.jdi.connect;
  * @author Gordon Hirsch
  * @since  1.3
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class VMStartException extends Exception {
-
-    private static final long serialVersionUID = 6408644824640801020L;
 
     /** @serial */
     @SuppressWarnings("serial") // Not statically typed as Serializable

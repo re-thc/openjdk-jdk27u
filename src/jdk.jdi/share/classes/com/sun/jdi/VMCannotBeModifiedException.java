@@ -32,9 +32,8 @@ package com.sun.jdi;
  * @author Jim Holmlund
  * @since  1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class VMCannotBeModifiedException extends UnsupportedOperationException {
-
-    private static final long serialVersionUID = -4063879815130164009L;
 
     public VMCannotBeModifiedException() {
         super();

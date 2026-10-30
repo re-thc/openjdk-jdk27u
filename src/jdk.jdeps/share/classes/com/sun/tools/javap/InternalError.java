@@ -31,8 +31,8 @@ package com.sun.tools.javap;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InternalError extends Error {
-    private static final long serialVersionUID = 8114054446416187030L;
     InternalError(Throwable t, Object... args) {
         super("Internal error", t);
         this.args = args;

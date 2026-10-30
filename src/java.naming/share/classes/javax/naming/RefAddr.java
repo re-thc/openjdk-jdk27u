@@ -55,6 +55,7 @@ package javax.naming;
   * String.
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class RefAddr implements java.io.Serializable {
     /**
      * Contains the type of this address.
@@ -144,8 +145,4 @@ public abstract class RefAddr implements java.io.Serializable {
         return (str.toString());
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = -1468165120479154358L;
 }

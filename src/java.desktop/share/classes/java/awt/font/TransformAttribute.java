@@ -50,6 +50,7 @@ import java.io.Serializable;
  * The {@code TransformAttribute} class provides an immutable
  * wrapper for a transform so that it is safe to use as an attribute.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class TransformAttribute implements Serializable {
 
     /**
@@ -133,12 +134,6 @@ public final class TransformAttribute implements Serializable {
         }
         return this;
     }
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 3356247357827709530L;
 
     /**
      * @since 1.6

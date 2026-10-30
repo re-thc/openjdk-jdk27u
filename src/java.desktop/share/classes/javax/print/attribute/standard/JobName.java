@@ -54,14 +54,9 @@ import javax.print.attribute.TextSyntax;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class JobName extends TextSyntax
         implements PrintRequestAttribute, PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 4660359192078689545L;
 
     /**
      * Constructs a new job name attribute with the given job name and locale.

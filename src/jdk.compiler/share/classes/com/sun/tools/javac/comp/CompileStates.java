@@ -37,6 +37,7 @@ import com.sun.tools.javac.util.Context;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CompileStates extends HashMap<Env<AttrContext>, CompileStates.CompileState> {
     /** The context key for the compile states. */
     protected static final Context.Key<CompileStates> compileStatesKey = new Context.Key<>();
@@ -76,8 +77,6 @@ public class CompileStates extends HashMap<Env<AttrContext>, CompileStates.Compi
         }
         private final int value;
     }
-
-    private static final long serialVersionUID = 1812267524140424433L;
 
     protected transient Context context;
 

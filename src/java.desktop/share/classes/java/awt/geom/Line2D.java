@@ -48,6 +48,7 @@ public abstract class Line2D implements Shape, Cloneable {
      * A line segment specified with float coordinates.
      * @since 1.2
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Float extends Line2D implements Serializable {
         /**
          * The X coordinate of the start point of the line segment.
@@ -205,17 +206,13 @@ public abstract class Line2D implements Shape, Cloneable {
             return new Rectangle2D.Float(x, y, w, h);
         }
 
-        /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 6161772511649436349L;
     }
 
     /**
      * A line segment specified with double coordinates.
      * @since 1.2
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Double extends Line2D implements Serializable {
         /**
          * The X coordinate of the start point of the line segment.
@@ -358,11 +355,6 @@ public abstract class Line2D implements Shape, Cloneable {
             return new Rectangle2D.Double(x, y, w, h);
         }
 
-        /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 7979627399746467499L;
     }
 
     /**

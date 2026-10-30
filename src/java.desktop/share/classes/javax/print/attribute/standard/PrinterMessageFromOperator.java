@@ -54,14 +54,9 @@ import javax.print.attribute.TextSyntax;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class PrinterMessageFromOperator   extends TextSyntax
     implements PrintServiceAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4486871203218629318L;
 
     /**
      * Constructs a new printer message from operator attribute with the given
