@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +36,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import sun.util.calendar.ZoneInfo;
 import sun.util.calendar.ZoneInfoFile;
@@ -53,6 +55,12 @@ import sun.util.locale.provider.TimeZoneNameUtility;
 public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
 
     private static final String NO_INHERITANCE_MARKER = "\u2205\u2205\u2205";
+
+    private static class GmtPatterns {
+        static final Pattern HOURS = Pattern.compile("H+");
+        static final Pattern MINUTES = Pattern.compile("m+");
+    }
+
     private static class AVAILABLE_IDS {
         static final String[] INSTANCE =
                 ZoneInfoFile.zoneIds()
@@ -250,7 +258,7 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
         if (rgn == null && !id.startsWith("Etc") && !id.startsWith("SystemV")) {
             int slash = id.lastIndexOf('/');
             if (slash > 0) {
-                rgn = id.substring(slash + 1).replaceAll("_", " ");
+                rgn = id.substring(slash + 1).replace('_', ' ');
             }
         }
 
@@ -307,9 +315,10 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
                 hourFormat = hourFormat.substring(hourFormat.indexOf(";") + 1);
                 offset = -offset;
             }
-            hourFormat = hourFormat
-                .replaceFirst("H+", "\\%1\\$02d")
-                .replaceFirst("m+", "\\%2\\$02d");
+            hourFormat = GmtPatterns.HOURS.matcher(hourFormat)
+                .replaceFirst("\\%1\\$02d");
+            hourFormat = GmtPatterns.MINUTES.matcher(hourFormat)
+                .replaceFirst("\\%2\\$02d");
             return MessageFormat.format(gmtFormat,
                     String.format(l, hourFormat, offset / 60, offset % 60));
         }

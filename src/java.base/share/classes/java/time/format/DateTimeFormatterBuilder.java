@@ -74,6 +74,7 @@ import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.ERA;
 
 import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -4543,6 +4544,57 @@ public final class DateTimeFormatterBuilder {
         private final Map<Locale, Entry<Integer, SoftReference<PrefixTree>>>
             cachedTreeCI = HashMap.newHashMap(1);
 
+        // Only built-in US names are shared, without modifying their table.
+        // Keep the trie and actual zone-ID snapshot soft, without retaining the
+        // resource table. No shared cache is initialized by formatting or
+        // zone-ID-only parsing.
+        private static volatile SoftReference<SharedTree> fullTree;
+        private static volatile SoftReference<SharedTree> fullTreeCI;
+        private static volatile SoftReference<SharedTree> shortTree;
+        private static volatile SoftReference<SharedTree> shortTreeCI;
+
+        private static final class SharedTree {
+            final Set<String> zoneIds;
+            final WeakReference<String[][]> zoneStrings;
+            final PrefixTree tree;
+
+            SharedTree(Set<String> zoneIds, String[][] zoneStrings, PrefixTree tree) {
+                this.zoneIds = zoneIds;
+                this.zoneStrings = new WeakReference<>(zoneStrings);
+                this.tree = tree;
+            }
+        }
+
+        private boolean canShareTree(Locale locale) {
+            if (preferredZones != null || !Locale.US.equals(locale) ||
+                    (textStyle != TextStyle.FULL && textStyle != TextStyle.SHORT)) {
+                return false;
+            }
+            // Do not probe providers: even a later SPI/HOST provider may be
+            // called while filling missing names for custom zone IDs.
+            var providers = LocaleProviderAdapter.getAdapterPreference();
+            return providers.size() == 2 &&
+                    providers.get(0) == LocaleProviderAdapter.Type.CLDR &&
+                    providers.get(1) == LocaleProviderAdapter.Type.FALLBACK;
+        }
+
+        private SoftReference<SharedTree> sharedTree(boolean caseSensitive) {
+            return textStyle == TextStyle.FULL
+                    ? (caseSensitive ? fullTree : fullTreeCI)
+                    : (caseSensitive ? shortTree : shortTreeCI);
+        }
+
+        private void shareTree(boolean caseSensitive, SharedTree tree) {
+            var ref = new SoftReference<>(tree);
+            if (textStyle == TextStyle.FULL) {
+                if (caseSensitive) fullTree = ref;
+                else fullTreeCI = ref;
+            } else {
+                if (caseSensitive) shortTree = ref;
+                else shortTreeCI = ref;
+            }
+        }
+
         @Override
         protected PrefixTree getTree(DateTimeParseContext context) {
             if (textStyle == TextStyle.NARROW) {
@@ -4564,6 +4616,18 @@ public final class DateTimeFormatterBuilder {
                 (tree = entry.getValue().get()) == null)) {
                 tree = PrefixTree.newTree(context);
                 zoneStrings = TimeZoneNameUtility.getZoneStrings(locale);
+                boolean share = canShareTree(locale);
+                if (share) {
+                    var ref = sharedTree(isCaseSensitive);
+                    SharedTree shared = ref == null ? null : ref.get();
+                    if (shared != null && shared.zoneStrings.get() == zoneStrings &&
+                            shared.zoneIds.equals(availableZoneIds)) {
+                        tree = shared.tree;
+                        cached.put(locale, new SimpleImmutableEntry<>(regionIdsSize,
+                                new SoftReference<>(tree)));
+                        return tree;
+                    }
+                }
                 Set<String> nonRegionIds = HashSet.newHashSet(64);
                 Set<String> regionIds = new HashSet<>(availableZoneIds);
                 for (String[] names : zoneStrings) {
@@ -4581,6 +4645,17 @@ public final class DateTimeFormatterBuilder {
                 }
 
                 // add names for provider's custom ids
+                // A shared snapshot is only published if this path does not
+                // retrieve custom names. Exact ID-set equality above then
+                // prevents its reuse after any custom-ID registration.
+                if (share) {
+                    for (String zid : regionIds) {
+                        if (!zid.startsWith("Etc") && !zid.startsWith("GMT")) {
+                            share = false;
+                            break;
+                        }
+                    }
+                }
                 final PrefixTree t = tree;
                 regionIds.stream()
                     .filter(zid -> !zid.startsWith("Etc") && !zid.startsWith("GMT"))
@@ -4609,6 +4684,9 @@ public final class DateTimeFormatterBuilder {
                     }
                 }
                 cached.put(locale, new SimpleImmutableEntry<>(regionIdsSize, new SoftReference<>(tree)));
+                if (share) {
+                    shareTree(isCaseSensitive, new SharedTree(availableZoneIds, zoneStrings, tree));
+                }
             }
             return tree;
         }
@@ -5353,6 +5431,8 @@ public final class DateTimeFormatterBuilder {
     static final class DayPeriodPrinterParser implements DateTimePrinterParser {
         private final TextStyle textStyle;
         private static final ConcurrentMap<Locale, LocaleStore> DAYPERIOD_LOCALESTORE = new ConcurrentHashMap<>();
+        private static final ConcurrentMap<Locale, DayPeriodIntervals> DAYPERIOD_INTERVALS = new ConcurrentHashMap<>();
+        private static final ConcurrentMap<DayPeriodIntervals, DayPeriodIntervals> SHARED_INTERVALS = new ConcurrentHashMap<>();
 
         /**
          * Constructor.
@@ -5374,13 +5454,8 @@ public final class DateTimeFormatterBuilder {
             long value = Math.floorMod(hod, 24) * 60 + (moh != null ? Math.floorMod(moh, 60) : 0);
             Locale locale = context.getLocale();
             LocaleStore store = findDayPeriodStore(locale);
-            final long val = value;
-            final var map = DayPeriod.getDayPeriodMap(locale);
-            value = map.keySet().stream()
-                    .filter(k -> k.includes(val))
-                    .min(DayPeriod.DPCOMPARATOR)
-                    .map(map::get)
-                    .orElse(val / 720); // fall back to am/pm
+            value = DAYPERIOD_INTERVALS.computeIfAbsent(locale,
+                    DayPeriodPrinterParser::createIntervals).indexAt((int) value);
             String text = store.getText(value, textStyle);
             buf.append(text);
             return true;
@@ -5412,6 +5487,99 @@ public final class DateTimeFormatterBuilder {
         @Override
         public String toString() {
             return "DayPeriod(" + textStyle + ")";
+        }
+
+        /**
+         * Creates intervals after the locale store has removed rules
+         * with unavailable names. Keep the first rule for equal durations.
+         */
+        private static DayPeriodIntervals createIntervals(Locale locale) {
+            DayPeriod[] periods = DayPeriod.getDayPeriodMap(locale).keySet()
+                    .toArray(DayPeriod[]::new);
+
+            // Classification can change only at a rule boundary, after a point
+            // rule, or at noon for the am/pm fallback.
+            int[] boundaries = new int[periods.length * 2 + 3];
+            boundaries[0] = 0;
+            boundaries[1] = 720;
+            boundaries[2] = 1_440;
+            int size = 3;
+            for (DayPeriod period : periods) {
+                long from = period.from;
+                long end = from == period.to ? from + 1 : period.to;
+                if (from > 0 && from < 1_440) {
+                    boundaries[size++] = (int) from;
+                }
+                if (end > 0 && end < 1_440) {
+                    boundaries[size++] = (int) end;
+                }
+            }
+            // The boundary list is small; avoid initializing a general-purpose sorter.
+            for (int i = 1; i < size; i++) {
+                int boundary = boundaries[i];
+                int j = i;
+                while (j > 0 && boundary < boundaries[j - 1]) {
+                    boundaries[j] = boundaries[j - 1];
+                    j--;
+                }
+                boundaries[j] = boundary;
+            }
+            char[] intervals = new char[size - 1];
+            int count = 0;
+            for (int i = 0; i < size - 1; i++) {
+                int minute = boundaries[i];
+                int end = boundaries[i + 1];
+                if (minute == end) {
+                    continue;
+                }
+                int index = minute / 720;
+                long minimum = Long.MAX_VALUE;
+                for (DayPeriod period : periods) {
+                    long duration = period.duration();
+                    if (duration < minimum && period.includes(minute)) {
+                        minimum = duration;
+                        index = (int) period.getIndex();
+                    }
+                }
+                if (count == 0 || (intervals[count - 1] & 0xf) != index) {
+                    count++;
+                }
+                intervals[count - 1] = (char) (end << 4 | index);
+            }
+            DayPeriodIntervals result = new DayPeriodIntervals(Arrays.copyOf(intervals, count));
+            DayPeriodIntervals shared = SHARED_INTERVALS.putIfAbsent(result, result);
+            return shared != null ? shared : result;
+        }
+
+        /** Immutable, shared classification with an exclusive end and type index per interval. */
+        private static final class DayPeriodIntervals {
+            private final char[] intervals;
+            private final int hash;
+
+            private DayPeriodIntervals(char[] intervals) {
+                this.intervals = intervals;
+                this.hash = Arrays.hashCode(intervals);
+            }
+
+            private int indexAt(int minute) {
+                for (char interval : intervals) {
+                    if (minute < (interval >>> 4)) {
+                        return interval & 0xf;
+                    }
+                }
+                throw new AssertionError("Invalid minute of day: " + minute);
+            }
+
+            @Override
+            public int hashCode() {
+                return hash;
+            }
+
+            @Override
+            public boolean equals(Object other) {
+                return this == other || other instanceof DayPeriodIntervals that
+                        && Arrays.equals(intervals, that.intervals);
+            }
         }
 
         /**
