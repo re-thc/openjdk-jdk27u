@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -174,6 +175,19 @@ endif
 
 ifneq ($(TOOLCHAIN_TYPE), gcc)
   LEGAL_EXCLUDES += gcc.md
+endif
+
+ifneq ($(RUST_REGEX_ENABLED), true)
+  LEGAL_EXCLUDES += rust_regex.md
+else
+  # libjvm contains Rust standard library code, whose dependency notices
+  # must match the compiler used for this particular build.
+  $(eval $(call SetupCopyFiles, COPY_RUST_REGEX_LICENSE, \
+      FILES := $(RUST_REGEX_LICENSE), \
+      DEST := $(SUPPORT_OUTPUTDIR)/modules_legal/java.base/rust-standard-library, \
+      FLATTEN := true, \
+  ))
+  TARGETS += $(COPY_RUST_REGEX_LICENSE)
 endif
 
 $(eval $(call SetupCopyLegalFiles, COPY_LEGAL, \

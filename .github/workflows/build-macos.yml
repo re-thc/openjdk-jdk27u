@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -105,9 +106,15 @@ jobs:
           debug-level: ${{ matrix.debug-level }}
           toolchain: xcode-${{ inputs.xcode-toolset-version }}
 
+      - name: 'Get Rust regex toolchain'
+        id: rust-regex
+        uses: ./.github/actions/get-rust-regex
+
       - name: 'Configure'
+        env:
+          CONFIGURED_RUSTC: ${{ steps.rust-regex.outputs.rustc }}
         run: >
-          bash bin/configure-dev
+          bash bin/configure-dev RUSTC="$CONFIGURED_RUSTC"
           --with-conf-name=${{ inputs.platform }}
           ${{ matrix.flags }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}

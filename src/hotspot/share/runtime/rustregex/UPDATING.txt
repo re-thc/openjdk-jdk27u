@@ -1,0 +1,41 @@
+Updating the bundled Rust regex sources
+---------------------------------------
+
+The adapter is maintained here; vendor/ contains pristine Cargo dependencies.
+Cargo.lock pins their versions and UPSTREAM.json records the selected release.
+Ordinary builds use --frozen and do not download dependencies.
+
+1. From the repository root, select the intended non-yanked stable release:
+
+     python3 make/scripts/update-rust-regex.py --version VERSION
+
+   This explicit update accesses the registry and regenerates Cargo.lock,
+   vendor checksums, UPSTREAM.json and src/java.base/share/legal/rust_regex.md.
+   Review them together, including dependency and license changes. Do not edit
+   vendored sources or checksums to work around an adapter problem.
+
+2. Keep the minimum Rust version consistent in Cargo.toml and
+   make/autoconf/lib-rust-regex.m4. A compiler-only update does not require
+   changing the bundled crates. CI selects its compiler and matching standard
+   library notices in .github/actions/get-rust-regex/action.yml; configure
+   passes the selected RUSTC to Cargo. Check the declared minimum as well as
+   the CI compiler when adopting standard-library APIs.
+
+3. From this directory, run:
+
+     cargo test --frozen
+     cargo clippy --frozen --all-targets -- -D warnings
+     cargo fmt --check
+
+   From the repository root, build on supported platforms and run:
+
+     make test TEST="jtreg:test/jdk/java/util/regex jtreg:test/jdk/java/util/Scanner"
+     make test TEST="jtreg:test/hotspot/jtreg/runtime/interpreter/RustRegexStartup.java"
+     make test TEST="jtreg:test/hotspot/jtreg/runtime/interpreter/RustRegexArrayLayout.java"
+
+   Preserve Java capture history, bounds, Unicode, reset/continuation and end
+   flags, including unsupported cases that use the Java engine. Native ABI,
+   ownership, work-budget or array-address changes also require release and
+   fastdebug coverage of interpreter/C1/C2 and JNI paths, relocated arrays,
+   safepoints and concurrent in-flight ownership. Keep panic containment and
+   the unwind-enabled release profile at the C ABI boundary.

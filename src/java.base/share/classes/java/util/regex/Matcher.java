@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +27,8 @@
 package java.util.regex;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.Map;
@@ -37,6 +40,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import jdk.internal.util.regex.RustRegex;
+import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * An engine that performs match operations on a {@linkplain
@@ -233,6 +239,25 @@ public final class Matcher implements MatchResult {
 
     private Map<String, Integer> namedGroups;
 
+    // Replay preserves end flags and failed-search continuation state.
+    // Save immutable input so reset or mutation cannot change those flags.
+    private Pattern nativeEndPattern;
+    private String nativeEndInput;
+    private int nativeEndFrom, nativeEndTo, nativeEndStart, nativeEndMode;
+    private boolean nativeEndTransparent, nativeEndAnchoring;
+    private boolean nativePendingLast;
+    private int nativeEndLast, nativeEndOldLast;
+    private JavaMatchChoice javaMatchChoice;
+    private boolean javaOnly;
+    private byte directSearch;
+    private static final byte MIXED_SEARCH = 0, JAVA_SEARCH = 1, FIXED_SEARCH = 2, LITERAL_SEARCH = 3;
+    private static final int FIXED_FIND_CONTINUATION = 3;
+    // Empty local storage has no mutable elements and can be shared.
+    private static final int[] EMPTY_LOCALS = new int[0];
+    private static final IntHashSet[] EMPTY_LOCALS_POS = new IntHashSet[0];
+    private record JavaMatchChoice(Pattern.Node root, Pattern.Node matchRoot,
+            WeakReference<CharSequence> input, int from, int to, int width, int mode) { }
+
     /**
      * No default constructor.
      */
@@ -245,11 +270,14 @@ public final class Matcher implements MatchResult {
     Matcher(Pattern parent, CharSequence text) {
         this.parentPattern = parent;
         this.text = text;
+        RustRegex engine = parent.rustRegex;
+        javaOnly = engine == null;
+        directSearch = searchKind(engine);
 
         // Allocate state storage
-        groups = new int[parent.capturingGroupCount * 2];
-        locals = new int[parent.localCount];
-        localsPos = new IntHashSet[parent.localTCNCount];
+        groups = new int[parent.capturingGroupCount * 2 + (engine != null ? 4 : 0)];
+        locals = parent.localCount == 0 ? EMPTY_LOCALS : new int[parent.localCount];
+        localsPos = parent.localTCNCount == 0 ? EMPTY_LOCALS_POS : new IntHashSet[parent.localTCNCount];
 
         // Put fields into initial states
         reset();
@@ -283,7 +311,7 @@ public final class Matcher implements MatchResult {
             capturedText = null;
         }
         return new ImmutableMatchResult(first, last, groupCount(),
-                groups.clone(), capturedText,
+                Arrays.copyOf(groups, parentPattern.capturingGroupCount * 2), capturedText,
                 namedGroups(), minStart);
     }
 
@@ -417,17 +445,22 @@ public final class Matcher implements MatchResult {
     public Matcher usePattern(Pattern newPattern) {
         if (newPattern == null)
             throw new IllegalArgumentException("Pattern cannot be null");
+        ensureContinuation();
+        javaMatchChoice = null;
         parentPattern = newPattern;
+        RustRegex engine = newPattern.rustRegex;
+        javaOnly = engine == null;
+        directSearch = searchKind(engine);
         namedGroups = null;
 
         // Reallocate state storage
-        groups = new int[newPattern.capturingGroupCount * 2];
-        locals = new int[newPattern.localCount];
+        groups = new int[newPattern.capturingGroupCount * 2 + (engine != null ? 4 : 0)];
+        locals = newPattern.localCount == 0 ? EMPTY_LOCALS : new int[newPattern.localCount];
         for (int i = 0; i < groups.length; i++)
             groups[i] = -1;
         for (int i = 0; i < locals.length; i++)
             locals[i] = -1;
-        localsPos = new IntHashSet[parentPattern.localTCNCount];
+        localsPos = newPattern.localTCNCount == 0 ? EMPTY_LOCALS_POS : new IntHashSet[newPattern.localTCNCount];
         modCount++;
         return this;
     }
@@ -443,11 +476,11 @@ public final class Matcher implements MatchResult {
      * @return  This matcher
      */
     public Matcher reset() {
+        if (nativeEndMode == FIXED_FIND_CONTINUATION) clearNativeEnd();
+        nativePendingLast = false;
         first = -1;
         last = 0;
         oldLast = -1;
-        for(int i=0; i<groups.length; i++)
-            groups[i] = -1;
         for(int i=0; i<locals.length; i++)
             locals[i] = -1;
         for (int i = 0; i < localsPos.length; i++) {
@@ -768,6 +801,7 @@ public final class Matcher implements MatchResult {
      *          sequence matches this matcher's pattern
      */
     public boolean find() {
+        ensureContinuation();
         int nextSearchIndex = last;
         if (nextSearchIndex == first)
             nextSearchIndex++;
@@ -1715,6 +1749,7 @@ public final class Matcher implements MatchResult {
      * @since 1.5
      */
     public boolean hitEnd() {
+        ensureEndFlags();
         return hitEnd;
     }
 
@@ -1733,6 +1768,7 @@ public final class Matcher implements MatchResult {
      * @since 1.5
      */
     public boolean requireEnd() {
+        ensureEndFlags();
         return requireEnd;
     }
 
@@ -1750,12 +1786,301 @@ public final class Matcher implements MatchResult {
      * the end of the previous match.
      */
     boolean search(int from) {
+        if (directSearch == LITERAL_SEARCH) return searchLiteral(from);
+        return directSearch != MIXED_SEARCH ? searchDirect(from) : searchMixed(from);
+    }
+
+    private static byte searchKind(RustRegex engine) {
+        if (engine == null) return JAVA_SEARCH;
+        if (engine.hasShortFixedWidth()) return FIXED_SEARCH;
+        return engine.hasLiteralSearch() ? LITERAL_SEARCH : MIXED_SEARCH;
+    }
+
+    private boolean searchLiteral(int from) {
+        RustRegex engine = parentPattern.rustRegex;
+        if (engine != null && to - this.from <= RustRegex.MAX_LENGTH && text instanceof String input) {
+            int start = Math.max(0, from);
+            int length = to - start;
+            if (engine.shouldCheckLiteral(length)) {
+                int literalStart = input.indexOf(engine.literalDigitsFirstChar(), start, to);
+                if (literalStart < 0 || length > 256 &&
+                        input.indexOf(engine.literalDigitsPrefix(), literalStart, to) < 0) {
+                    clearNativeEnd();
+                    nativePendingLast = false;
+                    hitEnd = true;
+                    requireEnd = false;
+                    acceptMode = NOANCHOR;
+                    first = -1;
+                    oldLast = last;
+                    modCount++;
+                    return false;
+                }
+            } else {
+                // Reuse the native route after preparation or C1 admission.
+                directSearch = MIXED_SEARCH;
+            }
+        }
+        return searchMixed(from);
+    }
+
+    private boolean searchDirect(int from) {
+        if (javaOnly) {
+            clearNativeEnd();
+            return searchJava(from);
+        }
+        int start = Math.max(0, from);
+        if (to - start <= 16) {
+            int limit = to - 11;
+            while (start <= limit) {
+                char c = text.charAt(start++);
+                if (c >= '0' && c <= '9') return searchMixed(from);
+            }
+            clearNativeEnd();
+            nativePendingLast = false;
+            hitEnd = true;
+            requireEnd = false;
+            acceptMode = NOANCHOR;
+            first = -1;
+            oldLast = last;
+            modCount++;
+            return false;
+        }
+        return searchMixed(from);
+    }
+
+    private boolean searchMixed(int from) {
         this.hitEnd = false;
         this.requireEnd = false;
         from        = from < 0 ? 0 : from;
         this.first  = from;
         this.oldLast = oldLast < 0 ? from : oldLast;
-        for (int i = 0; i < groups.length; i++)
+        int base = parentPattern.capturingGroupCount * 2;
+        acceptMode = NOANCHOR;
+        Pattern.Node javaRoot;
+        RustRegex engine = null;
+        if (javaOnly) {
+            clearNativeEnd();
+            javaRoot = parentPattern.root;
+        }
+        else {
+            JavaMatchChoice choice = javaMatchChoice;
+            if (choice != null && (choice.input == null ? to - this.from <= choice.width :
+                    choice.mode == 0 && this.from == choice.from && to == choice.to &&
+                    from == this.from && choice.input.get() == text)) {
+                if (nativeEndPattern != null) {
+                    nativeEndPattern = null;
+                    nativeEndInput = null;
+                    nativePendingLast = false;
+                }
+                javaRoot = choice.root;
+            } else {
+                engine = parentPattern.rustRegex;
+                if (engine == null) {
+                    selectJavaOnly();
+                    javaRoot = parentPattern.root;
+                } else javaRoot = null;
+            }
+        }
+        if (javaRoot != null) {
+            prepareJavaMatch(base);
+            boolean result = javaRoot.match(this, from, text);
+            if (!result) first = -1;
+            oldLast = last;
+            modCount++;
+            return result;
+        }
+        int nativeResult = nativeMatch(engine, base, from, 0);
+        boolean result;
+        if (nativeResult >= 0) result = nativeResult == 1;
+        else if (nativeResult == -2) {
+            prepareJavaMatch(base);
+            result = javaMatchChoice.root.match(this, from, text);
+        }
+        else {
+            selectJavaOnly();
+            prepareJavaMatch(base);
+            result = parentPattern.root.match(this, from, text);
+        }
+        if (!result) first = -1;
+        oldLast = last;
+        modCount++;
+        return result;
+    }
+
+    /**
+     * Initiates a search for an anchored match to a Pattern within the given
+     * bounds. The groups are filled with default values and the match of the
+     * root of the state machine is called. The state machine will hold the
+     * state of the match as it proceeds in this matcher.
+     */
+    boolean match(int from, int anchor) {
+        if (javaOnly) {
+            ensureContinuation();
+            clearNativeEnd();
+            return matchJava(from, anchor);
+        }
+        if (directSearch == FIXED_SEARCH) return matchFixed(from, anchor);
+        return matchMixed(from, anchor);
+    }
+
+    private boolean matchFixed(int from, int anchor) {
+        ensureContinuation();
+        clearNativeEnd();
+        nativePendingLast = false;
+        hitEnd = false;
+        requireEnd = false;
+        from = Math.max(0, from);
+        first = from;
+        oldLast = oldLast < 0 ? from : oldLast;
+        groups[0] = groups[1] = -1;
+        acceptMode = anchor;
+        if (from == to) {
+            hitEnd = true;
+            first = -1;
+            oldLast = last;
+            modCount++;
+            return false;
+        }
+        char initial = text.charAt(from);
+        if (initial < '0' || initial > '9') {
+            first = -1;
+            oldLast = last;
+            modCount++;
+            return false;
+        }
+        boolean knownMiss = false;
+        if (text instanceof String input) {
+            RustRegex engine = parentPattern.rustRegex;
+            if (engine == null) {
+                selectJavaOnly();
+                return matchJava(from, anchor);
+            }
+            int outcome = engine.match(input, groups, this.from, to, from,
+                    anchor == ENDANCHOR ? 2 : 1, transparentBounds, anchoringBounds);
+            if (outcome == 1) {
+                first = groups[0];
+                last = groups[1];
+                oldLast = last;
+                modCount++;
+                return true;
+            }
+            if (outcome < 0) {
+                parentPattern.ensureJava();
+                selectJavaOnly();
+                return matchJava(from, anchor);
+            }
+            knownMiss = true;
+        }
+        // Recover failed atom progress and end flags together. Mutable inputs
+        // use the same bounded traversal for the complete anchored operation.
+        last = from + 1;
+        boolean result = !knownMiss;
+        for (int i = 1; i < 11; i++) {
+            int at = from + i;
+            if (at == to) {
+                hitEnd = true;
+                result = false;
+                break;
+            }
+            char c = text.charAt(at);
+            if (i == 3 || i == 6) {
+                if (c != '-') { result = false; break; }
+            } else {
+                if (c < '0' || c > '9') { result = false; break; }
+                last = at + 1;
+            }
+        }
+        if (result && anchor == ENDANCHOR && from + 11 != to) result = false;
+        if (result) {
+            groups[0] = first;
+            groups[1] = last;
+        } else first = -1;
+        oldLast = last;
+        modCount++;
+        return result;
+    }
+
+    private boolean matchMixed(int from, int anchor) {
+        ensureContinuation();
+        this.hitEnd = false;
+        this.requireEnd = false;
+        from        = from < 0 ? 0 : from;
+        this.first  = from;
+        this.oldLast = oldLast < 0 ? from : oldLast;
+        int base = parentPattern.capturingGroupCount * 2;
+        acceptMode = anchor;
+        Pattern.Node javaRoot;
+        RustRegex engine = null;
+        if (javaOnly) {
+            clearNativeEnd();
+            javaRoot = parentPattern.matchRoot;
+        }
+        else {
+            JavaMatchChoice choice = javaMatchChoice;
+            if (choice != null && (choice.input == null ? to - this.from <= choice.width :
+                    choice.mode == (anchor == ENDANCHOR ? 2 : 1) &&
+                    this.from == choice.from && to == choice.to && from == this.from &&
+                    choice.input.get() == text)) {
+                if (nativeEndPattern != null) {
+                    nativeEndPattern = null;
+                    nativeEndInput = null;
+                    nativePendingLast = false;
+                }
+                javaRoot = choice.matchRoot;
+            } else {
+                engine = parentPattern.rustRegex;
+                if (engine == null) {
+                    selectJavaOnly();
+                    javaRoot = parentPattern.matchRoot;
+                } else javaRoot = null;
+            }
+        }
+        if (javaRoot != null) {
+            prepareJavaMatch(base);
+            boolean result = javaRoot.match(this, from, text);
+            if (!result) first = -1;
+            oldLast = last;
+            modCount++;
+            return result;
+        }
+        // A mandatory prepared literal can reject an anchored String before
+        // entering the adapter. No atom has consumed input in this case.
+        int prefixFirstChar = engine.literalDigitsFirstChar();
+        if (prefixFirstChar >= 0 && text instanceof String input
+                && (from == to || input.charAt(from) != prefixFirstChar)) {
+            clearNativeEnd();
+            nativePendingLast = false;
+            hitEnd = from == to;
+            first = -1;
+            oldLast = last;
+            modCount++;
+            return false;
+        }
+        int nativeResult = nativeMatch(engine, base, from, anchor == ENDANCHOR ? 2 : 1);
+        boolean result;
+        if (nativeResult >= 0) result = nativeResult == 1;
+        else if (nativeResult == -2) {
+            prepareJavaMatch(base);
+            result = javaMatchChoice.matchRoot.match(this, from, text);
+        }
+        else {
+            selectJavaOnly();
+            prepareJavaMatch(base);
+            result = parentPattern.matchRoot.match(this, from, text);
+        }
+        if (!result) first = -1;
+        oldLast = last;
+        modCount++;
+        return result;
+    }
+
+    private boolean searchJava(int from) {
+        this.hitEnd = false;
+        this.requireEnd = false;
+        from        = from < 0 ? 0 : from;
+        this.first  = from;
+        this.oldLast = oldLast < 0 ? from : oldLast;
+        for (int i = 0; i < parentPattern.capturingGroupCount * 2; i++)
             groups[i] = -1;
         for (int i = 0; i < localsPos.length; i++) {
             if (localsPos[i] != null)
@@ -1770,19 +2095,13 @@ public final class Matcher implements MatchResult {
         return result;
     }
 
-    /**
-     * Initiates a search for an anchored match to a Pattern within the given
-     * bounds. The groups are filled with default values and the match of the
-     * root of the state machine is called. The state machine will hold the
-     * state of the match as it proceeds in this matcher.
-     */
-    boolean match(int from, int anchor) {
+    private boolean matchJava(int from, int anchor) {
         this.hitEnd = false;
         this.requireEnd = false;
         from        = from < 0 ? 0 : from;
         this.first  = from;
         this.oldLast = oldLast < 0 ? from : oldLast;
-        for (int i = 0; i < groups.length; i++)
+        for (int i = 0; i < parentPattern.capturingGroupCount * 2; i++)
             groups[i] = -1;
         for (int i = 0; i < localsPos.length; i++) {
             if (localsPos[i] != null)
@@ -1795,6 +2114,147 @@ public final class Matcher implements MatchResult {
         this.oldLast = this.last;
         this.modCount++;
         return result;
+    }
+
+    @ForceInline
+    private int nativeMatch(RustRegex engine, int base, int start, int mode) {
+        if (nativeEndPattern != null) {
+            nativeEndPattern = null;
+            nativeEndInput = null;
+            nativePendingLast = false;
+        }
+        // Preserve CharSequence traversal without requesting a whole-input
+        // snapshot or promoting the shared Pattern, so a
+        // later reset to an immutable String can still use the native engine.
+        if (!(text instanceof String input)) {
+            if (javaMatchChoice == null) selectJavaMatch(true, mode);
+            return -2;
+        }
+        if (engine.prefersJava(to - from)) {
+            selectJavaMatch(false, mode);
+            return -2;
+        }
+        if (to - from > RustRegex.MAX_LENGTH && !engine.hasShortPlan()) {
+            parentPattern.ensureJava();
+            return -1;
+        }
+        int result = engine.match(input, groups, from, to, start, mode,
+                transparentBounds, anchoringBounds);
+        if (result == 0 && mode != 0 && engine.hasShortFixedWidth())
+            last = RustRegex.fixedFailureLast(input, to, start, last);
+        // Java traversal can advance last even when an anchored match fails.
+        // Replay on this Matcher so the next find() starts at the same position.
+        if (result < 0 || (result == 0 && mode != 0 && !engine.hasExactEndFlags())) {
+            parentPattern.ensureJava();
+            return -1;
+        }
+        if (result == 1) {
+            first = groups[0];
+            last = groups[1];
+            if (first == from && engine.prefersJavaEarlyMatch(last - first)) selectJavaMatch(true, mode);
+        }
+        // Greedy tails preserve last on failure; the fixed-count plan restores
+        // its atom progress above. Their end flags need no Java replay.
+        if (engine.hasExactEndFlags() || result == 1 && engine.hasExactSuccessEndFlags()) {
+            hitEnd = result == 1 ? engine.successHitsEnd(groups, to)
+                    : mode == 0 || engine.anchoredMissHitsEnd(input, to, start);
+            if (result != 0 || mode != 0 || !engine.hasShortFixedWidth()) return result;
+        }
+        nativePendingLast = result == 0;
+        nativeEndLast = last;
+        nativeEndOldLast = oldLast;
+        nativeEndPattern = parentPattern;
+        nativeEndInput = input;
+        nativeEndFrom = from;
+        nativeEndTo = to;
+        nativeEndStart = start;
+        // A failed fixed-count search can advance Java's digit atoms even
+        // though its end flags are exact. Recover that position only when
+        // another operation needs it, using this immutable input snapshot.
+        nativeEndMode = engine.hasShortFixedWidth() ? FIXED_FIND_CONTINUATION : mode;
+        nativeEndTransparent = transparentBounds;
+        nativeEndAnchoring = anchoringBounds;
+        return result;
+    }
+
+    private void selectJavaMatch(boolean inputSpecific, int mode) {
+        Pattern pattern = parentPattern.javaPattern();
+        javaStorage(pattern);
+        javaMatchChoice = new JavaMatchChoice(pattern.root, pattern.matchRoot,
+                inputSpecific ? new WeakReference<>(text) : null, from, to, to - from, mode);
+    }
+
+    private void selectJavaOnly() {
+        javaStorage(parentPattern);
+        javaOnly = true;
+        directSearch = JAVA_SEARCH;
+        javaMatchChoice = null;
+        clearNativeEnd();
+    }
+
+    @ForceInline
+    private void clearNativeEnd() {
+        if (nativeEndPattern != null) {
+            nativeEndPattern = null;
+            nativeEndInput = null;
+            nativePendingLast = false;
+        }
+    }
+
+    private void prepareJavaMatch(int base) {
+        // Native engines publish every capture on success. Java traversal can
+        // retain an unmatched optional capture, so clear only before that path.
+        for (int i = 0; i < base; i++) groups[i] = -1;
+        for (int i = 0; i < localsPos.length; i++) {
+            if (localsPos[i] != null) localsPos[i].clear();
+        }
+    }
+
+    private void javaStorage(Pattern execution) {
+        if (locals.length != execution.localCount) {
+            locals = execution.localCount == 0 ? EMPTY_LOCALS : new int[execution.localCount];
+            for (int i = 0; i < locals.length; i++) locals[i] = -1;
+        }
+        if (localsPos.length != execution.localTCNCount)
+            localsPos = execution.localTCNCount == 0 ? EMPTY_LOCALS_POS : new IntHashSet[execution.localTCNCount];
+    }
+
+    private void ensureContinuation() {
+        if (nativePendingLast) replayNative();
+    }
+
+    private void ensureEndFlags() {
+        if (nativeEndPattern != null && nativeEndMode != FIXED_FIND_CONTINUATION) replayNative();
+    }
+
+    private void replayNative() {
+        Pattern pattern = nativeEndPattern;
+        if (pattern == null) return;
+        if (nativeEndMode == FIXED_FIND_CONTINUATION) {
+            last = RustRegex.fixedSearchFailureLast(nativeEndInput, nativeEndTo,
+                    nativeEndStart, nativeEndLast);
+            oldLast = last;
+            clearNativeEnd();
+            return;
+        }
+        pattern.ensureJava();
+        Matcher replay = pattern.matcher(nativeEndInput)
+                .region(nativeEndFrom, nativeEndTo)
+                .useTransparentBounds(nativeEndTransparent)
+                .useAnchoringBounds(nativeEndAnchoring);
+        replay.last = nativeEndLast;
+        replay.oldLast = nativeEndOldLast;
+        if (nativeEndMode == 0) replay.search(nativeEndStart);
+        else replay.match(nativeEndStart, nativeEndMode == 2 ? ENDANCHOR : NOANCHOR);
+        if (nativePendingLast) {
+            last = replay.last;
+            oldLast = replay.oldLast;
+            nativePendingLast = false;
+        }
+        hitEnd = replay.hitEnd;
+        requireEnd = replay.requireEnd;
+        nativeEndPattern = null;
+        nativeEndInput = null;
     }
 
     /**

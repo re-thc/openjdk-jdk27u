@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -152,12 +153,25 @@ jobs:
           debug-level: ${{ matrix.debug-level }}
           toolchain: ${{ steps.gcc.outputs.identity }}
 
+      - name: 'Get Rust regex toolchain'
+        id: rust-regex
+        uses: ./.github/actions/get-rust-regex
+
+      - name: 'Check Rust adapter'
+        working-directory: src/hotspot/share/runtime/rustregex
+        run: |
+          cargo test --frozen
+          cargo clippy --frozen --all-targets -- -D warnings
+          cargo fmt --check
+        if: ${{ inputs.dry-run == false && inputs.platform == 'linux-x64' && matrix.debug-level == 'release' }}
+
       - name: 'Configure'
         env:
           CC: ${{ steps.gcc.outputs.path }}/gcc
           CXX: ${{ steps.gcc.outputs.path }}/g++
+          CONFIGURED_RUSTC: ${{ steps.rust-regex.outputs.rustc }}
         run: >
-          bash bin/configure-dev
+          bash bin/configure-dev RUSTC="$CONFIGURED_RUSTC"
           --with-conf-name=${{ inputs.platform }}
           --with-toolchain-path=${{ steps.gcc.outputs.path }}
           --with-sysroot=/
