@@ -722,10 +722,9 @@ public class ArrayNotificationBuffer implements NotificationBuffer {
 
     private final NotificationListener bufferListener = new BufferListener();
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class BroadcasterQuery
             extends QueryEval implements QueryExp {
-        private static final long serialVersionUID = 7378487660587592048L;
-
         public boolean apply(final ObjectName name) {
             final MBeanServer mbs = QueryEval.getMBeanServer();
             return isInstanceOf(mbs, name, broadcasterClass);

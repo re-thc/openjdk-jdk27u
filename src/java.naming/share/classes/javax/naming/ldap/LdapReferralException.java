@@ -49,6 +49,7 @@ import java.util.Hashtable;
  * @since 1.3
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class LdapReferralException extends ReferralException {
     /**
      * Constructs a new instance of LdapReferralException using the
@@ -158,5 +159,4 @@ public abstract class LdapReferralException extends ReferralException {
                            Control[] reqCtls)
         throws NamingException;
 
-    private static final long serialVersionUID = -1668992791764950804L;
 }

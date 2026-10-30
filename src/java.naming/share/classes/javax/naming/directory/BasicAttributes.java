@@ -68,6 +68,7 @@ import javax.naming.NamingEnumeration;
   * @since 1.3
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class BasicAttributes implements Attributes {
     /**
      * Indicates whether case of attribute ids is ignored.
@@ -386,9 +387,4 @@ class IDEnumImpl implements NamingEnumeration<String> {
     }
 }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability.
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 4980164073184639448L;
 }

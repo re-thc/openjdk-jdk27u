@@ -34,10 +34,8 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RuntimeMBeanException extends JMRuntimeException   {
-
-    /* Serial version */
-    private static final long serialVersionUID = 5274912751982730171L;
 
     /**
      * @serial The encapsulated {@link RuntimeException}

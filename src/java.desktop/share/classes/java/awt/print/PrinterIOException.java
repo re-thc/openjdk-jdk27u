@@ -41,13 +41,8 @@ import java.io.Serial;
  * and may be accessed via the {@link Throwable#getCause()} method,
  * as well as the aforementioned "legacy method."
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PrinterIOException extends PrinterException {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 5850870712125932846L;
 
     /**
      * The IO error that terminated the print job.

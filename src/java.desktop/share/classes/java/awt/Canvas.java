@@ -46,16 +46,11 @@ import javax.accessibility.AccessibleRole;
  * @author      Sami Shaio
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Canvas extends Component implements Accessible {
 
     private static final String base = "canvas";
     private static int nameCounter = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = -2284879212465893870L;
 
     /**
      * Constructs a new Canvas.
@@ -242,14 +237,9 @@ public class Canvas extends Component implements Accessible {
      * Java Accessibility API appropriate to canvas user-interface elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTCanvas extends AccessibleAWTComponent
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -6325592262103146699L;
-
         /**
          * Constructs an {@code AccessibleAWTCanvas}.
          */

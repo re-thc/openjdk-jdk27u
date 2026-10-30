@@ -85,6 +85,7 @@ public abstract class Arc2D extends RectangularShape {
      * This class defines an arc specified in {@code float} precision.
      * @since 1.2
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Float extends Arc2D implements Serializable {
         /**
          * The X coordinate of the upper-left corner of the framing
@@ -323,12 +324,6 @@ public abstract class Arc2D extends RectangularShape {
         }
 
         /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 9130893014586380278L;
-
-        /**
          * Writes the default serializable fields to the
          * {@code ObjectOutputStream} followed by a byte
          * indicating the arc type of this {@code Arc2D}
@@ -389,6 +384,7 @@ public abstract class Arc2D extends RectangularShape {
      * This class defines an arc specified in {@code double} precision.
      * @since 1.2
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Double extends Arc2D implements Serializable {
         /**
          * The X coordinate of the upper-left corner of the framing
@@ -622,12 +618,6 @@ public abstract class Arc2D extends RectangularShape {
                                          double w, double h) {
             return new Rectangle2D.Double(x, y, w, h);
         }
-
-        /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 728264085846882001L;
 
         /**
          * Writes the default serializable fields to the

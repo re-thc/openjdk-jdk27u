@@ -34,7 +34,7 @@ public class Reset {
 
     public static void main (String argv[]) throws Exception {
 
-        StringBufferInputStream in = new StringBufferInputStream("[ #");
+        StringReader in = new StringReader("[ #");
         StreamTokenizer scan = new StreamTokenizer(in);
 
         scan.nextToken();

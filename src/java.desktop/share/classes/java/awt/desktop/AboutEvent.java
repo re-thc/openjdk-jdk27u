@@ -36,13 +36,8 @@ import java.io.Serial;
  * @see AboutHandler#handleAbout
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class AboutEvent extends AppEvent {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -5987180734802756477L;
 
     /**
      * Constructs an {@code AboutEvent}.

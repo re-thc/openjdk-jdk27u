@@ -38,10 +38,8 @@ import java.io.Serial;
  *
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class FilerException extends IOException {
-
-    @Serial
-    private static final long serialVersionUID = 8426423106453163293L;
 
     /**
      * Constructs an exception with the specified detail message.

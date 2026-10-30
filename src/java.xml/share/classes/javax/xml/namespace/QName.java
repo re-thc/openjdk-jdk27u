@@ -65,10 +65,8 @@ import jdk.xml.internal.SecuritySupport;
  * @since 1.5
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class QName implements Serializable {
-    // tests show that the ID is the same from JDK 1.5 through JDK 9
-    private static final long serialVersionUID = -9120448754896609940L;
-
     /**
      * @serial <p>Namespace URI of this <code>QName</code>.</p>
      */

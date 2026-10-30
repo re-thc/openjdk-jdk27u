@@ -39,6 +39,7 @@ package javax.naming;
   * @since 1.3
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NoPermissionException extends NamingSecurityException {
     /**
      * Constructs a new instance of NoPermissionException using an
@@ -57,8 +58,4 @@ public class NoPermissionException extends NamingSecurityException {
     public NoPermissionException() {
         super();
     }
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = 8395332708699751775L;
 }

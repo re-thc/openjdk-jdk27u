@@ -60,19 +60,13 @@ import java.util.Map;
  * @since 1.2
  */
 
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "serial"})
 @Deprecated(since = "23", forRemoval = true)
 public class      BeanContextSupport extends BeanContextChildSupport
        implements BeanContext,
                   Serializable,
                   PropertyChangeListener,
                   VetoableChangeListener {
-
-    /**
-     * Use serialVersionUID from JDK 1.3 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4879613978649577204L;
 
     /**
      *
@@ -322,13 +316,8 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * A protected nested class containing per-child information
      * in the {@code children} hashtable.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class BCSChild implements Serializable {
-
-        /**
-         * Use serialVersionUID from JDK 1.7 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -5815286101609939109L;
 
         BCSChild(Object bcc, Object peer) {
             super();

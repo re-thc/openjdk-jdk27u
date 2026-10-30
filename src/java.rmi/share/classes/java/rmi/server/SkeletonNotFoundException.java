@@ -37,11 +37,9 @@ import java.rmi.RemoteException;
  * @deprecated no replacement.  Skeletons are no longer required for remote
  * method calls in the Java 2 platform v1.2 and greater.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated
 public class SkeletonNotFoundException extends RemoteException {
-
-    /* indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = -7860299673822761231L;
 
     /**
      * Constructs a <code>SkeletonNotFoundException</code> with the specified

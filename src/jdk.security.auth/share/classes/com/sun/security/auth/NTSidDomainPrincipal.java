@@ -45,9 +45,8 @@ package com.sun.security.auth;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NTSidDomainPrincipal extends NTSid {
-
-    private static final long serialVersionUID = 5247810785821650912L;
 
     /**
      * Create an {@code NTSidDomainPrincipal} with a Windows NT SID.

@@ -68,6 +68,7 @@ import java.util.Hashtable;
  *
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class ReferralException extends NamingException {
     /**
      * Constructs a new instance of ReferralException using the
@@ -197,8 +198,4 @@ public abstract class ReferralException extends NamingException {
      */
     public abstract void retryReferral();
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = -2881363844695698876L;
 }

@@ -38,13 +38,8 @@ import java.util.HashMap;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class HashAttributeSet implements AttributeSet, Serializable {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 5311560590283707917L;
 
     /**
      * The interface of which all members of this attribute set must be an

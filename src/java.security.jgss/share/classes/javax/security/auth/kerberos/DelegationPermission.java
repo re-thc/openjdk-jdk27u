@@ -50,12 +50,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public final class DelegationPermission extends BasicPermission
     implements java.io.Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 883133252142523922L;
 
     private transient String subordinate, service;
 
@@ -230,6 +228,7 @@ public final class DelegationPermission extends BasicPermission
 }
 
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class KrbDelegationPermissionCollection extends PermissionCollection
     implements java.io.Serializable {
 
@@ -293,9 +292,6 @@ final class KrbDelegationPermissionCollection extends PermissionCollection
     public Enumeration<Permission> elements() {
         return perms.keys();
     }
-
-    @Serial
-    private static final long serialVersionUID = -3383936936589966948L;
 
     // Need to maintain serialization interoperability with earlier releases,
     // which had the serializable field:

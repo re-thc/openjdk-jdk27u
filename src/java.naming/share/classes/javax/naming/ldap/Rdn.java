@@ -105,15 +105,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @since 1.5
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Rdn implements Serializable, Comparable<Object> {
 
     private transient ArrayList<RdnEntry> entries;
 
     // The common case.
     private static final int DEFAULT_SIZE = 1;
-
-    @java.io.Serial
-    private static final long serialVersionUID = -5994465067210009656L;
 
     /**
      * Constructs an Rdn from the given attribute set. See

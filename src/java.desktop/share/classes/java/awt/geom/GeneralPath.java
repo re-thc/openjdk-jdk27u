@@ -49,6 +49,7 @@ import java.io.Serial;
  * @author Jim Graham
  * @since 1.2
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class GeneralPath extends Path2D.Float {
     /**
      * Constructs a new empty single precision {@code GeneralPath} object
@@ -128,9 +129,4 @@ public final class GeneralPath extends Path2D.Float {
         this.numCoords = numCoords;
     }
 
-    /**
-     * Use serialVersionUID from JDK 1.6 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -8327096662768731142L;
 }

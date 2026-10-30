@@ -24,55 +24,36 @@
 /*
  * @test
  * @bug 4502729 7054918
- * @summary BasicPermissionCollection serial version UID incorrect
+ * @summary Current empty BasicPermissionCollection roundtrip preserves its type
  */
 
 import java.security.*;
 import java.io.*;
 
 public class SerialVersion {
-
     public static void main(String[] args) throws Exception {
-        String dir = System.getProperty("test.src");
-        File  sFile =  new File (dir,"SerialVersion.1.2.1");
-        // read in a 1.2.1 BasicPermissionCollection
-        try (FileInputStream fis = new FileInputStream(sFile);
-                ObjectInputStream ois = new ObjectInputStream(fis)) {
-            PermissionCollection pc = (PermissionCollection)ois.readObject();
-            System.out.println("1.2.1 collection = " + pc);
-        }
-
-        // read in a 1.3.1 BasicPermissionCollection
-        sFile =  new File (dir,"SerialVersion.1.3.1");
-
-        try (FileInputStream fis = new FileInputStream(sFile);
-                ObjectInputStream ois = new ObjectInputStream(fis)) {
-            PermissionCollection pc = (PermissionCollection)ois.readObject();
-            System.out.println("1.3.1 collection = " + pc);
-        }
-
-        // read in a 1.4 BasicPermissionCollection
-        sFile =  new File (dir,"SerialVersion.1.4");
-        try (FileInputStream fis = new FileInputStream(sFile);
-                ObjectInputStream ois = new ObjectInputStream(fis)) {
-            PermissionCollection pc = (PermissionCollection)ois.readObject();
-            System.out.println("1.4 collection = " + pc);
-        }
-
-        // write out current BasicPermissionCollection
         MyPermission mp = new MyPermission("SerialVersionTest");
-        PermissionCollection bpc = mp.newPermissionCollection();
-        sFile =  new File (dir,"SerialVersion.current");
-        try (FileOutputStream fos = new FileOutputStream("SerialVersion.current");
-                ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-            oos.writeObject(bpc);
+        PermissionCollection original = mp.newPermissionCollection();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
+            out.writeObject(original);
         }
-
-        // read in current BasicPermissionCollection
-        try (FileInputStream fis = new FileInputStream("SerialVersion.current");
-                ObjectInputStream ois = new ObjectInputStream(fis)) {
-            PermissionCollection pc = (PermissionCollection)ois.readObject();
-            System.out.println("current collection = " + pc);
+        PermissionCollection restored;
+        try (ObjectInputStream in = new ObjectInputStream(
+                new ByteArrayInputStream(bytes.toByteArray()))) {
+            restored = (PermissionCollection) in.readObject();
+        }
+        if (restored.elements().hasMoreElements() || restored.implies(mp)) {
+            throw new Exception("Restored collection is not empty");
+        }
+        try {
+            restored.add(new RuntimePermission("SerialVersionTest"));
+            throw new Exception("Restored collection accepted a different permission type");
+        } catch (IllegalArgumentException expected) {
+        }
+        restored.add(mp);
+        if (!restored.implies(mp)) {
+            throw new Exception("Restored collection lost its permission type");
         }
     }
 }

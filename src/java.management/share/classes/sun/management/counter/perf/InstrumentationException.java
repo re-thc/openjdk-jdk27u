@@ -25,6 +25,7 @@
 
 package sun.management.counter.perf;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InstrumentationException extends RuntimeException {
     /**
      * Constructs an {@code InstrumentationException} with no
@@ -43,5 +44,4 @@ public class InstrumentationException extends RuntimeException {
          super(message);
      }
 
-     private static final long serialVersionUID = 8060117844393922797L;
 }

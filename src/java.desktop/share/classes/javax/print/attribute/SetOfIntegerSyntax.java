@@ -78,13 +78,8 @@ import java.util.Vector;
  * @author David Mendenhall
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 3666874174847632203L;
 
     /**
      * This set's members in canonical array form.

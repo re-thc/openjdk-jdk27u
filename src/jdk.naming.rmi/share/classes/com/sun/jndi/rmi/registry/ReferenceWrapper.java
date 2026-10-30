@@ -41,6 +41,7 @@ import javax.naming.*;
  */
 
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ReferenceWrapper
         extends UnicastRemoteObject
         implements RemoteReference
@@ -57,5 +58,4 @@ public class ReferenceWrapper
         return wrappee;
     }
 
-    private static final long serialVersionUID = 6078186197417641456L;
 }

@@ -94,13 +94,8 @@ import java.util.Vector;
  * op = new RenderableImageOp("operation", pb.add(arg1).add(arg2));
  * </pre>
  * */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ParameterBlock implements Cloneable, Serializable {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -7577115551785240750L;
 
     /**
      * A Vector of sources, stored as arbitrary Objects.

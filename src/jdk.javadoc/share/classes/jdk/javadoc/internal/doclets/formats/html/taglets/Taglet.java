@@ -175,8 +175,8 @@ public interface Taglet {
     Content getAllBlockTagOutput(Element owner, TagletWriter tagletWriter) throws
             UnsupportedTagletOperationException;
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     class UnsupportedTagletOperationException extends UnsupportedOperationException {
-        private static final long serialVersionUID = -3530273193380250271L;
         public UnsupportedTagletOperationException(String message) {
             super(message);
         }

@@ -48,14 +48,9 @@ import javax.print.attribute.SupportedValuesAttribute;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class JobMediaSheetsSupported extends SetOfIntegerSyntax
         implements SupportedValuesAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 2953685470388672940L;
 
     /**
      * Construct a new job media sheets supported attribute containing a single

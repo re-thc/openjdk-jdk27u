@@ -66,9 +66,8 @@ import jdk.dynalink.linker.GuardingDynamicLinker;
  * Thrown at the invocation if the call site can not be linked by any available {@link GuardingDynamicLinker}.
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NoSuchDynamicMethodException extends RuntimeException {
-    private static final long serialVersionUID = 1L;
-
     /**
      * Creates a new NoSuchDynamicMethodException
      * @param message the message of the exception.

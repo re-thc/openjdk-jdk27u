@@ -36,6 +36,7 @@ import jdk.javadoc.internal.doclets.toolkit.DocletException;
  * @apiNote This exception should be thrown by a doclet when an IO exception occurs
  *  and the file is known that was in use when the exception occurred.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DocFileIOException extends DocletException {
     /**
      * A hint for the type of operation being performed when the exception occurred.
@@ -59,8 +60,6 @@ public class DocFileIOException extends DocletException {
      * The mode in which the file was being used when the exception occurred.
      */
     public final Mode mode;
-
-    private static final long serialVersionUID = 1L;
 
     /**
      * Creates an exception to wrap an IO exception, the file which caused it, and the manner

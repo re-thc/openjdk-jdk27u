@@ -56,6 +56,7 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
      * {@code float} coordinates.
      * @since 1.2
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Float extends CubicCurve2D implements Serializable {
         /**
          * The X coordinate of the start point
@@ -311,11 +312,6 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
             this.y2     = y2;
         }
 
-        /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -1272015596714244385L;
     }
 
     /**
@@ -323,6 +319,7 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
      * {@code double} coordinates.
      * @since 1.2
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Double extends CubicCurve2D implements Serializable {
         /**
          * The X coordinate of the start point
@@ -541,11 +538,6 @@ public abstract class CubicCurve2D implements Shape, Cloneable {
             this.y2     = y2;
         }
 
-        /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -4202960122839707295L;
     }
 
     /**

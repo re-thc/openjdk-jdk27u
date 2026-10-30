@@ -26,9 +26,8 @@ package com.sun.org.apache.bcel.internal.classfile;
  *
  * @since 6.8.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidMethodSignatureException extends ClassFormatException {
-
-    private static final long serialVersionUID = 1L;
 
     /**
      * Constructs a new instance with the specified invalid signature as the message.

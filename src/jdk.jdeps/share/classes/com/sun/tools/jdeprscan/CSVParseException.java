@@ -28,8 +28,8 @@ package com.sun.tools.jdeprscan;
 /**
  * Exception representing an error encountered during CSV parsing.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CSVParseException extends IllegalArgumentException {
-    private static final long serialVersionUID = 6822670269555409371L;
     final String input;
     final int index;
 

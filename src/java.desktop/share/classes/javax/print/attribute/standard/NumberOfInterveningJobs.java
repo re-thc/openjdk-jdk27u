@@ -42,14 +42,9 @@ import javax.print.attribute.PrintJobAttribute;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class NumberOfInterveningJobs extends IntegerSyntax
     implements PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 2568141124844982746L;
 
     /**
      * Construct a new number of intervening jobs attribute with the given

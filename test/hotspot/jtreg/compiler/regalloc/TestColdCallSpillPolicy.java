@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,15 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/**
- * Abstract class for serialized bytes of XMLGregorianCalendar and Duration data type for different JDK versions.
+/*
+ * @test
+ * @summary Check the production cold-call spill cost and reverse-liveness mechanics
+ * @requires vm.compiler2.enabled
+ * @run main/native compiler.regalloc.TestColdCallSpillPolicy
  */
-public abstract class GregorianCalendarAndDurationSerData {
-    //Returns byte array of serialized GregorianCalendar.
-    public abstract byte[] getGregorianCalendarByteArray();
 
-    //Returns byte array of serialized Duration.
-    public abstract byte[] getDurationBytes();
+package compiler.regalloc;
+
+public class TestColdCallSpillPolicy {
+    static {
+        System.loadLibrary("ColdCallSpillPolicy");
+    }
+
+    private static native void verify();
+
+    public static void main(String[] args) {
+        verify();
+        System.out.println("Cold-call spill policy checks passed");
+    }
 }

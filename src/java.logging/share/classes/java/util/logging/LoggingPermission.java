@@ -46,11 +46,9 @@ import java.io.Serial;
  *
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public final class LoggingPermission extends java.security.BasicPermission {
-
-    @Serial
-    private static final long serialVersionUID = 63564341580231582L;
 
     /**
      * Creates a new LoggingPermission object.

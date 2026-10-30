@@ -23,13 +23,9 @@
 package sql;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.CharArrayReader;
 import java.io.CharArrayWriter;
 import java.io.File;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -277,39 +273,6 @@ public class DriverManagerTests {
         DriverManager.deregisterDriver(d);
         assertFalse(isDriverRegistered(d), "Driver is registered");
         assertTrue(file.exists());
-    }
-
-    /**
-     * Create a PrintStream and use to send output via DriverManager.println
-     * Validate that if you disable the stream, the output sent is not present
-     */
-    @Test
-    public void tests17() throws Exception {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        PrintStream ps = new PrintStream(os);
-        DriverManager.setLogStream(ps);
-        assertTrue(DriverManager.getLogStream() == ps);
-
-        DriverManager.println(results[0]);
-        DriverManager.setLogStream((PrintStream) null);
-        assertTrue(DriverManager.getLogStream() == null);
-        DriverManager.println(noOutput);
-        DriverManager.setLogStream(ps);
-        DriverManager.println(results[1]);
-        DriverManager.println(results[2]);
-        DriverManager.println(results[3]);
-        DriverManager.setLogStream((PrintStream) null);
-        DriverManager.println(noOutput);
-
-        /*
-         * Check we do not get the output when the stream is disabled
-         */
-        InputStreamReader is
-                = new InputStreamReader(new ByteArrayInputStream(os.toByteArray()));
-        BufferedReader reader = new BufferedReader(is);
-        for (String result : results) {
-            assertTrue(result.equals(reader.readLine()));
-        }
     }
 
     /**

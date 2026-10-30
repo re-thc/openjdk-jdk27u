@@ -53,14 +53,9 @@ import javax.print.attribute.TextSyntax;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class JobMessageFromOperator extends TextSyntax
         implements PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4620751846003142047L;
 
     /**
      * Constructs a new job message from operator attribute with the given

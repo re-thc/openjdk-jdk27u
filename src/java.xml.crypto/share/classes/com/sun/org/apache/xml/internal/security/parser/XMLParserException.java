@@ -24,12 +24,11 @@ package com.sun.org.apache.xml.internal.security.parser;
 
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class XMLParserException extends XMLSecurityException {
     /**
      *
      */
-    private static final long serialVersionUID = 1L;
-
     /**
      * Constructor XMLParserException
      *

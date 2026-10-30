@@ -52,6 +52,7 @@ import sun.awt.AWTAccessor;
  * @author      Carl Quinn
  * @author      Amy Fowler
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SystemColor extends Color implements java.io.Serializable {
 
    /**
@@ -421,12 +422,6 @@ public final class SystemColor extends Color implements java.io.Serializable {
      * The color rendered for the text of tooltips or spot help.
      */
     public static final SystemColor infoText = new SystemColor((byte)INFO_TEXT);
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 4503142729533789064L;
 
     /*
      * An index into either array of SystemColor objects or values.

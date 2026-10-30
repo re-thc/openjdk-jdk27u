@@ -35,9 +35,8 @@ import sun.rmi.transport.LiveRef;
  * class and its getLiveRef method (inherited from UnicastRef) in the
  * implementation of javax.management.remote.rmi.RMIConnector.
  **/
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnicastRef2 extends UnicastRef {
-    private static final long serialVersionUID = 1829537514995881838L;
-
     /**
      * Create a new (empty) Unicast remote reference.
      */

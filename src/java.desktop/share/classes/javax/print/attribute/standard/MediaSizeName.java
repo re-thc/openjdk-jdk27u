@@ -46,13 +46,8 @@ import javax.print.attribute.EnumSyntax;
  * @spec https://www.rfc-editor.org/info/rfc2911
  *      RFC 2911: Internet Printing Protocol/1.1: Model and Semantics
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MediaSizeName extends Media {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 2778798329756942747L;
 
     /**
      * A0 size.

@@ -36,10 +36,8 @@ import java.io.Serial;
  * @author Mike Grogan
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ScriptException extends Exception {
-
-    @Serial
-    private static final long serialVersionUID = 8265071037049225001L;
 
     /** @serial */
     private final String fileName;

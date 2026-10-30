@@ -31,7 +31,7 @@ public class Main {
         System.out.println("Hello World!");
         if (args.length > 0 && args[0].equals("with_add_opens")) {
             Method method = ClassLoader.class.getDeclaredMethod("defineClass",
-                byte[].class, int.class, int.class);
+                String.class, byte[].class, int.class, int.class);
             method.setAccessible(true);
             System.out.println("method.setAccessible succeeded!");
         }

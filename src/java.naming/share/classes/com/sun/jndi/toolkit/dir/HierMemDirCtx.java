@@ -886,6 +886,7 @@ public class HierMemDirCtx implements DirContext {
     // hash function. We'll make up for the performance hit by caching
     // the hash value.
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class HierarchicalName extends CompoundName {
     private int hashValue = -1;
 
@@ -939,7 +940,6 @@ final class HierarchicalName extends CompoundName {
         return (new HierarchicalName(getAll(), mySyntax));
     }
 
-    private static final long serialVersionUID = -6717336834584573168L;
 }
 
 // This is the default name parser (used if setNameParser is not called)

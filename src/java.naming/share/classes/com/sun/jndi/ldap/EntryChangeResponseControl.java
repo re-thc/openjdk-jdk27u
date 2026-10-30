@@ -53,6 +53,7 @@ import javax.naming.directory.*;
  * @see PersistentSearchControl
  * @see DefaultResponseControlFactory
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class EntryChangeResponseControl extends BasicControl {
 
     /**
@@ -101,8 +102,6 @@ public final class EntryChangeResponseControl extends BasicControl {
      * @serial
      */
     private long changeNumber = -1L;
-
-    private static final long serialVersionUID = -2087354136750180511L;
 
     /**
      * Constructs a new instance of EntryChangeResponseControl.

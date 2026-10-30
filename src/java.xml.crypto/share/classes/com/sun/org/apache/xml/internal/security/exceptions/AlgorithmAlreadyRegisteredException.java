@@ -22,12 +22,11 @@
  */
 package com.sun.org.apache.xml.internal.security.exceptions;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AlgorithmAlreadyRegisteredException extends XMLSecurityException {
     /**
      *
      */
-    private static final long serialVersionUID = 1L;
-
     /**
      * Constructor AlgorithmAlreadyRegisteredException
      *

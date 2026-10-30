@@ -79,13 +79,8 @@ import sun.java2d.cmm.PCMM;
  * @see ColorSpace
  * @see ICC_Profile
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ICC_ColorSpace extends ColorSpace {
-
-    /**
-     * Use serialVersionUID from JDK 1.2 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 3455889114070431483L;
 
     /**
      * @serial The specified {@code ICC_Profile} object.

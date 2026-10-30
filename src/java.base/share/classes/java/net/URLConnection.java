@@ -1222,48 +1222,6 @@ public abstract class URLConnection {
     }
 
     /**
-     * Sets the default value of a general request property. When a
-     * {@code URLConnection} is created, it is initialized with
-     * these properties.
-     *
-     * @param   key     the keyword by which the request is known
-     *                  (e.g., "{@code Accept}").
-     * @param   value   the value associated with the key.
-     *
-     * @see java.net.URLConnection#setRequestProperty(java.lang.String,java.lang.String)
-     *
-     * @deprecated The instance specific setRequestProperty method
-     * should be used after an appropriate instance of URLConnection
-     * is obtained. Invoking this method will have no effect.
-     *
-     * @see #getDefaultRequestProperty(java.lang.String)
-     */
-    @Deprecated
-    public static void setDefaultRequestProperty(String key, String value) {
-    }
-
-    /**
-     * Returns the value of the default request property. Default request
-     * properties are set for every connection.
-     *
-     * @param key the keyword by which the request is known (e.g., "Accept").
-     * @return  the value of the default request property
-     * for the specified key.
-     *
-     * @see java.net.URLConnection#getRequestProperty(java.lang.String)
-     *
-     * @deprecated The instance specific getRequestProperty method
-     * should be used after an appropriate instance of URLConnection
-     * is obtained.
-     *
-     * @see #setDefaultRequestProperty(java.lang.String, java.lang.String)
-     */
-    @Deprecated
-    public static String getDefaultRequestProperty(String key) {
-        return null;
-    }
-
-    /**
      * The ContentHandler factory.
      */
     private static volatile ContentHandlerFactory factory;

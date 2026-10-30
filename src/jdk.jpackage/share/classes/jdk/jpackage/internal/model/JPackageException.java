@@ -30,6 +30,7 @@ import java.util.Objects;
 /**
  * Generic jpackage exception with non-null message.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @SelfContainedException
 public class JPackageException extends RuntimeException {
 
@@ -41,5 +42,4 @@ public class JPackageException extends RuntimeException {
         super(Objects.requireNonNull(msg), cause);
     }
 
-    private static final long serialVersionUID = 1L;
 }

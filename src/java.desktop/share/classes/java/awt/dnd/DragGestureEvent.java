@@ -64,13 +64,8 @@ import java.util.List;
  * @see java.awt.dnd.DnDConstants
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DragGestureEvent extends EventObject {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 9080172649166731306L;
 
     /**
      * Constructs a {@code DragGestureEvent} object given by the

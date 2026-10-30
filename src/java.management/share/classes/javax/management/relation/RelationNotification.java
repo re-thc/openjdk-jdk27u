@@ -50,13 +50,12 @@ import static com.sun.jmx.mbeanserver.Util.cast;
  * Service, or a role is updated in a relation, or a relation is removed from
  * the Relation Service.
  *
- * <p>The <b>serialVersionUID</b> of this class is <code>-6871117877523310399L</code>.
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RelationNotification extends Notification {
 
-    private static final long serialVersionUID = -6871117877523310399L;
     /**
      * @serialField relationId String Relation identifier of
      * created/removed/updated relation

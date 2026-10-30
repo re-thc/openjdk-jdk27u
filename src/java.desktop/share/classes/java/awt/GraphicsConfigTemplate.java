@@ -42,13 +42,8 @@ import java.io.Serializable;
  *
  * @since       1.2
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class GraphicsConfigTemplate implements Serializable {
-
-    /**
-     * Use serialVersionUID from JDK 1.6 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -8061369279557787079L;
 
     /**
      * This class is an abstract class so only subclasses can be

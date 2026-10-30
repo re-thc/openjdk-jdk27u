@@ -40,6 +40,7 @@ package javax.naming;
   * @since 1.3
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MalformedLinkException extends LinkException {
     /**
       * Constructs a new instance of MalformedLinkException with an explanation.
@@ -60,8 +61,4 @@ public class MalformedLinkException extends LinkException {
         super();
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = -3066740437737830242L;
 }

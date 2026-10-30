@@ -36,9 +36,8 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
  * @since   1.6
  * @author  Andreas Sterbenz
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SunPCSC extends Provider {
-
-    private static final long serialVersionUID = 6168388284028876579L;
 
     private static final class ProviderService extends Provider.Service {
 
