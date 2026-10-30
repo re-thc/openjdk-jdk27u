@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,13 +105,14 @@ public class BuiltinClassLoader
      * A module defined/loaded by a built-in class loader.
      *
      * A LoadedModule encapsulates a ModuleReference along with its CodeSource
-     * URL to avoid needing to create this URL when defining classes.
+     * URL and, for built-in URL handlers, a lazily created unsigned CodeSource.
      */
     private static class LoadedModule {
         private final BuiltinClassLoader loader;
         private final ModuleReference mref;
         private final URI uri;                      // may be null
         private @Stable URL codeSourceURL;          // may be null
+        private volatile CodeSource codeSource;     // may be null
 
         LoadedModule(BuiltinClassLoader loader, ModuleReference mref) {
             URL url = null;
@@ -137,6 +139,21 @@ public class BuiltinClassLoader
                 codeSourceURL = url = createURL(uri);
             }
             return url;
+        }
+
+        CodeSource codeSource(URL url) {
+            // Only reuse sources whose URL handler cannot be overridden. Other
+            // handlers may have observable behavior in CodeSource construction.
+            if (url != null && ("jrt".equals(url.getProtocol())
+                                || "file".equals(url.getProtocol()))) {
+                CodeSource cs = codeSource;
+                if (cs == null) {
+                    // Concurrent first definitions may create equivalent sources.
+                    codeSource = cs = new CodeSource(url, (CodeSigner[]) null);
+                }
+                return cs;
+            }
+            return new CodeSource(url, (CodeSigner[]) null);
         }
 
         private URL createURL(URI uri) {
@@ -729,7 +746,9 @@ public class BuiltinClassLoader
                 return null;
             }
 
-            CodeSource cs = new CodeSource(csURL, (CodeSigner[]) null);
+            CodeSource cs = reader instanceof PatchedModuleReader
+                    ? new CodeSource(csURL, (CodeSigner[]) null)
+                    : loadedModule.codeSource(csURL);
             try {
                 // define class to VM
                 return defineClass(cn, bb, cs);
@@ -983,6 +1002,13 @@ public class BuiltinClassLoader
         resourceCache = null;
         if (!moduleToReader.isEmpty()) {
             moduleToReader.clear();
+        }
+        // LoadedModules are reachable through ArchivedClassLoaders. Recreate
+        // this cache at runtime, including when archiving AOT-linked classes.
+        for (LoadedModule loadedModule : packageToModule.values()) {
+            if (loadedModule.loader() == this) {
+                loadedModule.codeSource = null;
+            }
         }
     }
 }

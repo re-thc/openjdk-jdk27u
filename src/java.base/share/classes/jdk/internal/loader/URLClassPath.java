@@ -1059,6 +1059,7 @@ public class URLClassPath {
         /* Canonicalized File */
         private final File dir;
         private final URL normalizedBase;
+        private final boolean deferResourceURL;
 
         /*
          * Creates a new FileLoader for the specified URL with a file protocol.
@@ -1074,6 +1075,50 @@ public class URLClassPath {
             dir = (new File(path)).getCanonicalFile();
             @SuppressWarnings("deprecation")
             var _unused = normalizedBase = new URL(getBaseURL(), ".");
+            deferResourceURL = canDeferResourceURL(url);
+        }
+
+        private boolean canDeferResourceURL(URL base) {
+            // Keep Windows drive/UNC paths and all custom handlers on the
+            // original path. A subclass can reject otherwise ordinary names.
+            if (File.separatorChar != '/'
+                    || JNUA.getHandler(base).getClass()
+                        != sun.net.www.protocol.file.Handler.class
+                    || (base.getAuthority() != null && !base.getAuthority().isEmpty())
+                    || (base.getHost() != null && !base.getHost().isEmpty())
+                    || base.getPort() != -1 || base.getUserInfo() != null
+                    || base.getQuery() != null || base.getRef() != null
+                    || !base.getFile().equals(normalizedBase.getFile())) {
+                return false;
+            }
+            String path = base.getPath();
+            return path.startsWith("/") && path.endsWith("/")
+                    && (path.length() == 1
+                        || isNormalRelativePath(path, 1, path.length() - 1));
+        }
+
+        private static boolean isNormalRelativePath(String path, int start, int end) {
+            int segment = start;
+            for (int i = start; i < end; i++) {
+                char c = path.charAt(i);
+                if (c == '/') {
+                    if (isDotOrEmptySegment(path, segment, i)) {
+                        return false;
+                    }
+                    segment = i + 1;
+                } else if (!(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
+                        || c >= '0' && c <= '9' || c == '_' || c == '$'
+                        || c == '-' || c == '.')) {
+                    return false;
+                }
+            }
+            return !isDotOrEmptySegment(path, segment, end);
+        }
+
+        private static boolean isDotOrEmptySegment(String path, int start, int end) {
+            int length = end - start;
+            return length == 0 || (path.charAt(start) == '.'
+                    && (length == 1 || (length == 2 && path.charAt(start + 1) == '.')));
         }
 
         /*
@@ -1090,14 +1135,22 @@ public class URLClassPath {
 
         @Override
         Resource getResource(final String name) {
-            final URL url;
             try {
-                @SuppressWarnings("deprecation")
-                var _unused = url = new URL(getBaseURL(), ParseUtil.encodePath(name, false));
+                final URL url;
+                if (deferResourceURL && isNormalRelativePath(name, 0, name.length())) {
+                    // Encoding is identity for this alphabet. With no scheme,
+                    // leading slash, dot segments, query, fragment or escapes,
+                    // parsing appends name to this already normal base. The
+                    // original normalizedBase prefix check therefore succeeds.
+                    url = null;
+                } else {
+                    @SuppressWarnings("deprecation")
+                    var _unused = url = new URL(getBaseURL(), ParseUtil.encodePath(name, false));
 
-                if (url.getFile().startsWith(normalizedBase.getFile()) == false) {
-                    // requested resource had ../..'s in path
-                    return null;
+                    if (url.getFile().startsWith(normalizedBase.getFile()) == false) {
+                        // requested resource had ../..'s in path
+                        return null;
+                    }
                 }
                 final File file;
                 if (name.contains("..")) {
@@ -1112,22 +1165,45 @@ public class URLClassPath {
                 }
 
                 if (file.exists()) {
-                    return new Resource() {
-                        public String getName() { return name; };
-                        public URL getURL() { return url; };
-                        public URL getCodeSourceURL() { return getBaseURL(); };
-                        public CodeSource getCodeSource()
-                            { return codeSourceFor(getBaseURL(), null); };
-                        public InputStream getInputStream() throws IOException
-                            { return new FileInputStream(file); };
-                        public int getContentLength() throws IOException
-                            { return (int)file.length(); };
-                    };
+                    return new FileResource(name, file, url);
                 }
             } catch (Exception e) {
                 return null;
             }
             return null;
+        }
+
+        private class FileResource extends Resource {
+            private final String name;
+            private final File file;
+            private URL url;
+
+            FileResource(String name, File file, URL url) {
+                this.name = name;
+                this.file = file;
+                this.url = url;
+            }
+
+            public String getName() { return name; }
+
+            public synchronized URL getURL() {
+                if (url == null) {
+                    try {
+                        // Only proven normal names with the exact built-in
+                        // handler reach here; encodePath would return name.
+                        @SuppressWarnings("deprecation")
+                        var _unused = url = new URL(getBaseURL(), name);
+                    } catch (MalformedURLException e) {
+                        throw new InternalError(e);
+                    }
+                }
+                return url;
+            }
+
+            public URL getCodeSourceURL() { return getBaseURL(); }
+            public CodeSource getCodeSource() { return codeSourceFor(getBaseURL(), null); }
+            public InputStream getInputStream() throws IOException { return new FileInputStream(file); }
+            public int getContentLength() { return (int)file.length(); }
         }
     }
 }
