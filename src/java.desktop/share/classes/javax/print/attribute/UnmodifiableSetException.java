@@ -34,13 +34,8 @@ import java.io.Serial;
  * @author Phil Race
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnmodifiableSetException extends RuntimeException {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 2255250308571511731L;
 
     /**
      * Constructs an {@code UnsupportedOperationException} with no detail

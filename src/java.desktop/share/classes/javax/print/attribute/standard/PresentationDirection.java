@@ -51,14 +51,9 @@ import javax.print.attribute.PrintRequestAttribute;
  *
  * @author Phil Race
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class PresentationDirection extends EnumSyntax
        implements PrintJobAttribute, PrintRequestAttribute  {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 8294728067230931780L;
 
     /**
      * Pages are laid out in columns starting at the top left, proceeding

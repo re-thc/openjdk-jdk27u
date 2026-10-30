@@ -63,13 +63,8 @@ import sun.swing.SwingAccessor;
  * @author David Mendenhall
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AWTKeyStroke implements Serializable {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -6430539691155161871L;
 
     private static Map<String, Integer> modifierKeywords;
     /**

@@ -39,10 +39,8 @@ import java.net.http.HttpClient.Builder;
  * the HttpClient's implementation of the underlying QUIC transport protocol.
  * @since 26
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class UnsupportedProtocolVersionException extends IOException {
-
-    @Serial
-    private static final long serialVersionUID = 981344214212332893L;
 
     /**
      * Constructs an {@code UnsupportedProtocolVersionException} with the given detail message.

@@ -31,9 +31,8 @@ package java.net.http;
  *
  * @since 11
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class HttpConnectTimeoutException extends HttpTimeoutException {
-
-    private static final long serialVersionUID = 321L + 11L;
 
     /**
      * Constructs an {@code HttpConnectTimeoutException} with the given detail

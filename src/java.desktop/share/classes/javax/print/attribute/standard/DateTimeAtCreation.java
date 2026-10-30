@@ -53,14 +53,9 @@ import javax.print.attribute.PrintJobAttribute;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class DateTimeAtCreation   extends DateTimeSyntax
         implements PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -2923732231056647903L;
 
     /**
      * Construct a new date-time at creation attribute with the given

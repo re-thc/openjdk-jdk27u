@@ -55,6 +55,7 @@ import javax.accessibility.AccessibleStateSet;
  * @author      Sami Shaio
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public non-sealed class TextArea extends TextComponent {
 
     /**
@@ -126,12 +127,6 @@ public non-sealed class TextArea extends TextComponent {
      * look them up each time.
      */
     private static Set<AWTKeyStroke> forwardTraversalKeys, backwardTraversalKeys;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = 3692302836626095722L;
 
     /**
      * Initialize JNI field and method ids
@@ -720,14 +715,9 @@ public non-sealed class TextArea extends TextComponent {
      * Java Accessibility API appropriate to text area user-interface elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTTextArea extends AccessibleAWTTextComponent
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 3472827823632144419L;
-
         /**
          * Constructs an {@code AccessibleAWTTextArea}.
          */

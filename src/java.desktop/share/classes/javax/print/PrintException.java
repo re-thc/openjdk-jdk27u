@@ -33,13 +33,8 @@ import java.io.Serial;
  * only a string description of the error. Subclasses furnish more detailed
  * information if applicable.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PrintException extends Exception {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -5932531546705242471L;
 
     /**
      * Construct a print exception with no detail message.

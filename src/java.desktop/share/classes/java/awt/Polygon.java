@@ -58,6 +58,7 @@ import sun.awt.geom.Crossings;
  * @author      Herb Jellinek
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Polygon implements Shape, java.io.Serializable {
 
     /**
@@ -111,12 +112,6 @@ public class Polygon implements Shape, java.io.Serializable {
      * @since 1.0
      */
     protected Rectangle bounds;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -6460061437900069969L;
 
     /*
      * Default length for xpoints and ypoints.

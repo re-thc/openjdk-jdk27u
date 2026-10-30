@@ -51,13 +51,12 @@ import java.lang.System.Logger.Level;
  * unregistration, both) of interest (corresponding to notification
  * types).
  *
- * <p>The <b>serialVersionUID</b> of this class is <code>2605900539589789736L</code>.
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MBeanServerNotificationFilter extends NotificationFilterSupport {
 
-    private static final long serialVersionUID = 2605900539589789736L;
     /**
      * @serialField selectedNames List List of {@link ObjectName}s of interest
      *         <ul>

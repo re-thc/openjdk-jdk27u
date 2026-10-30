@@ -30,6 +30,7 @@ import sun.management.counter.*;
 /**
  * A snapshot of the perf counter for serialization.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class LongCounterSnapshot extends AbstractCounter
        implements LongCounter {
 
@@ -53,5 +54,4 @@ class LongCounterSnapshot extends AbstractCounter
         return value;
     }
 
-    private static final long serialVersionUID = 2054263861474565758L;
 }

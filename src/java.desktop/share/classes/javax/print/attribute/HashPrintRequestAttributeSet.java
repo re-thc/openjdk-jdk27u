@@ -36,14 +36,9 @@ import java.io.Serializable;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class HashPrintRequestAttributeSet extends HashAttributeSet
     implements PrintRequestAttributeSet, Serializable {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 2364756266107751933L;
 
     /**
      * Construct a new, empty print request attribute set.

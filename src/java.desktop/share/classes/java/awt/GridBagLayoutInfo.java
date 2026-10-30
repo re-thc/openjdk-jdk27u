@@ -36,13 +36,8 @@ import java.io.Serial;
  * @see       java.awt.GridBagConstraints
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class GridBagLayoutInfo implements java.io.Serializable {
-
-    /**
-     * Use serialVersionUID from JDK 1.6 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4899416460737170217L;
 
     /**
      * @serial The number of cells: horizontal and vertical.

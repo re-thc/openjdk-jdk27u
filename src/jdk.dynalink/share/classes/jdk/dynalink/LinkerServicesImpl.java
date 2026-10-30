@@ -121,9 +121,8 @@ final class LinkerServicesImpl implements LinkerServices {
     /**
      * Used to marshal a checked exception out of Supplier.get() in getGuardedInvocation.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class LinkerException extends RuntimeException {
-        private static final long serialVersionUID = 1L;
-
         public LinkerException(final Exception cause) {
             super(null, cause, true, false);
         }

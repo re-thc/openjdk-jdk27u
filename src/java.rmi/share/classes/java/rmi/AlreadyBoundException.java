@@ -35,10 +35,8 @@ package java.rmi;
  * @see     java.rmi.Naming#bind(String, java.rmi.Remote)
  * @see     java.rmi.registry.Registry#bind(String, java.rmi.Remote)
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AlreadyBoundException extends java.lang.Exception {
-
-    /* indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = 9218657361741657110L;
 
     /**
      * Constructs an <code>AlreadyBoundException</code> with no

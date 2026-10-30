@@ -32,9 +32,8 @@ package javax.management.openmbean;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidKeyException extends IllegalArgumentException {
-
-    private static final long serialVersionUID = 4224269443946322062L;
 
     /**
      * An InvalidKeyException with no detail message.

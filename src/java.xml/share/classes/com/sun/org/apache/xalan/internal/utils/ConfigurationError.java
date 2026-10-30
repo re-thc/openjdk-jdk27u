@@ -25,10 +25,9 @@ package com.sun.org.apache.xalan.internal.utils;
  *
  * @LastModified: Oct 2017
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ConfigurationError
     extends Error {
-    private static final long serialVersionUID = 749136645488750664L;
-
     //
     // Data
     //

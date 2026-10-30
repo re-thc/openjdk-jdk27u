@@ -1257,8 +1257,8 @@ public class ExhaustivenessComputer {
         LOOSE;
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected static class TooManyChecksException extends RuntimeException {
-        private static final long serialVersionUID = 0L;
         private transient final Set<PatternDescription> missingPatterns;
 
         public TooManyChecksException(Set<PatternDescription> missingPatterns) {

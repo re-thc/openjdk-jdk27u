@@ -48,14 +48,9 @@ import javax.print.attribute.TextSyntax;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class OutputDeviceAssigned extends TextSyntax
     implements PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 5486733778854271081L;
 
     /**
      * Constructs a new output device assigned attribute with the given device

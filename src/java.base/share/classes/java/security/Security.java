@@ -456,43 +456,6 @@ public final class Security {
     }
 
     /**
-     * Gets a specified property for an algorithm. The algorithm name
-     * should be a standard name. See the <a href=
-     * "{@docRoot}/../specs/security/standard-names.html">
-     * Java Security Standard Algorithm Names Specification</a>
-     * for information about standard algorithm names.
-     *
-     * One possible use is by specialized algorithm parsers, which may map
-     * classes to algorithms which they understand (much like Key parsers
-     * do).
-     *
-     * @param algName the algorithm name.
-     *
-     * @param propName the name of the property to get.
-     *
-     * @return the value of the specified property.
-     *
-     * @spec security/standard-names.html Java Security Standard Algorithm Names
-     * @deprecated This method used to return the value of a proprietary
-     * property in the master file of the "SUN" Cryptographic Service
-     * Provider in order to determine how to parse algorithm-specific
-     * parameters. Use the new provider-based and algorithm-independent
-     * {@code AlgorithmParameters} and {@code KeyFactory} engine
-     * classes (introduced in the J2SE version 1.2 platform) instead.
-     */
-    @Deprecated
-    public static String getAlgorithmProperty(String algName,
-                                              String propName) {
-        ProviderProperty entry = getProviderProperty("Alg." + propName
-                                                     + "." + algName);
-        if (entry != null) {
-            return entry.className;
-        } else {
-            return null;
-        }
-    }
-
-    /**
      * Adds a new provider, at a specified position. The position is
      * the preference order in which providers are searched for
      * requested algorithms.  The position is 1-based, that is,

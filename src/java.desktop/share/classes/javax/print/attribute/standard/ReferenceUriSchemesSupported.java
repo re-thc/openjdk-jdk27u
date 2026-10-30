@@ -62,14 +62,9 @@ import javax.print.attribute.EnumSyntax;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ReferenceUriSchemesSupported
     extends EnumSyntax implements Attribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -8989076942813442805L;
 
     /**
      * File Transfer Protocol (FTP).

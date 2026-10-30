@@ -141,6 +141,7 @@ import jdk.internal.access.SharedSecrets;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class NumericShaper implements java.io.Serializable {
 
     // For access from java.text.Bidi
@@ -439,12 +440,6 @@ public final class NumericShaper implements java.io.Serializable {
      * If more than BSEARCH_THRESHOLD ranges are specified, binary search is used.
      */
     private static final int BSEARCH_THRESHOLD = 3;
-
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -8022764705923730308L;
 
     /** Identifies the Latin-1 (European) and extended range, and
      *  Latin-1 (European) decimal base.

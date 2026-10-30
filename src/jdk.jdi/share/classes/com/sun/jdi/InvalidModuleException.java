@@ -31,9 +31,8 @@ package com.sun.jdi;
  *
  * @since  9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidModuleException extends RuntimeException {
-
-    private static final long serialVersionUID = 7907359387320658039L;
 
     /**
      * Constructs an {@code InvalidModuleException} with no detail message.

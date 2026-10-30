@@ -36,13 +36,8 @@ import java.io.Serial;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidDnDOperationException extends IllegalStateException {
-
-    /**
-     * Use serialVersionUID from JDK 1.8 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -6062568741193956678L;
 
     private static String dft_msg = "The operation requested cannot be performed by the DnD system since it is not in the appropriate state";
 

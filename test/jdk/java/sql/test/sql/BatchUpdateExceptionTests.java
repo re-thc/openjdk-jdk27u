@@ -23,8 +23,10 @@
 package sql;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.sql.BatchUpdateException;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -32,16 +34,12 @@ import java.util.Arrays;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
-import util.SerializedBatchUpdateException;
 import util.BaseTest;
 
 public class BatchUpdateExceptionTests extends BaseTest {
 
     private final int[] uc = {1, 2, 3};
     private final long[] luc = {1, 2, 3};
-
-    private final String testSrcDir = System.getProperty("test.src", ".")
-            + File.separatorChar;
 
     /**
      * Create BatchUpdateException and setting all objects to null
@@ -240,8 +238,7 @@ public class BatchUpdateExceptionTests extends BaseTest {
 
 
     /**
-     * De-Serialize a BatchUpdateException from JDBC 4.0 and make sure you can
-     * read it back properly
+     * Read int-only update counts and reconstruct the long update counts.
      */
     @Test
     public void test13() throws Exception {
@@ -249,13 +246,33 @@ public class BatchUpdateExceptionTests extends BaseTest {
         String state1 = "user defined sqlState";
         String cause1 = "java.lang.Throwable: throw 1";
         int errorCode1 = 99999;
-        Throwable t = new Throwable("throw 1");
         int[] uc1 = {1, 2, 21};
         long[] luc1 = {1, 2, 21};
+        BatchUpdateException original = new BatchUpdateException(reason1, state1,
+                errorCode1, uc1, new Throwable("throw 1"));
 
-        ObjectInputStream ois = new ObjectInputStream(
-                new ByteArrayInputStream(SerializedBatchUpdateException.DATA));
-        BatchUpdateException bue = (BatchUpdateException) ois.readObject();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (ObjectOutputStream out = new ObjectOutputStream(bytes) {
+            private PutField fields;
+
+            @Override
+            public PutField putFields() throws IOException {
+                return fields = super.putFields();
+            }
+
+            @Override
+            public void writeFields() throws IOException {
+                fields.put("longUpdateCounts", (Object) null);
+                super.writeFields();
+            }
+        }) {
+            out.writeObject(original);
+        }
+        BatchUpdateException bue;
+        try (ObjectInputStream in = new ObjectInputStream(
+                new ByteArrayInputStream(bytes.toByteArray()))) {
+            bue = (BatchUpdateException) in.readObject();
+        }
         assertTrue(reason1.equals(bue.getMessage())
                 && bue.getSQLState().equals(state1)
                 && bue.getErrorCode() == errorCode1

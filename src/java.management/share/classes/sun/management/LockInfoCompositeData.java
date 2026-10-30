@@ -37,6 +37,7 @@ import javax.management.openmbean.OpenDataException;
  * This class avoids the performance penalty paid to the
  * construction of a CompositeData use in the local case.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LockInfoCompositeData extends LazyCompositeData {
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private final LockInfo lock;
@@ -108,5 +109,4 @@ public class LockInfoCompositeData extends LazyCompositeData {
         return new LockInfo(className, identityHashCode);
     }
 
-    private static final long serialVersionUID = -6374759159749014052L;
 }

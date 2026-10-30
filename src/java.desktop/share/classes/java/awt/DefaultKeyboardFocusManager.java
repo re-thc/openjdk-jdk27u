@@ -221,15 +221,10 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
      * KeyboardFocusManager if it is an instance of
      * DefaultKeyboardFocusManager.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class DefaultKeyboardFocusManagerSentEvent
         extends SentEvent
     {
-        /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -2924743257508701758L;
-
         public DefaultKeyboardFocusManagerSentEvent(AWTEvent nested) {
             super(nested);
         }

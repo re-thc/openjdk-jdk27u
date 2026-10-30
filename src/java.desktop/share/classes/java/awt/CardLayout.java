@@ -56,14 +56,9 @@ import java.util.Vector;
  * @since       1.0
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CardLayout implements LayoutManager2,
                                    Serializable {
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4328196481005934313L;
-
     /*
      * This creates a Vector to store associated
      * pairs of components and their names.
@@ -74,13 +69,9 @@ public class CardLayout implements LayoutManager2,
     /**
      * A pair of component and string that represents its name.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class Card implements Serializable {
 
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 6640330810709497518L;
         public String name;
         public Component comp;
         public Card(String cardName, Component cardComponent) {

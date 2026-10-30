@@ -31,10 +31,8 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidAttributeValueException extends OperationsException   {
-
-    /* Serial version */
-    private static final long serialVersionUID = 2164571879317142449L;
 
     /**
      * Default constructor.

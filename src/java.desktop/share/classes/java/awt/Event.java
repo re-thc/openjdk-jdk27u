@@ -62,6 +62,7 @@ import java.io.Serial;
  * @author     Sami Shaio
  * @since      1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since = "9")
 public class Event implements java.io.Serializable {
     private transient long data;
@@ -593,12 +594,6 @@ public class Event implements java.io.Serializable {
      * @see #isConsumed()
      */
     private boolean consumed = false;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 5488922509400504703L;
 
     static {
         /* ensure that the necessary native libraries are loaded */

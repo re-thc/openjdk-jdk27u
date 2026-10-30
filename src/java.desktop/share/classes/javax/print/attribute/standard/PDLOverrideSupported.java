@@ -44,14 +44,9 @@ import javax.print.attribute.PrintServiceAttribute;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PDLOverrideSupported extends EnumSyntax
     implements PrintServiceAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4393264467928463934L;
 
     /**
      * The printer makes no attempt to make the external job attribute values

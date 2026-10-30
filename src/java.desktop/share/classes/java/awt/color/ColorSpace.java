@@ -91,13 +91,8 @@ import java.lang.annotation.Native;
  *
  * @see ICC_ColorSpace
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class ColorSpace implements Serializable {
-
-    /**
-     * Use serialVersionUID from JDK 1.2 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -409452704308689724L;
 
     /**
      * @serial One of the {@code ColorSpace} type constants.

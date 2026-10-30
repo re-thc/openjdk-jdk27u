@@ -77,6 +77,7 @@ import com.sun.jndi.ldap.LdapCtx;
  * @see SortControl
  * @author Vincent Ryan
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SortResponseControl extends BasicControl {
 
     /**
@@ -84,8 +85,6 @@ public final class SortResponseControl extends BasicControl {
      * is 1.2.840.113556.1.4.474.
      */
     public static final String OID = "1.2.840.113556.1.4.474";
-
-    private static final long serialVersionUID = 5142939176006310877L;
 
     /**
      * The sort result code.

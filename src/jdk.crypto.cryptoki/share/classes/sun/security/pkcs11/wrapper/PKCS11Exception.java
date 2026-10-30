@@ -63,10 +63,8 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  * @author <a href="mailto:Karl.Scheibelhofer@iaik.at"> Karl Scheibelhofer </a>
  * @invariants
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PKCS11Exception extends Exception {
-    @Serial
-    private static final long serialVersionUID = 4077027363729192L;
-
     /**
      * The code of the error which was the reason for this exception.
      */

@@ -36,13 +36,8 @@ import sun.awt.SunToolkit;
  *
  * @author David Mendenhall
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class SentEvent extends AWTEvent implements ActiveEvent {
-
-    /**
-     * Use serialVersionUID from JDK 1.6 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -383615247028828931L;
 
     static final int ID =
         java.awt.event.FocusEvent.FOCUS_LAST + 2;

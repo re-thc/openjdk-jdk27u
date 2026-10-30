@@ -57,6 +57,7 @@ package javax.naming;
   */
 
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NamingException extends Exception {
     /**
      * Contains the part of the name that has been successfully resolved.
@@ -429,8 +430,4 @@ public class NamingException extends Exception {
         }
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = -1299181962103167177L;
 };

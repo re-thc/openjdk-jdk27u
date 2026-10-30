@@ -43,13 +43,8 @@ import org.w3c.dom.UserDataHandler;
  * An {@code IIODOMException} is thrown by the {@code IIOMetadataNode} in
  * "exceptional" circumstances.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class IIODOMException extends DOMException {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4369510142067447468L;
 
     public IIODOMException(short code, String message) {
         super(code, message);

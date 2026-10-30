@@ -69,13 +69,8 @@ import java.util.List;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DropTargetDragEvent extends DropTargetEvent {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -8422265619058953682L;
 
     /**
      * Construct a {@code DropTargetDragEvent} given the

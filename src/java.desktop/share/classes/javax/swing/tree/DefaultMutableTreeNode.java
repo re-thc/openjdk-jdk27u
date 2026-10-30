@@ -98,12 +98,6 @@ public class DefaultMutableTreeNode implements Cloneable,
        MutableTreeNode, Serializable
 {
     /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4298474751201349152L;
-
-    /**
      * An enumeration that is always empty. This is used when an enumeration
      * of a leaf node's children is requested.
      */

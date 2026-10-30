@@ -81,6 +81,7 @@ import javax.print.attribute.PrintRequestAttribute;
  * <p>
  * <b>IPP Compatibility:</b> MediaPrintableArea is not an IPP attribute.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class MediaPrintableArea
       implements DocAttribute, PrintRequestAttribute, PrintJobAttribute {
 
@@ -93,12 +94,6 @@ public final class MediaPrintableArea
      * @serial The units in which the values are expressed.
      */
     private int units;
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -1597171464050795793L;
 
     /**
      * Value to indicate units of inches (in). It is actually the conversion

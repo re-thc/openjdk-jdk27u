@@ -28,13 +28,12 @@ package com.sun.org.apache.xml.internal.security.signature;
  * of raising an exception or returning a value.
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidDigestValueException extends XMLSignatureException {
 
     /**
      *
      */
-    private static final long serialVersionUID = 1L;
-
     /**
      * Constructor InvalidDigestValueException
      *

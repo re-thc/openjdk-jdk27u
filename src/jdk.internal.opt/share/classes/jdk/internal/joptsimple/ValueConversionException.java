@@ -60,9 +60,8 @@ package jdk.internal.joptsimple;
  *
  * @author <a href="mailto:pholser@alumni.rice.edu">Paul Holser</a>
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ValueConversionException extends RuntimeException {
-    private static final long serialVersionUID = -1L;
-
     /**
      * Creates a new exception with the specified detail message.
      *

@@ -114,13 +114,8 @@ import sun.awt.dnd.SunDragSourceContextPeer;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DragSource implements Serializable {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 6236096958971414066L;
 
     /*
      * load a system default cursor

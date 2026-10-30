@@ -66,6 +66,7 @@ import java.lang.annotation.Native;
  * @author Carl Quinn
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ComponentEvent extends AWTEvent {
 
     /**
@@ -97,12 +98,6 @@ public class ComponentEvent extends AWTEvent {
      * This event indicates that the component was rendered invisible.
      */
     @Native public static final int COMPONENT_HIDDEN    = 3 + COMPONENT_FIRST;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 8101406823902992965L;
 
     /**
      * Constructs a {@code ComponentEvent} object.

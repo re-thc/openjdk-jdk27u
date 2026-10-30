@@ -146,6 +146,7 @@ import java.util.Properties;
  * @since 1.3
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CompoundName implements Name {
 
     /**
@@ -594,12 +595,6 @@ public class CompoundName implements Name {
             throw (new java.io.StreamCorruptedException("Invalid name"));
         }
     }
-
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    @java.io.Serial
-    private static final long serialVersionUID = 3513100557083972036L;
 
 /*
 //   For testing

@@ -59,20 +59,18 @@ import java.util.Objects;
  *
  * @LastModified: Oct 2017
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class URI implements Serializable
 {
-  private static final long serialVersionUID = 7096266377907081897L;
-
   /**
    * MalformedURIExceptions are thrown in the process of building a URI
    * or setting fields on a URI when an operation would result in an
    * invalid URI specification.
    *
    */
+  @SuppressWarnings("serial") // Serial version compatibility is not maintained.
   public static class MalformedURIException extends IOException
   {
-    private static final long serialVersionUID = -8498313684991136829L;
-
     /**
      * Constructs a <code>MalformedURIException</code> with no specified
      * detail message.

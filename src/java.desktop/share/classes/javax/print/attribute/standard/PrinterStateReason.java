@@ -64,13 +64,8 @@ import javax.print.attribute.EnumSyntax;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PrinterStateReason extends EnumSyntax implements Attribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -1623720656201472593L;
 
     /**
      * The printer has detected an error other than ones listed below.

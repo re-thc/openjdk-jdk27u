@@ -42,13 +42,8 @@ import java.io.Serial;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DragSourceDropEvent extends DragSourceEvent {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -5571321229470821891L;
 
     /**
      * Construct a {@code DragSourceDropEvent} for a drop,

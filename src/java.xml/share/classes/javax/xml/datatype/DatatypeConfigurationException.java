@@ -32,9 +32,8 @@ package javax.xml.datatype;
  * @since 1.5
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DatatypeConfigurationException extends Exception {
-    private static final long serialVersionUID = -1699373159027047238L;
-
     /**
      * <p>Create a new <code>DatatypeConfigurationException</code> with
      * no specified detail message and cause.</p>

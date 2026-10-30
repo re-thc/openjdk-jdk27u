@@ -56,14 +56,9 @@ import javax.print.attribute.URISyntax;
  *
  * @author Phil Race
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class Destination extends URISyntax
         implements PrintJobAttribute, PrintRequestAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 6776739171700415321L;
 
     /**
      * Constructs a new destination attribute with the specified {@code URI}.

@@ -852,9 +852,8 @@ public class Resolve {
          * hot execution path, we use flyweight pattern - and share the same exception instance
          * across multiple method check failures.
          */
+        @SuppressWarnings("serial") // Serial version compatibility is not maintained.
         class SharedInapplicableMethodException extends InapplicableMethodException {
-            private static final long serialVersionUID = 0;
-
             SharedInapplicableMethodException() {
                 super(null, Resolve.this.dumpStacktraceOnError);
             }
@@ -1417,9 +1416,8 @@ public class Resolve {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class InapplicableMethodException extends CompilerInternalException {
-        private static final long serialVersionUID = 0;
-
         transient JCDiagnostic diagnostic;
 
         InapplicableMethodException(JCDiagnostic diag, boolean dumpStackTraceOnError) {

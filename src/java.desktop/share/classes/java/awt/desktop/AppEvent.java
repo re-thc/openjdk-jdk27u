@@ -38,6 +38,7 @@ import java.util.EventObject;
  * @since 9
  * @sealedGraph
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public sealed class AppEvent extends EventObject
     permits AboutEvent,
             AppForegroundEvent,
@@ -50,12 +51,6 @@ public sealed class AppEvent extends EventObject
             ScreenSleepEvent,
             SystemSleepEvent,
             UserSessionEvent {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -5958503993556009432L;
 
     /**
      * Constructs an {@code AppEvent}.

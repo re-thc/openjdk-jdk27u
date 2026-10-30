@@ -104,6 +104,7 @@ interface Validator<T, U extends Exception> {
     /**
      * Thrown to indicate that the given value didn't pass validation.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class ValidatingConsumerException extends RuntimeException {
 
         ValidatingConsumerException(String msg, Exception cause) {
@@ -114,20 +115,19 @@ interface Validator<T, U extends Exception> {
             super(Objects.requireNonNull(cause));
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
 
     /**
      * Thrown to indicate an error in the normal execution of a validator.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class ValidatorException extends RuntimeException {
 
         private ValidatorException(Exception cause) {
             super(cause);
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
 

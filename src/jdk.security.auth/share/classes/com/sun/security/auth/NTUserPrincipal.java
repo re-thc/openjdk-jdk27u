@@ -46,10 +46,8 @@ import java.security.Principal;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NTUserPrincipal implements Principal, java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -8737649811939033735L;
 
     /**
      * @serial

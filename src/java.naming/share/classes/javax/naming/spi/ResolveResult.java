@@ -43,6 +43,7 @@ import javax.naming.InvalidNameException;
   * @author Scott Seligman
   * @since 1.3
   */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ResolveResult implements java.io.Serializable {
     /**
      * Field containing the Object that was resolved to successfully.
@@ -198,5 +199,4 @@ public class ResolveResult implements java.io.Serializable {
         // ??? should check for null?
     }
 
-    private static final long serialVersionUID = -4552108072002407559L;
 }

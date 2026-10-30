@@ -32,10 +32,8 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MalformedObjectNameException extends OperationsException   {
-
-    /* Serial version */
-    private static final long serialVersionUID = -572689714442915824L;
 
     /**
      * Default constructor.

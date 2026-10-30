@@ -28,6 +28,7 @@ package com.sun.jndi.ldap;
 import javax.naming.*;
 import javax.naming.ldap.*;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class NameClassPairWithControls extends NameClassPair implements HasControls {
     private Control[] controls;
 
@@ -41,5 +42,4 @@ class NameClassPairWithControls extends NameClassPair implements HasControls {
         return controls;
     }
 
-    private static final long serialVersionUID = 2010738921219112944L;
 }

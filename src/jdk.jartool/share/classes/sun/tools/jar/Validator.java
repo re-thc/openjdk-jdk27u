@@ -324,8 +324,8 @@ final class Validator {
         return isValid;
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class InvalidJarException extends RuntimeException {
-        private static final long serialVersionUID = -3642329147299217726L;
         InvalidJarException(String msg) {
             super(msg);
         }
