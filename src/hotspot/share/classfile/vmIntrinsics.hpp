@@ -281,6 +281,10 @@ class methodHandle;
    do_name(     currentTimeMillis_name,                          "currentTimeMillis")                                   \
   do_intrinsic(_nanoTime,                 java_lang_System,       nanoTime_name,          void_long_signature,   F_SN)  \
    do_name(     nanoTime_name,                                   "nanoTime")                                            \
+  do_class(jdk_internal_misc_VM, "jdk/internal/misc/VM")                                                                \
+  do_intrinsic(_getNanoTimeAdjustment, jdk_internal_misc_VM, getNanoTimeAdjustment_name, long_long_signature, F_SN)     \
+   do_name(getNanoTimeAdjustment_name, "getNanoTimeAdjustment")                                                         \
+                                                                                                                        \
                                                                                                                         \
   JFR_INTRINSICS(do_intrinsic, do_class, do_name, do_signature, do_alias)                                               \
                                                                                                                         \

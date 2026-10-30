@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 import sun.nio.ch.FileChannelImpl;
 
@@ -428,6 +429,7 @@ public class VM {
      *     In that case, the caller should call this method again, passing a
      *     more accurate offset.
      */
+    @IntrinsicCandidate
     public static native long getNanoTimeAdjustment(long offsetInSeconds);
 
     /**

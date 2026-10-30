@@ -73,6 +73,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
 #endif
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
+  case vmIntrinsics::_getNanoTimeAdjustment:
   case vmIntrinsics::_floatToRawIntBits:
   case vmIntrinsics::_intBitsToFloat:
   case vmIntrinsics::_doubleToRawLongBits:
@@ -127,6 +128,7 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
 #endif
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
+  case vmIntrinsics::_getNanoTimeAdjustment:
   case vmIntrinsics::_floatToRawIntBits:
   case vmIntrinsics::_intBitsToFloat:
   case vmIntrinsics::_doubleToRawLongBits:
@@ -173,6 +175,7 @@ bool vmIntrinsics::should_be_pinned(vmIntrinsics::ID id) {
 #endif
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
+  case vmIntrinsics::_getNanoTimeAdjustment:
   case vmIntrinsics::_blackhole:
     return true;
   default:

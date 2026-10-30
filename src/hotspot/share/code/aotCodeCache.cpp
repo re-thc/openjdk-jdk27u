@@ -1991,6 +1991,7 @@ void AOTCodeAddressTable::init_extrs() {
 
   ADD_EXTERNAL_ADDRESS(os::javaTimeMillis);
   ADD_EXTERNAL_ADDRESS(os::javaTimeNanos);
+  ADD_EXTERNAL_ADDRESS(os::javaTimeNanosAdjustment);
 #ifndef PRODUCT
   ADD_EXTERNAL_ADDRESS(os::breakpoint);
 #endif
