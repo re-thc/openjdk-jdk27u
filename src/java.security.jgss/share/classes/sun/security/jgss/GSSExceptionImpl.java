@@ -34,10 +34,8 @@ import java.io.Serial;
  * class that does not allow the thrower to set a string corresponding to
  * the major code.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class GSSExceptionImpl extends GSSException {
-
-    @Serial
-    private static final long serialVersionUID = 4251197939069005575L;
 
     private String majorMessage;
 

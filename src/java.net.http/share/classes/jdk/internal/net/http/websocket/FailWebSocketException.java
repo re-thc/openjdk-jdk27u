@@ -34,9 +34,9 @@ import static jdk.internal.net.http.websocket.StatusCodes.PROTOCOL_ERROR;
  *
  *     https://tools.ietf.org/html/rfc6455#section-7.1.7
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class FailWebSocketException extends RuntimeException {
 
-    private static final long serialVersionUID = 1L;
     private final int statusCode;
 
     FailWebSocketException(String detail) {

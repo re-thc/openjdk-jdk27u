@@ -71,12 +71,11 @@ import sun.rmi.transport.LiveRef;
  *
  * @see java.rmi.registry.LocateRegistry
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RegistryImpl extends java.rmi.server.RemoteServer
         implements Registry
 {
 
-    /* indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = 4666870661827494597L;
     private Hashtable<String, Remote> bindings
         = new Hashtable<>(101);
     private static Hashtable<InetAddress, InetAddress> allowedAccessCache

@@ -43,6 +43,7 @@ import java.io.NotSerializableException;
  * @serial  exclude
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NodeChangeEvent extends java.util.EventObject {
     /**
      * The node that was added or removed.
@@ -97,6 +98,4 @@ public class NodeChangeEvent extends java.util.EventObject {
      }
 
     // Defined so that this class isn't flagged as a potential problem when
-    // searches for missing serialVersionUID fields are done.
-    private static final long serialVersionUID = 8068949086596572957L;
 }

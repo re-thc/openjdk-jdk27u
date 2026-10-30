@@ -33,14 +33,9 @@ import java.io.Serial;
  * @since 1.1
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public
 class PropertyVetoException extends Exception {
-
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 129596057694162164L;
 
     /**
      * Constructs a {@code PropertyVetoException} with a

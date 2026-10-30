@@ -37,9 +37,8 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
  *
  * @since   9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class JdkLDAP extends Provider {
-
-    private static final long serialVersionUID = -2279741232933606418L;
 
     private static final class ProviderService extends Provider.Service {
         ProviderService(Provider p, String type, String algo, String cn,

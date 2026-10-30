@@ -42,6 +42,7 @@ import java.io.NotSerializableException;
  * @since   1.4
  * @serial exclude
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PreferenceChangeEvent extends java.util.EventObject {
 
     /**
@@ -120,6 +121,4 @@ public class PreferenceChangeEvent extends java.util.EventObject {
      }
 
     // Defined so that this class isn't flagged as a potential problem when
-    // searches for missing serialVersionUID fields are done.
-    private static final long serialVersionUID = 793724513368024975L;
 }

@@ -99,6 +99,7 @@ final class Utils {
                 });
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     @SelfContainedException
     static final class ParseException extends RuntimeException {
 
@@ -106,6 +107,5 @@ final class Utils {
             super(msg);
         }
 
-        private static final long serialVersionUID = 1L;
     }
 }

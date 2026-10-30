@@ -30,6 +30,7 @@ import sun.management.counter.*;
 /**
  * A snapshot of the perf counter for serialization.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class ByteArrayCounterSnapshot extends AbstractCounter
        implements ByteArrayCounter {
 
@@ -54,5 +55,4 @@ class ByteArrayCounterSnapshot extends AbstractCounter
         return value[index];
     }
 
-    private static final long serialVersionUID = 1444793459838438979L;
 }

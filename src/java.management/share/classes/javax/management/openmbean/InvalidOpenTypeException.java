@@ -32,9 +32,8 @@ package javax.management.openmbean;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidOpenTypeException extends IllegalArgumentException {
-
-    private static final long serialVersionUID = -2837312755412327534L;
 
     /** An InvalidOpenTypeException with no detail message.  */
     public InvalidOpenTypeException() {

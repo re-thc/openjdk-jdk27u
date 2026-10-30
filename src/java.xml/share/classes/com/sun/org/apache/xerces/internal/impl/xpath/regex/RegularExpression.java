@@ -488,9 +488,8 @@ import com.sun.org.apache.xerces.internal.util.IntStack;
  *
  * @author TAMURA Kent &lt;kent@trl.ibm.co.jp&gt;
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RegularExpression implements java.io.Serializable {
-
-    private static final long serialVersionUID = 6242499334195006401L;
 
     static final boolean DEBUG = false;
 

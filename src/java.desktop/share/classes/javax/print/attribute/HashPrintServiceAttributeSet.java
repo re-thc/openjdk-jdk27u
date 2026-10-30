@@ -37,14 +37,9 @@ import java.io.Serializable;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class HashPrintServiceAttributeSet extends HashAttributeSet
     implements PrintServiceAttributeSet, Serializable {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 6642904616179203070L;
 
     /**
      * Construct a new, empty hash print service attribute set.

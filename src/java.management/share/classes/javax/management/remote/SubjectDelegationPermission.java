@@ -63,10 +63,9 @@ import java.security.BasicPermission;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public final class SubjectDelegationPermission extends BasicPermission {
-
-    private static final long serialVersionUID = 1481618113008682343L;
 
     /**
      * Creates a new SubjectDelegationPermission with the specified name.

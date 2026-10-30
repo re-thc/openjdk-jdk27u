@@ -36,6 +36,7 @@ import java.io.IOException;
  *
  * @author Vincent Ryan
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ManageReferralControl extends BasicControl {
 
     /**
@@ -45,8 +46,6 @@ public final class ManageReferralControl extends BasicControl {
      * @serial
      */
     public static final String OID = "2.16.840.1.113730.3.4.2";
-
-    private static final long serialVersionUID = 909382692585717224L;
 
     /**
      * Constructs a manage referral critical control.

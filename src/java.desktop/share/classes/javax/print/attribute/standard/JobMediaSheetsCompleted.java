@@ -58,14 +58,9 @@ import javax.print.attribute.PrintJobAttribute;
  * @see JobKOctetsProcessed
  * @see JobImpressionsCompleted
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class JobMediaSheetsCompleted extends IntegerSyntax
         implements PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 1739595973810840475L;
 
     /**
      * Construct a new job media sheets completed attribute with the given

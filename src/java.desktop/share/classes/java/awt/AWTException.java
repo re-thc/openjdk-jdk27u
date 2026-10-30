@@ -32,13 +32,8 @@ import java.io.Serial;
  *
  * @author      Arthur van Hoff
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AWTException extends Exception {
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = -1900414231151323879L;
 
     /**
      * Constructs an instance of {@code AWTException} with the

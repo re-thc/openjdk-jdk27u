@@ -46,15 +46,9 @@ import java.util.EventObject;
  * @see         java.beans.beancontext.BeanContext
  */
 
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "serial"})
 @Deprecated(since = "23", forRemoval = true)
 public abstract class BeanContextEvent extends EventObject {
-
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 7267998073569045052L;
 
     /**
      * Construct a BeanContextEvent

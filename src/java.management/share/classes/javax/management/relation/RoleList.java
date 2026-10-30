@@ -57,10 +57,8 @@ import java.util.List;
    the asList() method so you can write
        for (Role r : roleList.asList())
 */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RoleList extends ArrayList<Object> {
-
-    /* Serial version */
-    private static final long serialVersionUID = 5568344346499649313L;
 
     //
     // Constructors

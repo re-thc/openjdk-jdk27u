@@ -380,7 +380,7 @@ public class FailureAtomicity {
 
     @SuppressWarnings("deprecation")
     static byte[] replacePkg(byte[] bytes) {
-        String str = new String(bytes, 0);
+        String str = new String(bytes, 0, 0, bytes.length);
         str = str.replaceAll(PKGS[0], PKGS[1]);
         str.getBytes(0, bytes.length, bytes, 0);
         return bytes;

@@ -60,6 +60,7 @@ import sun.util.logging.PlatformLogger;
  * @see Container#getComponents
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
     implements java.io.Serializable
 {
@@ -74,12 +75,6 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
      * @serial This constant is used when the backward focus traversal order is active.
      */
     private final int BACKWARD_TRAVERSAL = 1;
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 486933713763926351L;
 
     /**
      * @serial Whether this {@code ContainerOrderFocusTraversalPolicy} transfers focus

@@ -56,9 +56,8 @@ public class Dependencies {
     /**
      * Thrown when a class file cannot be found.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class ClassFileNotFoundException extends Exception {
-        private static final long serialVersionUID = 3632265927794475048L;
-
         public ClassFileNotFoundException(String className) {
             super(className);
             this.className = className;
@@ -75,9 +74,8 @@ public class Dependencies {
     /**
      * Thrown when an exception is found processing a class file.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class ClassFileError extends Error {
-        private static final long serialVersionUID = 4111110813961313203L;
-
         public ClassFileError(Throwable cause) {
             super(cause.getMessage(), cause);
         }

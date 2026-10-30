@@ -39,13 +39,12 @@ import java.io.ObjectStreamField;
  * Exception thrown when an invalid target object type is specified.
  *
  *
- * <p>The <b>serialVersionUID</b> of this class is <code>1190536278266811217L</code>.
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidTargetObjectTypeException  extends Exception
 {
-    private static final long serialVersionUID = 1190536278266811217L;
     /**
      * @serialField exception Exception Encapsulated {@link Exception}
      */

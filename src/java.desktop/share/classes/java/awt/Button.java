@@ -92,6 +92,7 @@ import javax.accessibility.AccessibleValue;
  * @see         java.awt.Component#addMouseListener
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Button extends Component implements Accessible {
 
     /**
@@ -115,12 +116,6 @@ public class Button extends Component implements Accessible {
 
     private static final String base = "button";
     private static int nameCounter = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -8774683716313001058L;
 
     /**
      * Constructs a button with an empty string for its label.
@@ -526,15 +521,10 @@ public class Button extends Component implements Accessible {
      * Java Accessibility API appropriate to button user-interface elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTButton extends AccessibleAWTComponent
         implements AccessibleAction, AccessibleValue
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -5932203980244017102L;
-
         /**
          * Constructs an {@code AccessibleAWTButton}.
          */

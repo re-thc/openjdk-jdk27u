@@ -32,9 +32,8 @@ import static jdk.javadoc.internal.tool.Main.Result.CMDERR;
  * decoding issue, arising from a command-line error.
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class IllegalOptionValue extends OptionException {
-
-    private static final long serialVersionUID = 0;
 
     /**
      * Constructs an object containing a runnable and a message.

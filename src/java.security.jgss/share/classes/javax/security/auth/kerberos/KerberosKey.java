@@ -77,10 +77,8 @@ import javax.security.auth.DestroyFailedException;
  * @author Mayank Upadhyay
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class KerberosKey implements SecretKey {
-
-    @Serial
-    private static final long serialVersionUID = -4625402278148246993L;
 
     /**
      * The principal that this secret key belongs to.

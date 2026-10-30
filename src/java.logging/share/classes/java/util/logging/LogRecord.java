@@ -70,6 +70,7 @@ import static jdk.internal.logger.SurrogateLogger.isFilteredFrame;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LogRecord implements java.io.Serializable {
     private static final AtomicLong globalSequenceNumber
         = new AtomicLong();
@@ -586,9 +587,6 @@ public class LogRecord implements java.io.Serializable {
     public void setThrown(Throwable thrown) {
         this.thrown = thrown;
     }
-
-    @Serial
-    private static final long serialVersionUID = 5372048053134512534L;
 
     /**
      * @serialData Serialized fields, followed by a two byte version number

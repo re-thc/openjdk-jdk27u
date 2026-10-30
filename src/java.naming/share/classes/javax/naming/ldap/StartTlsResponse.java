@@ -74,6 +74,7 @@ import javax.net.ssl.HostnameVerifier;
  * @see StartTlsRequest
  * @author Vincent Ryan
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class StartTlsResponse implements ExtendedResponse {
 
     // Constant
@@ -202,5 +203,4 @@ public abstract class StartTlsResponse implements ExtendedResponse {
      */
     public abstract void close() throws IOException;
 
-    private static final long serialVersionUID = 8372842182579276418L;
 }

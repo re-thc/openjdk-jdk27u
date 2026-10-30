@@ -39,11 +39,9 @@ import javax.management.ObjectName;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ObjectInstance implements Serializable   {
 
-
-    /* Serial version */
-    private static final long serialVersionUID = -4099952623687795850L;
 
     /**
      * @serial Object name.

@@ -27,13 +27,12 @@ import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 /**
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidTransformException extends XMLSecurityException {
 
     /**
      *
      */
-    private static final long serialVersionUID = 1L;
-
     /**
      * Constructor InvalidTransformException
      *

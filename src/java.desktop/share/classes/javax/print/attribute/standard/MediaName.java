@@ -44,13 +44,8 @@ import javax.print.attribute.EnumSyntax;
  * <b>IPP Compatibility:</b> {@code MediaName} is a representation class for
  * values of the IPP "media" attribute which names media.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MediaName extends Media implements Attribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 4653117714524155448L;
 
     /**
      * white letter paper.

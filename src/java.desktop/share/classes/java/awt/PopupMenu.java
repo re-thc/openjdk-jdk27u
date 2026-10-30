@@ -45,6 +45,7 @@ import sun.awt.AWTAccessor;
  *
  * @author      Amy Fowler
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PopupMenu extends Menu {
 
     private static final String base = "popup";
@@ -60,12 +61,6 @@ public class PopupMenu extends Menu {
                 }
             });
     }
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4620452533522760060L;
 
     /**
      * Creates a new popup menu with an empty name.
@@ -223,14 +218,9 @@ public class PopupMenu extends Menu {
      * The class used to obtain the accessible role for this object.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTPopupMenu extends AccessibleAWTMenu
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -4282044795947239955L;
-
         /**
          * Constructs an {@code AccessibleAWTPopupMenu}.
          */

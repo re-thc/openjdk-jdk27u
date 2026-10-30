@@ -788,9 +788,8 @@ public class ClassFinder {
      * Used for bad class definition files, such as bad .class files or
      * for .java files with unexpected package or class names.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class BadClassFile extends CompletionFailure {
-        private static final long serialVersionUID = 0;
-
         public BadClassFile(TypeSymbol sym, JavaFileObject file, JCDiagnostic diag,
                 JCDiagnostic.Factory diagFactory, DeferredCompletionFailureHandler dcfh) {
             super(sym, () -> createBadClassFileDiagnostic(file, diag, diagFactory), dcfh);
@@ -804,9 +803,8 @@ public class ClassFinder {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class BadEnclosingMethodAttr extends BadClassFile {
-        private static final long serialVersionUID = 0;
-
         public BadEnclosingMethodAttr(TypeSymbol sym, JavaFileObject file, JCDiagnostic diag,
                 JCDiagnostic.Factory diagFactory, DeferredCompletionFailureHandler dcfh) {
             super(sym, file, diag, diagFactory, dcfh);

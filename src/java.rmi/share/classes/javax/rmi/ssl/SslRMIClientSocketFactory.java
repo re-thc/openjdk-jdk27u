@@ -71,6 +71,7 @@ import javax.net.ssl.SSLSocketFactory;
  * @see javax.rmi.ssl.SslRMIServerSocketFactory
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SslRMIClientSocketFactory
     implements RMIClientSocketFactory, Serializable {
 
@@ -217,5 +218,4 @@ public class SslRMIClientSocketFactory
         return defaultSocketFactory;
     }
 
-    private static final long serialVersionUID = -8310631444933958385L;
 }

@@ -43,13 +43,8 @@ import javax.print.attribute.EnumSyntax;
  * <b>IPP Compatibility:</b> {@code MediaTray} is a representation class for
  * values of the IPP "media" attribute which name paper trays.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MediaTray extends Media implements Attribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -982503611095214703L;
 
     /**
      * The top input tray in the printer.

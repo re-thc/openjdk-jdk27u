@@ -32,10 +32,8 @@ import java.io.Serializable;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class QueryEval implements Serializable {
-
-    /* Serial version */
-    private static final long serialVersionUID = 2675899265640874796L;
 
     private static ThreadLocal<MBeanServer> server =
         new InheritableThreadLocal<>();

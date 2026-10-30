@@ -125,14 +125,9 @@ import javax.print.attribute.PrintRequestAttribute;
  * @see JobImpressions
  * @see JobMediaSheets
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class JobKOctets   extends IntegerSyntax
         implements PrintRequestAttribute, PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -8959710146498202869L;
 
     /**
      * Construct a new job K octets attribute with the given integer value.

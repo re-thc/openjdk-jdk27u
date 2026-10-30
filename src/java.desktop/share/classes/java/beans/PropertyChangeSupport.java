@@ -81,6 +81,7 @@ import java.util.Map.Entry;
  * @see VetoableChangeSupport
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PropertyChangeSupport implements Serializable {
     private PropertyChangeListenerMap map = new PropertyChangeListenerMap();
 
@@ -521,12 +522,6 @@ public class PropertyChangeSupport implements Serializable {
             new ObjectStreamField("source", Object.class),
             new ObjectStreamField("propertyChangeSupportSerializedDataVersion", Integer.TYPE)
     };
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 6401253773779951803L;
 
     /**
      * This is a {@link ChangeListenerMap ChangeListenerMap} implementation

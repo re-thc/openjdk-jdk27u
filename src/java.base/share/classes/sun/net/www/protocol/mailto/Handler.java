@@ -124,14 +124,9 @@ public class Handler extends URLStreamHandler {
          */
         if (file.isBlank())
             throw new RuntimeException("No email address");
-        setURLHandler(u, protocol, host, port, file);
-    }
-
-    /**
-     * This method is used to suppress the deprecated warning
-     */
-    @SuppressWarnings("deprecation")
-    private void setURLHandler(URL u, String protocol, String host, int port, String file) {
-        setURL(u, protocol, host, port, file, null);
+        int queryIndex = file.lastIndexOf('?');
+        String path = queryIndex == -1 ? file : file.substring(0, queryIndex);
+        String query = queryIndex == -1 ? null : file.substring(queryIndex + 1);
+        setURL(u, protocol, host, port, null, null, path, query, null);
     }
 }

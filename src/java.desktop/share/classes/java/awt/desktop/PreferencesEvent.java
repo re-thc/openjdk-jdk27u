@@ -36,13 +36,8 @@ import java.io.Serial;
  * @see PreferencesHandler#handlePreferences
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class PreferencesEvent extends AppEvent {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -6398607097086476160L;
 
     /**
      * Constructs a {@code PreferencesEvent}.

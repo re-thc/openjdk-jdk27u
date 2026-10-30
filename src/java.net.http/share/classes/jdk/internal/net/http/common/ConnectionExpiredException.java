@@ -33,9 +33,8 @@ import java.io.IOException;
  * or that a new stream creation was rejected because the underlying
  * connection was closed.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ConnectionExpiredException extends IOException {
-    private static final long serialVersionUID = 0;
-
     /**
      * Constructs a {@code ConnectionExpiredException} with a detail message of
      * "subscription is finished" and the given cause.

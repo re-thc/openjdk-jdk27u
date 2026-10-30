@@ -108,13 +108,8 @@ import sun.datatransfer.DataFlavorUtil;
  * @author Jeff Dunn
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DataFlavor implements Externalizable, Cloneable {
-
-    /**
-     * Use serialVersionUID from JDK 1.2 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 8367026044764648243L;
 
     /**
      * Tries to load a class from: the bootstrap loader, the system loader, the

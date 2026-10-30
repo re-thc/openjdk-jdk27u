@@ -36,13 +36,8 @@ import javax.print.attribute.PrintJobAttributeSet;
  * {@code PrintService} reports to let the client know that one or more printing
  * attributes for a {@code PrintJob} have changed.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PrintJobAttributeEvent extends PrintEvent {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -6534469883874742101L;
 
     /**
      * @serial The printing service attributes that changed.

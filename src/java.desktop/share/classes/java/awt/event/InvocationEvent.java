@@ -57,6 +57,7 @@ import sun.awt.AWTAccessor;
  *
  * @since       1.2
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvocationEvent extends AWTEvent implements ActiveEvent {
 
     static {
@@ -151,12 +152,6 @@ public class InvocationEvent extends AWTEvent implements ActiveEvent {
      * @see #getWhen
      */
     private long when;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 436056344909459450L;
 
     /**
      * Constructs an {@code InvocationEvent} with the specified

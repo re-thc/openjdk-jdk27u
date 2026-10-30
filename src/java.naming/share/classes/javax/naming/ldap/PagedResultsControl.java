@@ -110,6 +110,7 @@ import com.sun.jndi.ldap.BerEncoder;
  * @see PagedResultsResponseControl
  * @author Vincent Ryan
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class PagedResultsControl extends BasicControl {
 
     /**
@@ -119,8 +120,6 @@ public final class PagedResultsControl extends BasicControl {
     public static final String OID = "1.2.840.113556.1.4.319";
 
     private static final byte[] EMPTY_COOKIE = new byte[0];
-
-    private static final long serialVersionUID = 6684806685736844298L;
 
     /**
      * Constructs a control to set the number of entries to be returned per

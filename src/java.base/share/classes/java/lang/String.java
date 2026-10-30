@@ -360,8 +360,8 @@ public final class String
      * subarray, and the {@code count} argument specifies the length of the
      * subarray.
      *
-     * <p> Each {@code byte} in the subarray is converted to a {@code char} as
-     * specified in the {@link #String(byte[],int) String(byte[],int)} constructor.
+     * <p> Each byte {@code b} in the subarray is converted to a character
+     * {@code (char) (((hibyte & 0xff) << 8) | (b & 0xff))}.
      *
      * <p> The contents of the string are unspecified if the byte array
      * is modified during string construction.
@@ -386,7 +386,6 @@ public final class String
      *          If {@code offset} is negative, {@code count} is negative, or
      *          {@code offset} is greater than {@code ascii.length - count}
      *
-     * @see  #String(byte[], int)
      * @see  #String(byte[], int, int, java.lang.String)
      * @see  #String(byte[], int, int, java.nio.charset.Charset)
      * @see  #String(byte[], int, int)
@@ -414,43 +413,6 @@ public final class String
             this.value = val;
             this.coder = UTF16;
         }
-    }
-
-    /**
-     * Allocates a new {@code String} containing characters constructed from
-     * an array of 8-bit integer values. Each character <i>c</i> in the
-     * resulting string is constructed from the corresponding component
-     * <i>b</i> in the byte array such that:
-     *
-     * <blockquote><pre>
-     *     <b><i>c</i></b> == (char)(((hibyte &amp; 0xff) &lt;&lt; 8)
-     *                         | (<b><i>b</i></b> &amp; 0xff))
-     * </pre></blockquote>
-     *
-     * <p> The contents of the string are unspecified if the byte array
-     * is modified during string construction.
-     *
-     * @deprecated  This method does not properly convert bytes into
-     * characters.  As of JDK&nbsp;1.1, the preferred way to do this is via the
-     * {@code String} constructors that take a {@link Charset}, charset name,
-     * or that use the {@link Charset#defaultCharset() default charset}.
-     *
-     * @param  ascii
-     *         The bytes to be converted to characters
-     *
-     * @param  hibyte
-     *         The top 8 bits of each 16-bit Unicode code unit
-     *
-     * @see  #String(byte[], int, int, java.lang.String)
-     * @see  #String(byte[], int, int, java.nio.charset.Charset)
-     * @see  #String(byte[], int, int)
-     * @see  #String(byte[], java.lang.String)
-     * @see  #String(byte[], java.nio.charset.Charset)
-     * @see  #String(byte[])
-     */
-    @Deprecated(since="1.1")
-    public String(byte[] ascii, int hibyte) {
-        this(ascii, hibyte, 0, ascii.length);
     }
 
     /**

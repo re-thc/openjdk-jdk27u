@@ -51,14 +51,10 @@ public class DateTest
         TimeZone save = TimeZone.getDefault();
         try {
             TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-            Date d = new Date();
-            d.setYear(98);
-            d.setMonth(Calendar.JANUARY);
-            d.setDate(1);
-            d.setHours(6);
+            Date d = new Date(98, Calendar.JANUARY, 1, 6, 0, 0);
             TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"));
             if (d.getHours() != 22) {
-                fail("Fail: Date.setHours()/getHours() ignoring default zone");
+                fail("Fail: Date constructor/getHours() ignoring default zone");
             }
         }
         finally { TimeZone.setDefault(save); }
@@ -81,9 +77,10 @@ public class DateTest
             TimeZone GMT = TimeZone.getTimeZone("GMT");
             TimeZone PST = TimeZone.getTimeZone("America/Los_Angeles");
 
-            String[] names = { "year", "month", "date", "day of week", "hour", "offset" };
-            int[] GMT_EXP = { 98, Calendar.JANUARY, 1, Calendar.THURSDAY - Calendar.SUNDAY, 6, 0 };
-            int[] PST_EXP = { 97, Calendar.DECEMBER, 31, Calendar.WEDNESDAY - Calendar.SUNDAY, 22, 480 };
+            // getDay/getTimezoneOffset are retired; retain all other field checks.
+            String[] names = { "year", "month", "date", "hour" };
+            int[] GMT_EXP = { 98, Calendar.JANUARY, 1, 6 };
+            int[] PST_EXP = { 97, Calendar.DECEMBER, 31, 22 };
 
             // There are two cases to consider: a Date object with no Calendar
             // sub-object (most Date objects), and a Date object with a Calendar
@@ -92,10 +89,10 @@ public class DateTest
                 System.out.println(pass == 0 ? "Normal Date object" : "Date with Calendar sub-object");
 
                 TimeZone.setDefault(GMT);
-                d = new Date(refstr);
+                d = new Date(Date.parse(refstr));
                 if (pass == 1) {
                     // Force creation of Calendar sub-object
-                    d.setYear(d.getYear());
+                    d.getYear();
                 }
                 if (d.getTime() != ref.getTime()) {
                     fail("FAIL: new Date(\"" + refstr + "\") x GMT -> " + d +
@@ -103,7 +100,7 @@ public class DateTest
                 }
 
                 int[] fields = { d.getYear(), d.getMonth(), d.getDate(),
-                                 d.getDay(), d.getHours(), d.getTimezoneOffset() };
+                                 d.getHours() };
                 for (int i=0; i<fields.length; ++i) {
                     if (fields[i] != GMT_EXP[i]) {
                         fail("FAIL: GMT Expected " + names[i] + " of " + GMT_EXP[i] +
@@ -113,7 +110,7 @@ public class DateTest
 
                 TimeZone.setDefault(PST);
                 int[] fields2 = { d.getYear(), d.getMonth(), d.getDate(),
-                                  d.getDay(), d.getHours(), d.getTimezoneOffset() };
+                                  d.getHours() };
                 for (int i=0; i<fields2.length; ++i) {
                     if (fields2[i] != PST_EXP[i]) {
                         fail("FAIL: PST Expected " + names[i] + " of " + PST_EXP[i] +
@@ -151,7 +148,7 @@ public class DateTest
     static double PER_LOOP_LIMIT = 3.0;
 
     /**
-     * Verify that the Date(String) constructor works.
+     * Verify that Date.parse handles GMT.
      */
     @Test
     public void TestParseOfGMT()
@@ -162,7 +159,7 @@ public class DateTest
         String stringVal = "Jan 01 00:00:00 GMT 1900";
         long expectedVal = -2208988800000L;
 
-        OUT = new Date( stringVal );
+        OUT = new Date(Date.parse(stringVal));
 
         if( OUT.getTime( ) == expectedVal ) {
             // logln("PASS");

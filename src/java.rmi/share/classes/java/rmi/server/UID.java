@@ -68,6 +68,7 @@ import java.security.SecureRandom;
  * @author      Peter Jones
  * @since       1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class UID implements Serializable {
 
     private static int hostUnique;
@@ -76,9 +77,6 @@ public final class UID implements Serializable {
     private static final Object lock = new Object();
     private static long lastTime = System.currentTimeMillis();
     private static short lastCount = Short.MIN_VALUE;
-
-    /** indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = 1086053664494604050L;
 
     /**
      * number that uniquely identifies the VM that this <code>UID</code>

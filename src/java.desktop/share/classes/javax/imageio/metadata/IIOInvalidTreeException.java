@@ -46,13 +46,8 @@ import org.w3c.dom.Node;
  * @see IIOMetadataNode
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IIOInvalidTreeException extends IIOException {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -1314083172544132777L;
 
     /**
      * The {@code Node} that led to the parsing error, or

@@ -35,6 +35,7 @@ import java.io.NotSerializableException;
  * @author  Josh Bloch
  * @since   1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class BackingStoreException extends Exception {
     /**
      * Constructs a BackingStoreException with the specified detail message.
@@ -54,5 +55,4 @@ public class BackingStoreException extends Exception {
         super(cause);
     }
 
-    private static final long serialVersionUID = 859796500401108469L;
 }

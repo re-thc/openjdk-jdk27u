@@ -32,13 +32,8 @@ import java.io.Serial;
  * Singleton class representing a simple, mathematically defined CMYK
  * color space.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SimpleCMYKColorSpace extends ColorSpace {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 5387117338644522424L;
 
     private static ColorSpace theInstance = null;
     private ColorSpace csRGB;

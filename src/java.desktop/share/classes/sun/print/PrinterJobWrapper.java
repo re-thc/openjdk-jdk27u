@@ -31,13 +31,8 @@ import java.io.Serial;
 import javax.print.attribute.Attribute;
 import javax.print.attribute.PrintRequestAttribute;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PrinterJobWrapper implements PrintRequestAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.8 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -8792124426995707237L;
 
     @SuppressWarnings("serial") // Type of field is not Serializable
     private PrinterJob job;
