@@ -156,9 +156,10 @@ public class HelloClasslist {
 
         // Keep enough distinct labels to exercise the bootstrap even when javac
         // lowers small reference switches directly.
-        record A(int a) { }
+        // Keep one record above the direct method limit to seed ObjectMethods.
+        record A(int a, int b, int c, int d, int e) { }
         record B(int b) { }
-        Object o = new A(4711);
+        Object o = new A(4711, 0, 0, 0, 0);
         int value = switch (o) {
             case A a -> a.a;
             case B b -> b.b;

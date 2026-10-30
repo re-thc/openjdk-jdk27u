@@ -418,8 +418,59 @@ public class TransPatterns extends TreeTranslator {
 
     @Override
     public void visitSwitchExpression(JCSwitchExpression tree) {
+        if (canUseNullableEnumMapping(tree)) {
+            // Lower already tests for null before accessing the ordinary enum map.
+            tree.isolatedEnumMapping = true;
+            super.visitSwitchExpression(tree);
+            return;
+        }
         handleSwitch(tree, tree.selector, tree.cases,
                      tree.hasUnconditionalPattern, tree.patternSwitch);
+    }
+
+    // Bound the generated map initializer for each eligible label sequence.
+    private static final int MAX_NULLABLE_ENUM_LABELS = 4;
+
+    private boolean canUseNullableEnumMapping(JCSwitchExpression tree) {
+        // Older targets use Object/typeSwitch with EnumDesc labels. Preserve
+        // their lowering and constructor-time resolution behavior.
+        if (target.usesReferenceOnlySelectorTypes()) {
+            return false;
+        }
+        // Preserve the linkage path for inaccessible inferred enum types.
+        if (!tree.patternSwitch || !tree.selector.type.tsym.isEnum() ||
+                !rs.isAccessible(env, tree.selector.type.tsym, true)) {
+            return false;
+        }
+        boolean hasNullLabel = false;
+        int constants = 0;
+        for (JCCase c : tree.cases) {
+            if (c.caseKind != JCCase.RULE || c.guard != null) {
+                return false;
+            }
+            for (JCCaseLabel label : c.labels) {
+                if (TreeInfo.isNullCaseLabel(label)) {
+                    if (hasNullLabel || c.labels.size() != 1) {
+                        return false;
+                    }
+                    hasNullLabel = true;
+                } else if (label.hasTag(Tag.DEFAULTCASELABEL)) {
+                    if (c.labels.size() != 1) {
+                        return false;
+                    }
+                } else if (label instanceof JCConstantCaseLabel constant &&
+                        TreeInfo.symbol(constant.expr) instanceof VarSymbol symbol &&
+                        (symbol.flags() & Flags.ENUM) != 0 &&
+                        symbol.owner == tree.selector.type.tsym) {
+                    if (++constants > MAX_NULLABLE_ENUM_LABELS) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            }
+        }
+        return hasNullLabel;
     }
 
     private void handleSwitch(JCTree tree,
