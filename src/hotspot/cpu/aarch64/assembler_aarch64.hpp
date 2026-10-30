@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * Copyright 2026 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -3167,6 +3168,16 @@ public:
     assert(size_b < 3 && size_b == size_a - 1, "Invalid size specifier");
     f(0, 31), f(Tb & 1, 30), f(0b001110, 29, 24), f(size_b, 23, 22);
     f(0b100001001010, 21, 10), rf(Vn, 5), rf(Vd, 0);
+  }
+
+  void shrn(FloatRegister Vd, SIMD_Arrangement Tb, FloatRegister Vn, SIMD_Arrangement Ta, int shift) {
+    starti;
+    assert((Tb == T8B && Ta == T8H) || (Tb == T4H && Ta == T4S) ||
+           (Tb == T2S && Ta == T2D), "Invalid size specifiers");
+    int bits = 8 << ((int)Tb >> 1);
+    assert(shift >= 1 && shift <= bits, "Invalid shift value");
+    f(0b000011110, 31, 23), f(2 * bits - shift, 22, 16);
+    f(0b100001, 15, 10), rf(Vn, 5), rf(Vd, 0);
   }
 
   void dup(FloatRegister Vd, SIMD_Arrangement T, Register Xs)
