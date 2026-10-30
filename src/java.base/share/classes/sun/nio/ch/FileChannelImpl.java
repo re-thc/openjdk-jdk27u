@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -721,11 +722,12 @@ public class FileChannelImpl
      * Transfers bytes from this channel's file to the resource that the given file
      * descriptor is connected to.
      */
-    private long transferToFileDescriptor(long position, int count, FileDescriptor targetFD) {
+    private long transferToFileDescriptor(long position, int count, FileDescriptor targetFD,
+                                         boolean isSocket) {
         long n;
         boolean append = fdAccess.getAppend(targetFD);
         do {
-            n = nd.transferTo(fd, position, count, targetFD, append);
+            n = nd.transferTo(fd, position, count, targetFD, append, isSocket);
         } while ((n == IOStatus.INTERRUPTED) && isOpen());
         return n;
     }
@@ -744,7 +746,7 @@ public class FileChannelImpl
             try {
                 int targetIndex = target.beforeTransfer();
                 try {
-                    long n = transferToFileDescriptor(position, count, target.fd);
+                    long n = transferToFileDescriptor(position, count, target.fd, false);
                     completed = (n >= 0);
                     return IOStatus.normalize(n);
                 } finally {
@@ -772,7 +774,7 @@ public class FileChannelImpl
             try {
                 target.beforeTransferTo();
                 try {
-                    long n = transferToFileDescriptor(position, count, target.getFD());
+                    long n = transferToFileDescriptor(position, count, target.getFD(), true);
                     completed = (n >= 0);
                     return IOStatus.normalize(n);
                 } finally {
@@ -1089,10 +1091,23 @@ public class FileChannelImpl
         throws IOException
     {
         int c = (int) Math.min(count, TRANSFER_SIZE);
-        ByteBuffer bb = ByteBuffer.allocate(c);
-        long tw = 0;                    // Total bytes written
-        long pos = position;
+        // Trusted sockets can use an exact-size, budgeted native buffer. If
+        // capacity is unavailable, retain the original heap staging path rather
+        // than triggering direct-memory cleaning, retry delays or quota OOME.
+        // Direct I/O keeps its existing aligned staging path.
+        var nioAccess = SharedSecrets.getJavaNioAccess();
+        long allocationSize = (c + (long) Unsafe.ADDRESS_SIZE - 1) & -Unsafe.ADDRESS_SIZE;
+        boolean useDirectBuffer = c > 0 && !direct && src instanceof SocketChannelImpl
+                && nioAccess.tryReserveMemory(allocationSize, c);
+        long address = 0;
+        long tw = 0;                        // Total bytes written
         try {
+            if (useDirectBuffer)
+                address = Unsafe.getUnsafe().allocateMemory(c);
+            ByteBuffer bb = useDirectBuffer
+                    ? nioAccess.newDirectByteBuffer(address, c)
+                    : ByteBuffer.allocate(c);
+            long pos = position;
             while (tw < count) {
                 bb.limit((int) Math.min((count - tw), TRANSFER_SIZE));
                 // read may block, closing this channel will not wake it up
@@ -1107,12 +1122,16 @@ public class FileChannelImpl
                 pos += nw;
                 bb.clear();
             }
-            return tw;
         } catch (IOException x) {
-            if (tw > 0)
-                return tw;
-            throw x;
+            if (tw <= 0)
+                throw x;
+        } finally {
+            if (useDirectBuffer) {
+                Unsafe.getUnsafe().freeMemory(address);
+                nioAccess.unreserveMemory(allocationSize, c);
+            }
         }
+        return tw;
     }
 
     @Override

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +81,7 @@ class UnixAsynchronousSocketChannelImpl
     private Object readAttachment;
     private PendingFuture<Number,Object> readFuture;
     private Future<?> readTimer;
+    private Runnable readTimeoutTask;
 
     // pending write (updateLock)
     private boolean writePending;
@@ -91,6 +93,7 @@ class UnixAsynchronousSocketChannelImpl
     private Object writeAttachment;
     private PendingFuture<Number,Object> writeFuture;
     private Future<?> writeTimer;
+    private Runnable writeTimeoutTask;
 
 
     UnixAsynchronousSocketChannelImpl(Port port)
@@ -98,19 +101,21 @@ class UnixAsynchronousSocketChannelImpl
     {
         super(port);
 
-        // set non-blocking
         try {
             IOUtil.configureBlocking(fd, false);
-        } catch (IOException x) {
-            nd.close(fd);
+            this.port = port;
+            this.fdVal = IOUtil.fdVal(fd);
+            // add mapping from file descriptor to this channel
+            port.register(fdVal, this);
+        } catch (IOException | ShutdownChannelGroupException x) {
+            // These failures occur before registration, so we still own fd.
+            try {
+                nd.close(fd);
+            } catch (IOException suppressed) {
+                x.addSuppressed(suppressed);
+            }
             throw x;
         }
-
-        this.port = port;
-        this.fdVal = IOUtil.fdVal(fd);
-
-        // add mapping from file descriptor to this channel
-        port.register(fdVal, this);
     }
 
     // Constructor for sockets created by UnixAsynchronousServerSocketChannelImpl
@@ -189,9 +194,12 @@ class UnixAsynchronousSocketChannelImpl
         // ready for both reading and writing. In that case, submit task to
         // complete write if write operation has a completion handler.
         if (finishRead) {
-            if (finishWrite)
-                finishWrite(false);
-            finishRead(mayInvokeDirect);
+            try {
+                if (finishWrite)
+                    finishWrite(false);
+            } finally {
+                finishRead(mayInvokeDirect);
+            }
             return;
         }
         if (finishWrite) {
@@ -368,11 +376,26 @@ class UnixAsynchronousSocketChannelImpl
 
     // -- read --
 
+    // Called during initiation, or after claiming the operation under updateLock.
+    private void clearReadState() {
+        Runnable releasers = readScopeHandleReleasers;
+        readScopeHandleReleasers = null;
+        readBuffer = null;
+        readBuffers = null;
+        readAttachment = null;
+        readHandler = null;
+        readFuture = null;
+        readTimer = null;
+        readTimeoutTask = null;
+        IOUtil.releaseScopes(releasers);
+    }
+
     private void finishRead(boolean mayInvokeDirect) {
         int n = -1;
         Throwable exc = null;
+        boolean completed = true;
 
-        // copy fields as we can't access them after reading is re-enabled.
+        // Copy fields before reading is re-enabled.
         boolean scattering = isScatteringRead;
         CompletionHandler<Number,Object> handler = readHandler;
         Object att = readAttachment;
@@ -381,47 +404,79 @@ class UnixAsynchronousSocketChannelImpl
 
         try {
             begin();
-
-            if (scattering) {
-                n = (int)IOUtil.read(fd, readBuffers, true, nd);
-            } else {
-                n = IOUtil.read(fd, readBuffer, -1, true, nd);
+            try {
+                if (scattering) {
+                    n = (int)IOUtil.read(fd, readBuffers, true, nd);
+                } else {
+                    n = IOUtil.read(fd, readBuffer, -1, true, nd);
+                }
+            } catch (Throwable x) {
+                if (x instanceof ClosedChannelException)
+                    x = new AsynchronousCloseException();
+                if (x instanceof ConnectionResetException)
+                    x = new IOException(x.getMessage());
+                exc = x;
             }
-            if (n == IOStatus.UNAVAILABLE) {
-                // spurious wakeup, is this possible?
+
+            if (exc == null && n == IOStatus.UNAVAILABLE) {
                 synchronized (updateLock) {
                     readPending = true;
+                    try {
+                        updateEvents();
+                    } catch (Throwable x) {
+                        // Keep ownership if registration fails. A timeout or
+                        // readiness event must not complete the operation too.
+                        readPending = false;
+                        throw x;
+                    }
                 }
-                return;
+                completed = false;
+            } else if (!(exc instanceof AsynchronousCloseException)) {
+                // Restart polling before another read can be initiated.
+                lockAndUpdateEvents();
             }
-
-            // allow objects to be GC'ed.
-            this.readBuffer = null;
-            this.readBuffers = null;
-            this.readAttachment = null;
-            this.readHandler = null;
-            IOUtil.releaseScopes(readScopeHandleReleasers);
-
-            // allow another read to be initiated
-            enableReading();
-
         } catch (Throwable x) {
-            enableReading();
             if (x instanceof ClosedChannelException)
                 x = new AsynchronousCloseException();
-            if (x instanceof ConnectionResetException)
-                x = new IOException(x.getMessage());
-            exc = x;
+            if (exc == null) {
+                exc = x;
+            } else if (exc != x) {
+                exc.addSuppressed(x);
+            }
         } finally {
-            // restart poll in case of concurrent write
-            if (!(exc instanceof AsynchronousCloseException))
-                lockAndUpdateEvents();
-            end();
+            try {
+                if (completed) {
+                    try {
+                        clearReadState();
+                    } catch (Throwable x) {
+                        if (exc == null) {
+                            exc = x;
+                        } else if (exc != x) {
+                            exc.addSuppressed(x);
+                        }
+                    } finally {
+                        enableReading();
+                    }
+                }
+            } finally {
+                end();
+            }
         }
+        if (!completed)
+            return;
 
         // cancel the associated timer
-        if (timeout != null)
-            timeout.cancel(false);
+        if (timeout != null) {
+            try {
+                timeout.cancel(false);
+            } catch (Throwable x) {
+                if (exc == null) {
+                    exc = x;
+                } else if (exc != x) {
+                    exc.addSuppressed(x);
+                }
+            }
+        }
 
         // create result
         Number result = (exc != null) ? null : (scattering) ?
@@ -439,34 +494,42 @@ class UnixAsynchronousSocketChannelImpl
         }
     }
 
-    private Runnable readTimeoutTask = new Runnable() {
-        public void run() {
-            CompletionHandler<Number,Object> handler = null;
-            Object att = null;
-            PendingFuture<Number,Object> future = null;
+    private Runnable newReadTimeoutTask() {
+        return new Runnable() {
+            public void run() {
+                CompletionHandler<Number,Object> handler = null;
+                Object att = null;
+                PendingFuture<Number,Object> future = null;
 
-            synchronized (updateLock) {
-                if (!readPending)
-                    return;
-                readPending = false;
-                handler = readHandler;
-                att = readAttachment;
-                future = readFuture;
+                synchronized (updateLock) {
+                    if (!readPending || readTimeoutTask != this)
+                        return;
+                    readPending = false;
+                    handler = readHandler;
+                    att = readAttachment;
+                    future = readFuture;
+                }
+
+                Exception exc = new InterruptedByTimeoutException();
+                try {
+                    clearReadState();
+                } catch (Throwable x) {
+                    exc.addSuppressed(x);
+                } finally {
+                    // Kill further reading before releasing waiters.
+                    enableReading(true);
+                }
+
+                // invoke handler or set result
+                if (handler == null) {
+                    future.setFailure(exc);
+                } else {
+                    AsynchronousChannel ch = UnixAsynchronousSocketChannelImpl.this;
+                    Invoker.invokeIndirectly(ch, handler, att, null, exc);
+                }
             }
-
-            // kill further reading before releasing waiters
-            enableReading(true);
-
-            // invoke handler or set result
-            Exception exc = new InterruptedByTimeoutException();
-            if (handler == null) {
-                future.setFailure(exc);
-            } else {
-                AsynchronousChannel ch = UnixAsynchronousSocketChannelImpl.this;
-                Invoker.invokeIndirectly(ch, handler, att, null, exc);
-            }
-        }
-    };
+        };
+    }
 
     /**
      * Initiates a read or scattering read operation
@@ -517,25 +580,46 @@ class UnixAsynchronousSocketChannelImpl
             if (n == IOStatus.UNAVAILABLE) {
                 PendingFuture<V,A> result = null;
                 synchronized (updateLock) {
-                    this.isScatteringRead = isScatteringRead;
-                    this.readScopeHandleReleasers = IOUtil.acquireScopes(dst, dsts);
-                    this.readBuffer = dst;
-                    this.readBuffers = dsts;
-                    if (handler == null) {
-                        this.readHandler = null;
-                        result = new PendingFuture<V,A>(this, OpType.READ);
-                        this.readFuture = (PendingFuture<Number,Object>)result;
-                        this.readAttachment = null;
-                    } else {
-                        this.readHandler = (CompletionHandler<Number,Object>)handler;
-                        this.readAttachment = attachment;
-                        this.readFuture = null;
+                    try {
+                        this.isScatteringRead = isScatteringRead;
+                        this.readScopeHandleReleasers = IOUtil.acquireScopes(dst, dsts);
+                        this.readBuffer = dst;
+                        this.readBuffers = dsts;
+                        if (handler == null) {
+                            this.readHandler = null;
+                            result = new PendingFuture<V,A>(this, OpType.READ);
+                            this.readFuture = (PendingFuture<Number,Object>)result;
+                            this.readAttachment = null;
+                        } else {
+                            this.readHandler = (CompletionHandler<Number,Object>)handler;
+                            this.readAttachment = attachment;
+                            this.readFuture = null;
+                        }
+                        if (timeout > 0L) {
+                            this.readTimeoutTask = newReadTimeoutTask();
+                            this.readTimer = port.schedule(readTimeoutTask, timeout, unit);
+                        }
+                        this.readPending = true;
+                        updateEvents();
+                    } catch (Throwable x) {
+                        readPending = false;
+                        Future<?> timer = readTimer;
+                        try {
+                            clearReadState();
+                        } catch (Throwable suppressed) {
+                            if (suppressed != x)
+                                x.addSuppressed(suppressed);
+                        }
+                        if (timer != null) {
+                            try {
+                                timer.cancel(false);
+                            } catch (Throwable suppressed) {
+                                if (suppressed != x)
+                                    x.addSuppressed(suppressed);
+                            }
+                        }
+                        throw x;
                     }
-                    if (timeout > 0L) {
-                        this.readTimer = port.schedule(readTimeoutTask, timeout, unit);
-                    }
-                    this.readPending = true;
-                    updateEvents();
                 }
                 pending = true;
                 return result;
@@ -547,9 +631,12 @@ class UnixAsynchronousSocketChannelImpl
                 x = new IOException(x.getMessage());
             exc = x;
         } finally {
-            if (!pending)
-                enableReading();
-            end();
+            try {
+                if (!pending)
+                    enableReading();
+            } finally {
+                end();
+            }
         }
 
         Number result = (exc != null) ? null : (isScatteringRead) ?
@@ -570,58 +657,105 @@ class UnixAsynchronousSocketChannelImpl
 
     // -- write --
 
+    // Called during initiation, or after claiming the operation under updateLock.
+    private void clearWriteState() {
+        Runnable releasers = writeScopeHandleReleasers;
+        writeScopeHandleReleasers = null;
+        writeBuffer = null;
+        writeBuffers = null;
+        writeAttachment = null;
+        writeHandler = null;
+        writeFuture = null;
+        writeTimer = null;
+        writeTimeoutTask = null;
+        IOUtil.releaseScopes(releasers);
+    }
+
     private void finishWrite(boolean mayInvokeDirect) {
         int n = -1;
         Throwable exc = null;
+        boolean completed = true;
 
-        // copy fields as we can't access them after reading is re-enabled.
-        boolean gathering = this.isGatheringWrite;
-        CompletionHandler<Number,Object> handler = this.writeHandler;
-        Object att = this.writeAttachment;
-        PendingFuture<Number,Object> future = this.writeFuture;
-        Future<?> timer = this.writeTimer;
+        // Copy fields before writing is re-enabled.
+        boolean gathering = isGatheringWrite;
+        CompletionHandler<Number,Object> handler = writeHandler;
+        Object att = writeAttachment;
+        PendingFuture<Number,Object> future = writeFuture;
+        Future<?> timeout = writeTimer;
 
         try {
             begin();
-
-            if (gathering) {
-                n = (int)IOUtil.write(fd, writeBuffers, true, nd);
-            } else {
-                n = IOUtil.write(fd, writeBuffer, -1, true, nd);
+            try {
+                if (gathering) {
+                    n = (int)IOUtil.write(fd, writeBuffers, true, nd);
+                } else {
+                    n = IOUtil.write(fd, writeBuffer, -1, true, nd);
+                }
+            } catch (Throwable x) {
+                if (x instanceof ClosedChannelException)
+                    x = new AsynchronousCloseException();
+                exc = x;
             }
-            if (n == IOStatus.UNAVAILABLE) {
-                // spurious wakeup, is this possible?
+
+            if (exc == null && n == IOStatus.UNAVAILABLE) {
                 synchronized (updateLock) {
                     writePending = true;
+                    try {
+                        updateEvents();
+                    } catch (Throwable x) {
+                        // Keep ownership if registration fails. A timeout or
+                        // readiness event must not complete the operation too.
+                        writePending = false;
+                        throw x;
+                    }
                 }
-                return;
+                completed = false;
+            } else if (!(exc instanceof AsynchronousCloseException)) {
+                // Restart polling before another write can be initiated.
+                lockAndUpdateEvents();
             }
-
-            // allow objects to be GC'ed.
-            this.writeBuffer = null;
-            this.writeBuffers = null;
-            this.writeAttachment = null;
-            this.writeHandler = null;
-            IOUtil.releaseScopes(writeScopeHandleReleasers);
-
-            // allow another write to be initiated
-            enableWriting();
-
         } catch (Throwable x) {
-            enableWriting();
             if (x instanceof ClosedChannelException)
                 x = new AsynchronousCloseException();
-            exc = x;
+            if (exc == null) {
+                exc = x;
+            } else if (exc != x) {
+                exc.addSuppressed(x);
+            }
         } finally {
-            // restart poll in case of concurrent write
-            if (!(exc instanceof AsynchronousCloseException))
-                lockAndUpdateEvents();
-            end();
+            try {
+                if (completed) {
+                    try {
+                        clearWriteState();
+                    } catch (Throwable x) {
+                        if (exc == null) {
+                            exc = x;
+                        } else if (exc != x) {
+                            exc.addSuppressed(x);
+                        }
+                    } finally {
+                        enableWriting();
+                    }
+                }
+            } finally {
+                end();
+            }
         }
+        if (!completed)
+            return;
 
         // cancel the associated timer
-        if (timer != null)
-            timer.cancel(false);
+        if (timeout != null) {
+            try {
+                timeout.cancel(false);
+            } catch (Throwable x) {
+                if (exc == null) {
+                    exc = x;
+                } else if (exc != x) {
+                    exc.addSuppressed(x);
+                }
+            }
+        }
 
         // create result
         Number result = (exc != null) ? null : (gathering) ?
@@ -639,34 +773,42 @@ class UnixAsynchronousSocketChannelImpl
         }
     }
 
-    private Runnable writeTimeoutTask = new Runnable() {
-        public void run() {
-            CompletionHandler<Number,Object> handler = null;
-            Object att = null;
-            PendingFuture<Number,Object> future = null;
+    private Runnable newWriteTimeoutTask() {
+        return new Runnable() {
+            public void run() {
+                CompletionHandler<Number,Object> handler = null;
+                Object att = null;
+                PendingFuture<Number,Object> future = null;
 
-            synchronized (updateLock) {
-                if (!writePending)
-                    return;
-                writePending = false;
-                handler = writeHandler;
-                att = writeAttachment;
-                future = writeFuture;
+                synchronized (updateLock) {
+                    if (!writePending || writeTimeoutTask != this)
+                        return;
+                    writePending = false;
+                    handler = writeHandler;
+                    att = writeAttachment;
+                    future = writeFuture;
+                }
+
+                Exception exc = new InterruptedByTimeoutException();
+                try {
+                    clearWriteState();
+                } catch (Throwable x) {
+                    exc.addSuppressed(x);
+                } finally {
+                    // Kill further writing before releasing waiters.
+                    enableWriting(true);
+                }
+
+                // invoke handler or set result
+                if (handler != null) {
+                    Invoker.invokeIndirectly(UnixAsynchronousSocketChannelImpl.this,
+                        handler, att, null, exc);
+                } else {
+                    future.setFailure(exc);
+                }
             }
-
-            // kill further writing before releasing waiters
-            enableWriting(true);
-
-            // invoke handler or set result
-            Exception exc = new InterruptedByTimeoutException();
-            if (handler != null) {
-                Invoker.invokeIndirectly(UnixAsynchronousSocketChannelImpl.this,
-                    handler, att, null, exc);
-            } else {
-                future.setFailure(exc);
-            }
-        }
-    };
+        };
+    }
 
     /**
      * Initiates a read or scattering read operation
@@ -705,25 +847,46 @@ class UnixAsynchronousSocketChannelImpl
             if (n == IOStatus.UNAVAILABLE) {
                 PendingFuture<V,A> result = null;
                 synchronized (updateLock) {
-                    this.isGatheringWrite = isGatheringWrite;
-                    this.writeScopeHandleReleasers = IOUtil.acquireScopes(src, srcs);
-                    this.writeBuffer = src;
-                    this.writeBuffers = srcs;
-                    if (handler == null) {
-                        this.writeHandler = null;
-                        result = new PendingFuture<V,A>(this, OpType.WRITE);
-                        this.writeFuture = (PendingFuture<Number,Object>)result;
-                        this.writeAttachment = null;
-                    } else {
-                        this.writeHandler = (CompletionHandler<Number,Object>)handler;
-                        this.writeAttachment = attachment;
-                        this.writeFuture = null;
+                    try {
+                        this.isGatheringWrite = isGatheringWrite;
+                        this.writeScopeHandleReleasers = IOUtil.acquireScopes(src, srcs);
+                        this.writeBuffer = src;
+                        this.writeBuffers = srcs;
+                        if (handler == null) {
+                            this.writeHandler = null;
+                            result = new PendingFuture<V,A>(this, OpType.WRITE);
+                            this.writeFuture = (PendingFuture<Number,Object>)result;
+                            this.writeAttachment = null;
+                        } else {
+                            this.writeHandler = (CompletionHandler<Number,Object>)handler;
+                            this.writeAttachment = attachment;
+                            this.writeFuture = null;
+                        }
+                        if (timeout > 0L) {
+                            this.writeTimeoutTask = newWriteTimeoutTask();
+                            this.writeTimer = port.schedule(writeTimeoutTask, timeout, unit);
+                        }
+                        this.writePending = true;
+                        updateEvents();
+                    } catch (Throwable x) {
+                        writePending = false;
+                        Future<?> timer = writeTimer;
+                        try {
+                            clearWriteState();
+                        } catch (Throwable suppressed) {
+                            if (suppressed != x)
+                                x.addSuppressed(suppressed);
+                        }
+                        if (timer != null) {
+                            try {
+                                timer.cancel(false);
+                            } catch (Throwable suppressed) {
+                                if (suppressed != x)
+                                    x.addSuppressed(suppressed);
+                            }
+                        }
+                        throw x;
                     }
-                    if (timeout > 0L) {
-                        this.writeTimer = port.schedule(writeTimeoutTask, timeout, unit);
-                    }
-                    this.writePending = true;
-                    updateEvents();
                 }
                 pending = true;
                 return result;
@@ -733,9 +896,12 @@ class UnixAsynchronousSocketChannelImpl
                 x = new AsynchronousCloseException();
             exc = x;
         } finally {
-            if (!pending)
-                enableWriting();
-            end();
+            try {
+                if (!pending)
+                    enableWriting();
+            } finally {
+                end();
+            }
         }
 
         Number result = (exc != null) ? null : (isGatheringWrite) ?

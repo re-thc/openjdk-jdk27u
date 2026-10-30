@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,10 +284,9 @@ public class FileInputStream extends InputStream
 
     @Override
     public byte[] readAllBytes() throws IOException {
-        if (!isRegularFile())
+        long length = regularFileLength();
+        if (length == -2)
             return super.readAllBytes();
-
-        long length = length();
         long position = position();
         long size = length - position;
 
@@ -337,10 +337,9 @@ public class FileInputStream extends InputStream
         if (len == 0)
             return new byte[0];
 
-        if (!isRegularFile())
+        long length = regularFileLength();
+        if (length == -2)
             return super.readNBytes(len);
-
-        long length = length();
         long position = position();
         long size = length - position;
 
@@ -392,6 +391,21 @@ public class FileInputStream extends InputStream
             return Long.MAX_VALUE;
         }
     }
+
+    /**
+     * Returns a fresh length for a regular file, or -2 for another file type.
+     * Only the file kind is cached; the first query obtains both kind and length.
+     */
+    private long regularFileLength() throws IOException {
+        Boolean regular = isRegularFile;
+        if (regular == null) {
+            long length = regularFileLength0();
+            isRegularFile = length != -2;
+            return length;
+        }
+        return regular ? length() : -2;
+    }
+    private native long regularFileLength0() throws IOException;
 
     private long length() throws IOException {
         return length0();

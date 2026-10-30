@@ -58,6 +58,10 @@ tier1_part3 = \
     java/text/Format/DecimalFormat/DoubleFormattingTest.java \
     java/text/Format/DecimalFormat/RoundingTiesNearZeroTest.java \
     :jdk_security_serialization_sanity \
+    :jdk_nio_sanity \
+    java/nio/channels/FileChannel/TransferSocketChannel.java \
+    java/nio/channels/FileChannel/TransferFromSocketBuffer.java \
+    java/io/FileInputStream/BulkReadMetadata.java \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
     jdk/classfile \
@@ -79,14 +83,19 @@ tier2_part2 = \
     :core_tools \
     :jdk_io \
     :jdk_nio \
+    -:jdk_nio_sanity \
     -java/nio/Buffer \
+    -java/nio/channels/FileChannel/TransferSocketChannel.java \
+    -java/nio/channels/FileChannel/TransferFromSocketBuffer.java \
+    -java/io/FileInputStream/BulkReadMetadata.java \
     -sun/nio/cs/ISO8859x.java \
     :jdk_other \
     :jdk_text \
     :jdk_time
 
 tier2_part3 = \
-    :jdk_net
+    :jdk_net \
+    -:jdk_nio_sanity
 
 # These sub groups of tier3 allow for running certain tests separately from the
 # rest. When adding tests to tier3, in most cases they should be added to
@@ -221,6 +230,39 @@ jdk_nio = \
     java/nio \
     sun/nio \
     jdk/nio
+
+# Focused NIO lifecycle and classic-socket endpoint coverage.
+jdk_nio_sanity = \
+    sun/nio/ch/EventFDTest.java \
+    sun/nio/ch/IOVecCapacity.java \
+    sun/nio/ch/LargeVectorIO.java \
+    sun/nio/ch/IOUtil/ScopeAcquisition.java \
+    sun/nio/ch/UnixAsynchronousSocketChannelImpl/RegistrationFailure.java \
+    java/nio/channels/AsynchronousSocketChannel/ScopeLifecycle.java \
+    sun/nio/ch/LocalSocketAddress.java \
+    sun/nio/ch/LocalSocketPort.java \
+    sun/nio/ch/ConstructorRegistrationFailure.java \
+    java/nio/channels/AsynchronousSocketChannel/Basic.java \
+    java/nio/channels/AsynchronousSocketChannel/CompletionHandlerRelease.java \
+    java/nio/channels/AsynchronousSocketChannel/DieBeforeComplete.java \
+    java/nio/channels/AsynchronousServerSocketChannel/Basic.java \
+    java/nio/channels/AsynchronousChannelGroup/Basic.java \
+    java/nio/channels/FileChannel/ScatteringRead.java \
+    java/nio/channels/SocketChannel/VectorIO.java \
+    java/nio/channels/SocketChannel/VectorParams.java \
+    java/nio/channels/SocketChannel/LocalAddress.java \
+    java/nio/channels/SocketChannel/Basic.java \
+    java/nio/channels/Selector/Wakeup.java \
+    java/nio/channels/Selector/WakeupNow.java \
+    java/nio/channels/Selector/WakeupEmpty.java \
+    java/nio/channels/Selector/WakeupAfterClose.java \
+    java/nio/channels/Selector/WakeupOverflow.java \
+    java/nio/channels/Selector/SelectAndClose.java \
+    java/nio/channels/Selector/CloseInvalidatesKeys.java \
+    java/net/Socket/AddressTest.java \
+    java/net/Socket/GetLocalAddress.java \
+    java/net/Socket/ClosedSocketTest.java \
+    java/net/Socket/asyncClose/AsyncClose.java
 
 jdk_net = \
     java/net \

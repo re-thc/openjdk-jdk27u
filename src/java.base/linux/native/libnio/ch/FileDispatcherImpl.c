@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +82,8 @@ JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_transferTo0(JNIEnv *env, jobject this,
                                             jobject srcFDO,
                                             jlong position, jlong count,
-                                            jobject dstFDO, jboolean append)
+                                            jobject dstFDO, jboolean append,
+                                            jboolean isSocket)
 {
     jint srcFD = fdval(env, srcFDO);
     jint dstFD = fdval(env, dstFDO);
@@ -93,7 +95,8 @@ Java_sun_nio_ch_FileDispatcherImpl_transferTo0(JNIEnv *env, jobject this,
 
     loff_t offset = (loff_t)position;
     jlong n;
-    if (my_copy_file_range_func != NULL) {
+    // copy_file_range only supports regular files; socket targets use sendfile.
+    if (isSocket == JNI_FALSE && my_copy_file_range_func != NULL) {
         size_t len = (size_t)count;
         n = my_copy_file_range_func(srcFD, &offset, dstFD, NULL, len, 0);
         if (n < 0) {

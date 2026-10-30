@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +154,7 @@ class UnixFileDispatcherImpl extends FileDispatcher {
     }
 
     long transferTo(FileDescriptor src, long position, long count,
-                    FileDescriptor dst, boolean append) {
+                    FileDescriptor dst, boolean append, boolean isSocket) {
         return IOStatus.UNSUPPORTED;
     }
 
