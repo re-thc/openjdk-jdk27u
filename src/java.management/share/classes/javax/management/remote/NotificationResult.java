@@ -56,9 +56,8 @@ import java.io.Serializable;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NotificationResult implements Serializable {
-
-    private static final long serialVersionUID = 1191800228721395279L;
 
     /**
      * <p>Constructs a notification query result.</p>

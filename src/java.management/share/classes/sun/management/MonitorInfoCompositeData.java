@@ -39,6 +39,7 @@ import javax.management.openmbean.OpenType;
  * This class avoids the performance penalty paid to the
  * construction of a CompositeData use in the local case.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MonitorInfoCompositeData extends LazyCompositeData {
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private final MonitorInfo lock;
@@ -153,5 +154,4 @@ public class MonitorInfoCompositeData extends LazyCompositeData {
         }
     }
 
-    private static final long serialVersionUID = -5825215591822908529L;
 }

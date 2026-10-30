@@ -49,6 +49,7 @@ package javax.naming;
   * @see javax.naming.spi.NamingManager#setInitialContextFactoryBuilder
   * @since 1.3
   */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NoInitialContextException extends NamingException {
     /**
       * Constructs an instance of NoInitialContextException.
@@ -68,8 +69,4 @@ public class NoInitialContextException extends NamingException {
         super(explanation);
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = -3413733186901258623L;
 }

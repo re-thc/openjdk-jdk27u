@@ -28,9 +28,8 @@ package jdk.jfr.internal.util;
 /**
  * Exception that is thrown if options don't follow the syntax of the command.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class UserSyntaxException extends Exception {
-    private static final long serialVersionUID = 3437009454344160933L;
-
     /**
      * The error message.
      *

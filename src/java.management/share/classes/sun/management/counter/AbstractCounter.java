@@ -31,6 +31,7 @@ import java.io.ObjectInputStream;
 
 /**
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class AbstractCounter implements Counter {
 
     String name;
@@ -115,7 +116,5 @@ public abstract class AbstractCounter implements Counter {
             return result;
         }
     }
-
-    private static final long serialVersionUID = 6992337162326171013L;
 
 }

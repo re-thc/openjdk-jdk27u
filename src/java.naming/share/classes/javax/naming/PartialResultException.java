@@ -40,6 +40,7 @@ package javax.naming;
   * @since 1.3
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PartialResultException extends NamingException {
     /**
       * Constructs a new instance of the exception using the explanation
@@ -59,8 +60,4 @@ public class PartialResultException extends NamingException {
         super();
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = 2572144970049426786L;
 }

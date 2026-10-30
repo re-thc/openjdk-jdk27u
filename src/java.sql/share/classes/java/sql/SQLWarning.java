@@ -43,6 +43,7 @@ package java.sql;
  * @see ResultSet#getWarnings
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SQLWarning extends SQLException {
 
     /**
@@ -214,5 +215,4 @@ public class SQLWarning extends SQLException {
         setNextException(w);
     }
 
-    private static final long serialVersionUID = 3917336774604784856L;
 }

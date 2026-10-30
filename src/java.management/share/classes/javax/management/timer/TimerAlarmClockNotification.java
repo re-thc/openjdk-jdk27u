@@ -29,11 +29,9 @@ package javax.management.timer;
  * <p>Definitions of the notifications sent by TimerAlarmClock
  * MBeans.</p>
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class TimerAlarmClockNotification
     extends javax.management.Notification {
-
-    /* Serial version */
-    private static final long serialVersionUID = -4841061275673620641L;
 
     /*
      * ------------------------------------------

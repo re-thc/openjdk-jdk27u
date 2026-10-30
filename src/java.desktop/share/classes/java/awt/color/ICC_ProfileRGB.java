@@ -80,13 +80,8 @@ import sun.java2d.cmm.Profile;
  * RGB components through the inverse of the above 3x3 matrix, and then
  * converting linear RGB to device RGB through inverses of the TRCs.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ICC_ProfileRGB extends ICC_Profile {
-
-    /**
-     * Use serialVersionUID from JDK 1.2 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 8505067385152579334L;
 
     /**
      * Used to get a gamma value or TRC for the red component.

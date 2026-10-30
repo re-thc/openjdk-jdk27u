@@ -30,9 +30,8 @@ import java.util.Formatter;
  * Thrown to indicate that a diagnostic command could not be executed
  * successfully.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class DCmdException extends Exception {
-    private static final long serialVersionUID = -3792411099340016465L;
-
     /**
      * Constructs a new exception with message derived from a format string.
      *

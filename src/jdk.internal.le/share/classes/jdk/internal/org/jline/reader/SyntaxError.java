@@ -8,9 +8,8 @@
  */
 package jdk.internal.org.jline.reader;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SyntaxError extends RuntimeException {
-
-    private static final long serialVersionUID = 1L;
 
     private final int line;
     private final int column;

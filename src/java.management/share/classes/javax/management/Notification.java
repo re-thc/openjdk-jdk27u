@@ -45,13 +45,12 @@ import java.util.EventObject;
  * object name rather than a reference to the MBean object as the
  * source.</p>
  *
- * <p>The <b>serialVersionUID</b> of this class is <code>-7516092053498031989L</code>.
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Notification extends EventObject {
 
-    private static final long serialVersionUID = -7516092053498031989L;
     /**
      * @serialField type String The notification type.
      *              A string expressed in a dot notation similar to Java properties.

@@ -193,6 +193,7 @@ import jdk.xml.internal.SecuritySupport;
  * @LastModified: Nov 2024
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class XMLGregorianCalendarImpl
         extends XMLGregorianCalendar
         implements Serializable, Cloneable {
@@ -324,14 +325,6 @@ public class XMLGregorianCalendarImpl
         "Millisecond",
         "Timezone"
     };
-
-    /**
-     * <p>Stream Unique Identifier.</p>
-     *
-     * <p>TODO: Serialization should use the XML string representation as
-     * the serialization format to ensure future compatibility.</p>
-     */
-    private static final long serialVersionUID = 1L;
 
     /**
      * <p>Use as a template for default field values when

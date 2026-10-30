@@ -32,9 +32,8 @@ import java.io.IOException;
  *
  * @since 11
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class WebSocketHandshakeException extends IOException {
-
-    private static final long serialVersionUID = 1L;
 
     private final transient HttpResponse<?> response;
 

@@ -95,11 +95,10 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MBeanServerNotification extends Notification {
 
 
-    /* Serial version */
-    private static final long serialVersionUID = 2876477500475969677L;
     /**
      * Notification type denoting that an MBean has been registered.
      * Value is "JMX.mbean.registered".

@@ -242,9 +242,8 @@ public final class AltServicesRegistry {
     // then removes the eldest (the least recently added) entry from the collection.
     // The implementation of this class is not thread safe and any concurrent access
     // to instances of this class should be guarded externally.
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static final class InvalidAltServices extends LinkedHashMap<InvalidAltSvc, Void> {
-
-        private static final long serialVersionUID = 2772562283544644819L;
 
         // we track only a reasonably small number of invalid alt services
         private static final int MAX_TRACKED_INVALID_ALT_SVCS = 20;

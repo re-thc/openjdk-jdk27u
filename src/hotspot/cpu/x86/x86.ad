@@ -1,6 +1,6 @@
 //
 // Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+// Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -13042,6 +13042,30 @@ instruct convI2LAndI_reg_immIbitmask(rRegL dst, rRegI src,  immI_Pow2M1 mask, rR
     __ movl($tmp$$Register, exact_log2($mask$$constant + 1));
     __ bzhiq($dst$$Register, $src$$Register, $tmp$$Register);
   %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+// Java int shifts use count & 31. BZHI preserves src for byte indices >= 32,
+// so normalize the count even when it is already known to fit in a byte.
+instruct bzhiI_rReg_rReg(rRegI dst, rRegI src, rRegI shift, immI_1 one,
+                        immI_M1 minus_one, rFlagsReg cr)
+%{
+  predicate(UseBMI2Instructions && VM_Version::supports_bmi2());
+  match(Set dst (AndI src (AddI (LShiftI one shift) minus_one)));
+  // Reserve dst separately from the inputs so count normalization cannot
+  // clobber src, including when src and shift are the same value.
+  effect(TEMP_DEF dst, KILL cr);
+
+  ins_cost(300);
+  format %{ "movl    $dst, $shift\n\t"
+            "andl    $dst, 31\n\t"
+            "bzhil   $dst, $src, $dst\t# Java int low-bit mask" %}
+  ins_encode %{
+    __ movl($dst$$Register, $shift$$Register);
+    __ andl($dst$$Register, 31);
+    __ bzhil($dst$$Register, $src$$Register, $dst$$Register);
+  %}
+
   ins_pipe(ialu_reg_reg);
 %}
 

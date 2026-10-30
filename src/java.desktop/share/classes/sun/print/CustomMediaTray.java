@@ -35,6 +35,7 @@ import javax.print.attribute.EnumSyntax;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaTray;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CustomMediaTray extends MediaTray {
     private static ArrayList<String> customStringTable = new ArrayList<>();
     private static ArrayList<MediaTray> customEnumTable = new ArrayList<>();
@@ -57,12 +58,6 @@ public class CustomMediaTray extends MediaTray {
         choiceName = choice;
         customEnumTable.add(this);
     }
-
-    /**
-     * Use serialVersionUID from JDK 1.5 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 1019451298193987013L;
 
 
     /**

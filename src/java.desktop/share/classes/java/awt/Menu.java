@@ -64,6 +64,7 @@ import sun.awt.AWTAccessor;
  * @see     java.awt.CheckboxMenuItem
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Menu extends MenuItem implements MenuContainer, Accessible {
 
     static {
@@ -115,12 +116,6 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
 
     private static final String base = "menu";
     private static int nameCounter = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = -8809584163345499784L;
 
     /**
      * Constructs a new menu with an empty label. This menu is not
@@ -625,14 +620,9 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * Java Accessibility API appropriate to menu user-interface elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTMenu extends AccessibleAWTMenuItem
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 5228160894980069094L;
-
         /**
          * Constructs an {@code AccessibleAWTMenu}.
          */

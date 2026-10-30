@@ -24,6 +24,6 @@
  */
 package jdk.jfr.internal.jfc.model;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class AbortException extends Exception {
-    private static final long serialVersionUID = -2501519883611363246L;
 }

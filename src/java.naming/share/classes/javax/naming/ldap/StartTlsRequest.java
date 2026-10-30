@@ -73,6 +73,7 @@ import java.util.ServiceLoader;
  * @see StartTlsResponse
  * @author Vincent Ryan
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class StartTlsRequest implements ExtendedRequest {
 
     // Constant
@@ -213,5 +214,4 @@ public class StartTlsRequest implements ExtendedRequest {
         return ce;
     }
 
-    private static final long serialVersionUID = 4441679576360753397L;
 }

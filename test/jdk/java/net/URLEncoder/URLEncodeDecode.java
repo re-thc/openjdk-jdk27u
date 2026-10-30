@@ -29,6 +29,7 @@
  *
  */
 
+import java.nio.charset.Charset;
 import java.io.*;
 import java.net.*;
 
@@ -62,7 +63,7 @@ public class URLEncodeDecode {
         String outStr = null;
 
         if (enc == null) {
-            encoded = URLEncoder.encode(str);
+            encoded = URLEncoder.encode(str, Charset.defaultCharset());
             outStr = "default";
         }
         else {

@@ -59,6 +59,7 @@ import com.sun.jndi.ldap.Connection;
  * @see StartTlsRequest
  * @author Vincent Ryan
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class StartTlsResponseImpl extends StartTlsResponse {
 
     private static final boolean debug = false;
@@ -108,8 +109,6 @@ public final class StartTlsResponseImpl extends StartTlsResponse {
      * The flag to indicate that close() was invoked
      */
     private transient boolean closed;
-
-    private static final long serialVersionUID = -1126624615143411328L;
 
     // public no-arg constructor required by JDK's Service Provider API.
 

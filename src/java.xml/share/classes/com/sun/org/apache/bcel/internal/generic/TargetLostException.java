@@ -48,9 +48,9 @@ package com.sun.org.apache.bcel.internal.generic;
  * @see InstructionTargeter
  * @LastModified: Sept 2025
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class TargetLostException extends Exception {
 
-    private static final long serialVersionUID = -6857272667645328384L;
     @SuppressWarnings("serial") // Array component type is not Serializable
     private final InstructionHandle[] targets;
 

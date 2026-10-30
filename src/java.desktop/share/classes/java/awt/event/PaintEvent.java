@@ -45,6 +45,7 @@ import java.io.Serial;
  * @author Amy Fowler
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PaintEvent extends ComponentEvent {
 
     /**
@@ -78,12 +79,6 @@ public class PaintEvent extends ComponentEvent {
      * @see #getUpdateRect()
      */
     Rectangle updateRect;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 1267492026433337593L;
 
     /**
      * Constructs a {@code PaintEvent} object with the specified

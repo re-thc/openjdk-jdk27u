@@ -33,6 +33,7 @@ import javax.naming.ldap.*;
   *
   * @author Vincent Ryan
   */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class BasicControl implements Control {
 
     /**
@@ -55,8 +56,6 @@ public class BasicControl implements Control {
      * @serial
      */
     protected byte[] value = null;
-
-    private static final long serialVersionUID = -5914033725246428413L;
 
     /**
      * Constructs a new instance of BasicControl.

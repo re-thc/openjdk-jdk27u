@@ -96,6 +96,7 @@ import java.text.CharacterIterator;
  * @see         java.awt.Font
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class FontMetrics implements java.io.Serializable {
 
     static {
@@ -118,12 +119,6 @@ public abstract class FontMetrics implements java.io.Serializable {
      * @see #getFont()
      */
     protected Font font;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 1681126225205050147L;
 
     /**
      * Creates a new {@code FontMetrics} object for finding out

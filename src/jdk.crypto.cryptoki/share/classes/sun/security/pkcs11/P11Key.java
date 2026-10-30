@@ -66,10 +66,8 @@ import sun.security.jca.JCAUtil;
  * @author  Andreas Sterbenz
  * @since   1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 abstract class P11Key implements Key, Length {
-
-    @Serial
-    private static final long serialVersionUID = -2575874101938349339L;
 
     private static final String PUBLIC = "public";
     private static final String PRIVATE = "private";
@@ -413,11 +411,9 @@ abstract class P11Key implements Key, Length {
     }
 
     // base class for all PKCS11 private keys
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private abstract static class P11PrivateKey extends P11Key implements
             PrivateKey {
-        @Serial
-        private static final long serialVersionUID = -2138581185214187615L;
-
         protected byte[] encoded; // guard by synchronized
 
         P11PrivateKey(Session session, long keyID, String algorithm,
@@ -435,10 +431,8 @@ abstract class P11Key implements Key, Length {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class P11SecretKey extends P11Key implements SecretKey {
-        @Serial
-        private static final long serialVersionUID = -7828241727014329084L;
-
         private volatile byte[] encoded; // guard by double-checked locking
 
         P11SecretKey(Session session, long keyID, String algorithm,
@@ -478,11 +472,9 @@ abstract class P11Key implements Key, Length {
     }
 
     // base class for all PKCS11 public keys
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private abstract static class P11PublicKey extends P11Key implements
             PublicKey {
-        @Serial
-        private static final long serialVersionUID = 1L;
-
         protected byte[] encoded; // guard by synchronized
 
         P11PublicKey(Session session, long keyID, String algorithm,
@@ -491,9 +483,9 @@ abstract class P11Key implements Key, Length {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class P11PBKDFKey extends P11SecretKey
             implements PBEKey {
-        private static final long serialVersionUID = 6847576994253634876L;
         private char[] password;
         private final byte[] salt;
         private final int iterationCount;
@@ -531,10 +523,8 @@ abstract class P11Key implements Key, Length {
     }
 
     // impl class for sensitive/unextractable RSA private keys
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class P11RSAPrivateKeyInternal extends P11PrivateKey {
-        @Serial
-        private static final long serialVersionUID = -2138581185214187615L;
-
         static P11RSAPrivateKeyInternal of(Session session, long keyID,
                 String algorithm, int keyLength, CK_ATTRIBUTE[] attrs,
                 boolean keySensitive) {
@@ -630,11 +620,9 @@ abstract class P11Key implements Key, Length {
     }
 
     // RSA CRT private key
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static final class P11RSAPrivateKey extends P11RSAPrivateKeyInternal
             implements RSAPrivateCrtKey {
-        @Serial
-        private static final long serialVersionUID = 9215872438913515220L;
-
         private transient BigInteger e, d, p, q, pe, qe, coeff;
 
         private P11RSAPrivateKey(Session session, long keyID, String algorithm,
@@ -708,11 +696,9 @@ abstract class P11Key implements Key, Length {
     }
 
     // RSA non-CRT private key
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static final class P11RSAPrivateNonCRTKey extends
             P11RSAPrivateKeyInternal implements RSAPrivateKey {
-        @Serial
-        private static final long serialVersionUID = 1137764983777411481L;
-
         private transient BigInteger d;
 
         P11RSAPrivateNonCRTKey(Session session, long keyID, String algorithm,
@@ -754,10 +740,9 @@ abstract class P11Key implements Key, Length {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static final class P11RSAPublicKey extends P11PublicKey
                                                 implements RSAPublicKey {
-        @Serial
-        private static final long serialVersionUID = -826726289023854455L;
         private transient BigInteger n, e;
 
         P11RSAPublicKey(Session session, long keyID, String algorithm,
@@ -811,11 +796,9 @@ abstract class P11Key implements Key, Length {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static final class P11DSAPublicKey extends P11PublicKey
                                                 implements DSAPublicKey {
-        @Serial
-        private static final long serialVersionUID = 5989753793316396637L;
-
         private transient BigInteger y;
         private transient DSAParams params;
 
@@ -868,10 +851,8 @@ abstract class P11Key implements Key, Length {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class P11DSAPrivateKeyInternal extends P11PrivateKey {
-        @Serial
-        private static final long serialVersionUID = 3119629997181999389L;
-
         protected transient DSAParams params;
 
         static P11DSAPrivateKeyInternal of(Session session, long keyID,
@@ -910,11 +891,9 @@ abstract class P11Key implements Key, Length {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static final class P11DSAPrivateKey extends P11DSAPrivateKeyInternal
                                         implements DSAPrivateKey {
-        @Serial
-        private static final long serialVersionUID = 3119629997181999389L;
-
         private transient BigInteger x; // params inside P11DSAPrivateKeyInternal
 
         P11DSAPrivateKey(Session session, long keyID, String algorithm,
@@ -964,10 +943,8 @@ abstract class P11Key implements Key, Length {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class P11DHPrivateKeyInternal extends P11PrivateKey {
-        @Serial
-        private static final long serialVersionUID = 1L;
-
         protected transient DHParameterSpec params;
 
         static P11DHPrivateKeyInternal of(Session session, long keyID,
@@ -1004,11 +981,9 @@ abstract class P11Key implements Key, Length {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static final class P11DHPrivateKey extends P11DHPrivateKeyInternal
                                                 implements DHPrivateKey {
-        @Serial
-        private static final long serialVersionUID = -1698576167364928838L;
-
         private transient BigInteger x; // params in P11DHPrivateKeyInternal
 
         P11DHPrivateKey(Session session, long keyID, String algorithm,
@@ -1168,10 +1143,8 @@ abstract class P11Key implements Key, Length {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class P11ECPrivateKeyInternal extends P11PrivateKey {
-
-        @Serial
-        private static final long serialVersionUID = 1L;
 
         protected transient ECParameterSpec params;
 
@@ -1214,11 +1187,9 @@ abstract class P11Key implements Key, Length {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static final class P11ECPrivateKey extends P11ECPrivateKeyInternal
                                                 implements ECPrivateKey {
-        @Serial
-        private static final long serialVersionUID = -7786054399510515515L;
-
         private transient BigInteger s; // params in P11ECPrivateKeyInternal
 
         P11ECPrivateKey(Session session, long keyID, String algorithm,
@@ -1273,11 +1244,9 @@ abstract class P11Key implements Key, Length {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static final class P11ECPublicKey extends P11PublicKey
                                                 implements ECPublicKey {
-        @Serial
-        private static final long serialVersionUID = -6371481375154806089L;
-
         private transient ECPoint w;
         private transient ECParameterSpec params;
 

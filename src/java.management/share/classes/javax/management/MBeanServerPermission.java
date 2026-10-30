@@ -74,10 +74,9 @@ import java.util.StringTokenizer;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public class MBeanServerPermission extends BasicPermission {
-    private static final long serialVersionUID = -5661980843569388590L;
-
     private static final int
         CREATE = 0,
         FIND = 1,
@@ -339,14 +338,12 @@ public class MBeanServerPermission extends BasicPermission {
  * implementation from defining a PermissionCollection there with an
  * optimized "implies" method.
  */
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "serial"})
 class MBeanServerPermissionCollection extends PermissionCollection {
     /** @serial Null if no permissions in collection, otherwise a
         single permission that is the union of all permissions that
         have been added.  */
     private MBeanServerPermission collectionPermission;
-
-    private static final long serialVersionUID = -5661980843569388590L;
 
     public synchronized void add(Permission permission) {
         if (!(permission instanceof MBeanServerPermission)) {

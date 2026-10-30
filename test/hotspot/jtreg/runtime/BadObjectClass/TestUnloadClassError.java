@@ -59,7 +59,7 @@ public class TestUnloadClassError extends ClassLoader {
       TestUnloadClassError loader = new TestUnloadClassError();
       byte[] buf = InMemoryJavaCompiler.compile("java.lang.Object", source,
                                                 "--patch-module=java.base");
-      Class c = loader.defineClass(buf, 0, buf.length);
+      Class c = loader.defineClass(null, buf, 0, buf.length);
       System.out.println("test FAILS");
       throw new RuntimeException("Did not get security exception");
     } catch(SecurityException e) {

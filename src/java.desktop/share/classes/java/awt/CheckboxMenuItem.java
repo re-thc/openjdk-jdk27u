@@ -71,6 +71,7 @@ import sun.awt.AWTAccessor;
  * @see         java.awt.event.ItemListener
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Accessible {
 
     static {
@@ -100,12 +101,6 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
 
     private static final String base = "chkmenuitem";
     private static int nameCounter = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = 6190621106981774043L;
 
     /**
      * Create a check box menu item with an empty label.
@@ -537,15 +532,10 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
      * user-interface elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTCheckboxMenuItem extends AccessibleAWTMenuItem
         implements AccessibleAction, AccessibleValue
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -1122642964303476L;
-
         /**
          * Constructs an {@code AccessibleAWTCheckboxMenuItem}.
          */

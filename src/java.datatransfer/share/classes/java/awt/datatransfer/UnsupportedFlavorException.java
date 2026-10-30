@@ -34,13 +34,8 @@ import java.io.Serial;
  * @see Transferable#getTransferData
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnsupportedFlavorException extends Exception {
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 5383814944251665601L;
 
     /**
      * Constructs an UnsupportedFlavorException.

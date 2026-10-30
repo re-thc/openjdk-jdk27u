@@ -44,9 +44,8 @@ import javax.xml.crypto.dsig.keyinfo.RetrievalMethod;
  * @see URIDereferencer#dereference(URIReference, XMLCryptoContext)
  * @see RetrievalMethod#dereference(XMLCryptoContext)
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class URIReferenceException extends Exception {
-
-    private static final long serialVersionUID = 7173469703932561419L;
 
     /**
      * The throwable that caused this exception to get thrown, or null if this

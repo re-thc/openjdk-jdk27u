@@ -24,85 +24,109 @@
 /*
  * @test
  * @bug 4096312
- * @summary Codebase annotations on classes that are marshalled should not
- *          affect the behavior of MarshalledObject.equals.  Only the bytes
- *          not involved in location should be compared.
+ * @summary Codebase annotations must not affect MarshalledObject.equals.
  * @author Ken Arnold
- *
- * @run main/othervm Compare 11 annotatedRef
+ * @run main/othervm Compare 11
  */
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Path;
 import java.rmi.MarshalledObject;
-import java.io.*;
+import java.rmi.server.RMIClassLoader;
+import java.util.Arrays;
+import java.util.Objects;
 
 public class Compare {
     static class Node implements Serializable {
-        int value = nextValue++;
+        int value;
         Node next;
-
-        static int nextValue = 1;
-    };
-
-    private static MarshalledObject made;
-    private static MarshalledObject read;
-
-    public static void main(String[] args) throws Throwable {
-        if (args.length == 1)
-            writeObjToOut(Integer.parseInt(args[0]));
-        else
-            compareObjToFile(args[0], args[1]);
     }
 
-    static void writeObjToOut(int listLength) throws Throwable {
-        ObjectOutputStream out = new ObjectOutputStream(System.out);
-        out.writeObject(marshalledList(listLength));
-        out.close();
-    }
+    private static MarshalledObject<?> made;
+    private static MarshalledObject<?> read;
 
-    public static void compareHashCodes(String[] args) throws Throwable {
-        File f = new File(System.getProperty("test.src", "."), args[1]);
-        setupObjects(args[0], f);
-        if (made.hashCode() != read.hashCode()) {
-            throw new RuntimeException(
-                "made.hashCode(){" + made.hashCode() + "} != " +
-                "read.hashCode(){" + read.hashCode() + "}"
-            );
-        }
-    }
-
-    static void compareObjToFile(String lengthStr, String file0) throws Throwable
-    {
-        File f = new File(System.getProperty("test.src", "."), file0);
-        setupObjects(lengthStr, f);
+    public static void main(String[] args) throws Exception {
+        setupObjects(Integer.parseInt(args[0]));
         if (!made.equals(read) || !read.equals(made)) {
-            throw new RuntimeException(
-                     "made.equals(read) = " + made.equals(read)
-                + ", read.equals(made) = " + read.equals(made)
-            );
+            throw new RuntimeException("Codebase annotations affected equality");
         }
     }
 
-    static MarshalledObject setupObjects(String lengthStr, File file)
-        throws Throwable
-    {
-        int listLength = Integer.parseInt(lengthStr);
-        made = marshalledList(listLength);
-        ObjectInputStream in = new ObjectInputStream(new FileInputStream(file));
-        read = (MarshalledObject) in.readObject();
-        in.close();
-        return read;
+    public static void compareHashCodes(String[] args) throws Exception {
+        setupObjects(Integer.parseInt(args[0]));
+        if (made.hashCode() != read.hashCode()) {
+            throw new RuntimeException("Codebase annotations affected hashCode");
+        }
     }
 
-    static MarshalledObject marshalledList(int length) throws Throwable {
-        Node head = null;
-        Node cur = null;
-        for (int i = 0; i < length; i++) {
-            if (head == null)
-                cur = head = new Node();
-            else
-                cur = cur.next = new Node();
+    static void setupObjects(int length) throws Exception {
+        made = roundTrip(marshalledList(Node.class, length));
+        URL classes = Path.of(System.getProperty("test.classes", ".")).toUri().toURL();
+        try (URLClassLoader loader = new URLClassLoader(new URL[] {classes}, null)) {
+            Class<?> annotatedNode = loader.loadClass(Node.class.getName());
+            String annotation = RMIClassLoader.getClassAnnotation(annotatedNode);
+            if (annotation == null || Objects.equals(annotation,
+                    RMIClassLoader.getClassAnnotation(Node.class))) {
+                throw new RuntimeException("Expected different class annotations");
+            }
+            MarshalledObject<?> annotated = marshalledList(annotatedNode, length);
+            if (Arrays.equals(serialize(made), serialize(annotated))) {
+                throw new RuntimeException("Expected different serialized annotations");
+            }
+            read = roundTrip(annotated);
         }
-        System.err.println("head = " + head);
-        return new MarshalledObject(head);
+        checkList((Node) made.get(), length);
+        checkList((Node) read.get(), length);
+    }
+
+    static MarshalledObject<?> marshalledList(Class<?> type, int length)
+            throws Exception {
+        Constructor<?> constructor = type.getDeclaredConstructor();
+        Field value = type.getDeclaredField("value");
+        Field next = type.getDeclaredField("next");
+        constructor.setAccessible(true);
+        value.setAccessible(true);
+        next.setAccessible(true);
+        Object head = null;
+        for (int i = length; i > 0; i--) {
+            Object node = constructor.newInstance();
+            value.setInt(node, i);
+            next.set(node, head);
+            head = node;
+        }
+        return new MarshalledObject<>(head);
+    }
+
+    static MarshalledObject<?> roundTrip(MarshalledObject<?> value) throws Exception {
+        try (ObjectInputStream in = new ObjectInputStream(
+                new ByteArrayInputStream(serialize(value)))) {
+            return (MarshalledObject<?>) in.readObject();
+        }
+    }
+
+    static byte[] serialize(MarshalledObject<?> value) throws Exception {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
+            out.writeObject(value);
+        }
+        return bytes.toByteArray();
+    }
+
+    static void checkList(Node node, int length) {
+        for (int i = 1; i <= length; i++) {
+            if (node == null || node.value != i) {
+                throw new RuntimeException("Incorrect unmarshalled list at " + i);
+            }
+            node = node.next;
+        }
+        if (node != null) throw new RuntimeException("Unexpected extra node");
     }
 }

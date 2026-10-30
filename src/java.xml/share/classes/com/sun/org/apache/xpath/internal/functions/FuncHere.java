@@ -38,9 +38,8 @@ import org.w3c.dom.Node;
  *
  * @LastModified: Oct 2017
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class FuncHere extends Function {
-
-    private static final long serialVersionUID = 4328660760070034592L;
 
     @Override
     public XObject execute(XPathContext xctxt) throws TransformerException {

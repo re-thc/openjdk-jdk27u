@@ -79,6 +79,7 @@ import sun.awt.AWTAccessor;
  *
  * @author Sami Shaio
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MenuItem extends MenuComponent implements Accessible {
 
     static {
@@ -175,12 +176,6 @@ public class MenuItem extends MenuComponent implements Accessible {
 
     private static final String base = "menuitem";
     private static int nameCounter = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -21757335363267194L;
 
     /**
      * Constructs a new MenuItem with an empty label and no keyboard
@@ -822,15 +817,10 @@ public class MenuItem extends MenuComponent implements Accessible {
      * Java Accessibility API appropriate to menu item user-interface elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTMenuItem extends AccessibleAWTMenuComponent
         implements AccessibleAction, AccessibleValue
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -217847831945965825L;
-
         /**
          * Constructs an {@code AccessibleAWTMenuItem}.
          */

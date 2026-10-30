@@ -299,9 +299,9 @@ public interface ExecutionControl extends AutoCloseable {
     /**
      * Bundles class name with class bytecodes.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static final class ClassBytecodes implements Serializable {
 
-        private static final long serialVersionUID = 0xC1A55B47EC0DE5L;
         /** @serial */
         private final String name;
         /** @serial */
@@ -339,9 +339,8 @@ public interface ExecutionControl extends AutoCloseable {
     /**
      * The abstract base of all {@code ExecutionControl} exceptions.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public abstract static class ExecutionControlException extends Exception {
-
-        private static final long serialVersionUID = 1L;
 
         public ExecutionControlException(String message) {
             super(message);
@@ -351,9 +350,8 @@ public interface ExecutionControl extends AutoCloseable {
     /**
      * Unbidden execution engine termination has occurred.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class EngineTerminationException extends ExecutionControlException {
-
-        private static final long serialVersionUID = 1L;
 
         public EngineTerminationException(String message) {
             super(message);
@@ -363,9 +361,8 @@ public interface ExecutionControl extends AutoCloseable {
     /**
      * The command is not implemented.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class NotImplementedException extends InternalException {
-
-        private static final long serialVersionUID = 1L;
 
         public NotImplementedException(String message) {
             super(message);
@@ -375,9 +372,8 @@ public interface ExecutionControl extends AutoCloseable {
     /**
      * An internal problem has occurred.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class InternalException extends ExecutionControlException {
-
-        private static final long serialVersionUID = 1L;
 
         public InternalException(String message) {
             super(message);
@@ -387,9 +383,8 @@ public interface ExecutionControl extends AutoCloseable {
     /**
      * A class install (load or redefine) encountered a problem.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class ClassInstallException extends ExecutionControlException {
-
-        private static final long serialVersionUID = 1L;
 
         /** @serial */
         private final boolean[] installed;
@@ -413,9 +408,8 @@ public interface ExecutionControl extends AutoCloseable {
     /**
      * The abstract base of of exceptions specific to running user code.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public abstract static class RunException extends ExecutionControlException {
-
-        private static final long serialVersionUID = 1L;
 
         private RunException(String message) {
             super(message);
@@ -425,9 +419,8 @@ public interface ExecutionControl extends AutoCloseable {
     /**
      * A 'normal' user exception occurred.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class UserException extends RunException {
-
-        private static final long serialVersionUID = 1L;
 
         /** @serial */
         private final String causeExceptionClass;
@@ -459,9 +452,8 @@ public interface ExecutionControl extends AutoCloseable {
      * exception (with {@code DeclarationSnippet} reference) provided in the
      * main API.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class ResolutionException extends RunException {
-
-        private static final long serialVersionUID = 1L;
 
         /** @serial */
         private final int id;
@@ -497,9 +489,8 @@ public interface ExecutionControl extends AutoCloseable {
      * {@link ExecutionControl#varValue(java.lang.String, java.lang.String) })
      * has been interrupted by a {@link ExecutionControl#stop() }.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class StoppedException extends RunException {
-
-        private static final long serialVersionUID = 1L;
 
         public StoppedException() {
             super("stopped by stop()");

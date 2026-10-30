@@ -79,13 +79,8 @@ import java.util.Set;
  * @spec https://www.rfc-editor.org/info/rfc2046
  *      RFC 2046: Multipurpose Internet Mail Extensions (MIME) Part Two: Media Types
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class MimeType implements Serializable, Cloneable {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -2785720609362367683L;
 
     /**
      * Array of strings that hold pieces of this MIME type's canonical form. If

@@ -30,13 +30,8 @@ import java.io.Serial;
 /**
  * Class {@code PrintEvent} is the super class of all Print Service API events.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PrintEvent extends java.util.EventObject {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 2286914924430763847L;
 
     /**
      * Constructs a {@code PrintEvent} object.

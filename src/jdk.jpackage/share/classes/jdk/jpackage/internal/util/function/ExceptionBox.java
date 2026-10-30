@@ -29,9 +29,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ExceptionBox extends RuntimeException {
-
-    private static final long serialVersionUID = 1L;
 
     public static RuntimeException toUnchecked(Exception ex) {
         switch (ex) {

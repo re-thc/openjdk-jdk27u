@@ -30,9 +30,8 @@ package jdk.internal.net.http.websocket;
  * a `ProtocolException` or an `IllegalArgumentException` depending on who's
  * doing the check.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class CheckFailedException extends RuntimeException {
-
-    private static final long serialVersionUID = 1L;
 
     CheckFailedException(String message) {
         super(message);

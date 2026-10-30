@@ -56,6 +56,7 @@ import javax.accessibility.AccessibleRole;
  * @author      Sami Shaio
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Label extends Component implements Accessible {
 
     static {
@@ -104,12 +105,6 @@ public class Label extends Component implements Accessible {
 
     private static final String base = "label";
     private static int nameCounter = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = 3094126758329070636L;
 
     /**
      * Constructs an empty label.
@@ -326,14 +321,9 @@ public class Label extends Component implements Accessible {
      * Java Accessibility API appropriate to label user-interface elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTLabel extends AccessibleAWTComponent
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -3568967560160480438L;
-
         /**
          * Constructor for the accessible label.
          */

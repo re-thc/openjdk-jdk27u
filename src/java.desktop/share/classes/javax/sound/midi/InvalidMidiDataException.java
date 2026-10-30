@@ -39,13 +39,8 @@ import java.io.Serial;
  *
  * @author Kara Kytle
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidMidiDataException extends Exception {
-
-    /**
-     * Use serialVersionUID from JDK 1.3 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 2780771756789932067L;
 
     /**
      * Constructs an {@code InvalidMidiDataException} with {@code null} for its

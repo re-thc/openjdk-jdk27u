@@ -39,10 +39,8 @@ import javax.lang.model.UnknownEntityException;
  * @see ElementVisitor#visitUnknown
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnknownElementException extends UnknownEntityException {
-
-    @Serial
-    private static final long serialVersionUID = 269L;
 
     private transient Element element;
     private transient Object parameter;

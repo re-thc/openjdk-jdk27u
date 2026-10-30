@@ -74,14 +74,11 @@ import javax.management.RuntimeOperationsException;
  * method.  This allows for wrapping exceptions from distributed
  * communications (RMI, EJB, etc.)
  *
- * <p>The <b>serialVersionUID</b> of this class is
- * <code>-1935722590756516193L</code>.
- *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ModelMBeanInfoSupport extends MBeanInfo implements ModelMBeanInfo {
 
-    private static final long serialVersionUID = -1935722590756516193L;
     /**
      * @serialField modelMBeanDescriptor Descriptor The descriptor containing
      *              MBean wide policy

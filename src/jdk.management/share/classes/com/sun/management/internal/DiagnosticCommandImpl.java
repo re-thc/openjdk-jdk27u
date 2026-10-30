@@ -291,10 +291,8 @@ public class DiagnosticCommandImpl extends NotificationEmitterSupport
 
     // Defer costly help generation (e.g. JFR configuration parsing) until the
     // descriptor is used; registration only needs the MBeanInfo class name.
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static final class LazyHelpDescriptor implements Descriptor {
-        @Serial
-        private static final long serialVersionUID = 4872935126013456978L;
-
         private final HashMap<String, Object> fields;
         private final transient DiagnosticCommandImpl impl;
         private final String helpCommand;

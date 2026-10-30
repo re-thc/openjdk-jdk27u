@@ -34,9 +34,8 @@ package com.sun.tools.javac.util;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class FatalError extends Error {
-    private static final long serialVersionUID = 0;
-
     /** Construct a <code>FatalError</code> with the specified detail message.
      *  @param d A diagnostic containing the reason for failure.
      */

@@ -34,9 +34,8 @@ import jdk.javadoc.internal.tool.Main.Result;
  * be wrapped to supply extended information about the exception.
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class ToolException extends Exception {
-
-    private static final long serialVersionUID = 0;
 
     final String message;
 

@@ -28,13 +28,12 @@ import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
  * Class CanonicalizationException
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CanonicalizationException extends XMLSecurityException {
 
     /**
      *
      */
-    private static final long serialVersionUID = 1L;
-
     /**
      * Constructor CanonicalizationException
      *

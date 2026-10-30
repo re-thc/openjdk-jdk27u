@@ -32,9 +32,8 @@ import java.io.IOException;
  *
  * @since 11
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class HttpTimeoutException extends IOException {
-
-    private static final long serialVersionUID = 981344271622632951L;
 
     /**
      * Constructs an {@code HttpTimeoutException} with the given detail message.

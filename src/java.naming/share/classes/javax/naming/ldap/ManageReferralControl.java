@@ -39,6 +39,7 @@ package javax.naming.ldap;
  * @since 1.5
  * @author Vincent Ryan
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ManageReferralControl extends BasicControl {
 
     /**
@@ -46,8 +47,6 @@ public final class ManageReferralControl extends BasicControl {
      * is 2.16.840.1.113730.3.4.2.
      */
     public static final String OID = "2.16.840.1.113730.3.4.2";
-
-    private static final long serialVersionUID = 3017756160149982566L;
 
     /**
      * Constructs a critical ManageReferral control.
