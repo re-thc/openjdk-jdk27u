@@ -52,10 +52,8 @@ import sun.print.CustomOutputBin;
  *
  * @since 23
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public sealed class OutputBin extends EnumSyntax implements PrintRequestAttribute, PrintJobAttribute permits CustomOutputBin {
-
-    @Serial
-    private static final long serialVersionUID = -3718893309873137109L;
 
     /**
      * The top output bin in the printer.

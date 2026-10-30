@@ -53,8 +53,8 @@ public interface PlatformProvider {
 
     /**Throw if the given platform is not supported.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public class PlatformNotSupported extends Exception {
-        private static final long serialVersionUID = 1L;
     }
 
 }

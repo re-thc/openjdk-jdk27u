@@ -56,6 +56,7 @@ package javax.naming;
   * String), class name (a String), and isRelative flag (a boolean).
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NameClassPair implements java.io.Serializable {
     /**
      * Contains the name of this NameClassPair.
@@ -291,8 +292,4 @@ public class NameClassPair implements java.io.Serializable {
     }
 
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = 5620776610160863339L;
 }

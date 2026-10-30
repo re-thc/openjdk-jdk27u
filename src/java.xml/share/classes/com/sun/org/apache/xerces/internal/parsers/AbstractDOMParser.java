@@ -163,8 +163,8 @@ public class AbstractDOMParser extends AbstractXMLDocumentParser {
     /**
      * If the user stops the process, this exception will be thrown.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class Abort extends RuntimeException {
-        private static final long serialVersionUID = 1687848994976808490L;
         static final Abort INSTANCE = new Abort();
         private Abort() {}
         public Throwable fillInStackTrace() {

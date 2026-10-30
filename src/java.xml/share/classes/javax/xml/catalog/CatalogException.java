@@ -30,9 +30,8 @@ package javax.xml.catalog;
  *
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CatalogException extends RuntimeException {
-
-    private static final long serialVersionUID = 653231525876459057L;
 
     /**
      * Constructs a new CatalogException with the specified detail message. The

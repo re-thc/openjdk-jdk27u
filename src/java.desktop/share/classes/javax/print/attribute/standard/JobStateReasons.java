@@ -68,14 +68,9 @@ import javax.print.attribute.PrintJobAttribute;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class JobStateReasons
     extends HashSet<JobStateReason> implements PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 8849088261264331812L;
 
     /**
      * Construct a new, empty job state reasons attribute; the underlying hash

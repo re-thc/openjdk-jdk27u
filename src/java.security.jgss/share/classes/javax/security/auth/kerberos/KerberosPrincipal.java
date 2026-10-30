@@ -38,11 +38,9 @@ import sun.security.util.*;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class KerberosPrincipal
     implements java.security.Principal, java.io.Serializable {
-
-    @Serial
-    private static final long serialVersionUID = -7374788026156829911L;
 
     //name types
 

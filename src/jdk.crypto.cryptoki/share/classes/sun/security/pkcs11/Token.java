@@ -46,12 +46,9 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
  * @author  Andreas Sterbenz
  * @since   1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class Token implements Serializable {
     public enum CTSVariant {CS1, CS2, CS3}
-
-    // need to be serializable to allow SecureRandom to be serialized
-    @Serial
-    private static final long serialVersionUID = 2541527649100571747L;
 
     // how often to check if the token is still present (in ms)
     // this is different from checking if a token has been inserted,
@@ -472,10 +469,8 @@ final class Token implements Serializable {
     // serialized representation of a token
     // tokens can only be de-serialized within the same VM invocation
     // and if the token has not been removed in the meantime
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class TokenRep implements Serializable {
-
-        @Serial
-        private static final long serialVersionUID = 3503721168218219807L;
 
         private final byte[] tokenId;
 

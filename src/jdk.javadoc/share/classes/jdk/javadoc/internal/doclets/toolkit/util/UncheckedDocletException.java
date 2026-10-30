@@ -32,9 +32,8 @@ import jdk.javadoc.internal.doclets.toolkit.DocletException;
  * It can be used in places where a checked exception
  * is not permitted, such as in lambda expressions.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UncheckedDocletException extends Error {
-    private static final long serialVersionUID = -9131058909576418984L;
-
     public UncheckedDocletException(DocletException de) {
         super(de);
     }

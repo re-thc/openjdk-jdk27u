@@ -88,8 +88,8 @@ abstract class IOContext implements AutoCloseable {
         throw new UnsupportedOperationException();
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     class InputInterruptedException extends Exception {
-        private static final long serialVersionUID = 1L;
     }
 }
 

@@ -31,13 +31,8 @@ import java.io.Serial;
  * This exception is thrown when an error occurs in accessing or processing an
  * {@code ICC_Profile} object.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ProfileDataException extends RuntimeException {
-
-    /**
-     * Use serialVersionUID from JDK 1.2 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 7286140888240322498L;
 
     /**
      * Constructs a {@code ProfileDataException} with the specified detail

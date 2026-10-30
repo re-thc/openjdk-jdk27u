@@ -57,6 +57,7 @@ import java.io.Serial;
  * @see         java.awt.Checkbox
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CheckboxGroup implements java.io.Serializable {
     /**
      * The current choice.
@@ -65,12 +66,6 @@ public class CheckboxGroup implements java.io.Serializable {
      * @see #setCurrent(Checkbox)
      */
     Checkbox selectedCheckbox = null;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 3729780091441768983L;
 
     /**
      * Creates a new instance of {@code CheckboxGroup}.

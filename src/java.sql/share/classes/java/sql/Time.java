@@ -167,6 +167,7 @@ public class Time extends java.util.Date {
     * This method is deprecated and should not be used because SQL {@code TIME}
     * values do not have a day component.
     *
+    * @return never returns normally
     * @deprecated
     * @throws java.lang.IllegalArgumentException if this
     *         method is invoked
@@ -194,6 +195,7 @@ public class Time extends java.util.Date {
     * This method is deprecated and should not be used because SQL {@code TIME}
     * values do not have a year component.
     *
+    * @param i ignored; this operation is unsupported
     * @deprecated
     * @throws java.lang.IllegalArgumentException if this
     *         method is invoked
@@ -208,6 +210,7 @@ public class Time extends java.util.Date {
     * This method is deprecated and should not be used because SQL {@code TIME}
     * values do not have a month component.
     *
+    * @param i ignored; this operation is unsupported
     * @deprecated
     * @throws java.lang.IllegalArgumentException if this
     *         method is invoked
@@ -222,6 +225,7 @@ public class Time extends java.util.Date {
     * This method is deprecated and should not be used because SQL {@code TIME}
     * values do not have a date component.
     *
+    * @param i ignored; this operation is unsupported
     * @deprecated
     * @throws java.lang.IllegalArgumentException if this
     *         method is invoked

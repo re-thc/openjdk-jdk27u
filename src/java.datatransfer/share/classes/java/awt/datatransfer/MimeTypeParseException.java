@@ -33,13 +33,8 @@ import java.io.Serial;
  * @since 1.3
  * @serial exclude
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MimeTypeParseException extends Exception {
-
-    /**
-     * Use serialVersionUID from JDK 1.2.2 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -5604407764691570741L;
 
     /**
      * Constructs a MimeTypeParseException with no specified detail message.

@@ -34,13 +34,8 @@ import java.io.Serial;
  * the process of printing.
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PrinterAbortException extends PrinterException {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 4725169026278854136L;
 
     /**
      * Constructs a new {@code PrinterAbortException} with no

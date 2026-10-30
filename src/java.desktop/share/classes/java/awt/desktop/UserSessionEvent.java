@@ -38,13 +38,8 @@ import java.io.Serial;
  * @see UserSessionListener#userSessionDeactivated(UserSessionEvent)
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class UserSessionEvent extends AppEvent {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 6747138462796569055L;
 
     /**
      * @serial The reason of the user session change.

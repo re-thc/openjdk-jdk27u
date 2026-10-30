@@ -145,10 +145,10 @@ public class TestProvider extends RMIClassLoaderSpi {
         /*
          *
          */
-        testcase = "RMIClassLoader.loadClass(String)";
+        testcase = "RMIClassLoader.loadClass(null,String)";
         System.err.println("testing " + testcase);
 
-        ret = RMIClassLoader.loadClass(classname);
+        ret = RMIClassLoader.loadClass((String) null, classname);
         if (ret != loadClassReturn) {
              throw new RuntimeException("TEST FAILED: " +
                 testcase + " returned " + ret);

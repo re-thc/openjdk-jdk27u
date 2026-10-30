@@ -265,9 +265,8 @@ public class Locations {
      * Utility class to help evaluate a path option. Duplicate entries are ignored, jar class paths
      * can be expanded.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private class SearchPath extends LinkedHashSet<Path> {
-
-        private static final long serialVersionUID = 0;
 
         private boolean expandJarClassPaths = false;
         private final transient Set<Path> canonicalValues = new HashSet<>();

@@ -84,8 +84,8 @@ public class ReferenceParser {
     /**
      * An exception that indicates an error occurred while parsing a signature.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class ParseException extends Exception {
-        private static final long serialVersionUID = 0;
         final int pos;
 
         ParseException(int pos, String message) {

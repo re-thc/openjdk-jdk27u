@@ -57,6 +57,7 @@ import sun.awt.SunToolkit;
  *
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class WindowEvent extends ComponentEvent {
 
     /**
@@ -172,12 +173,6 @@ public class WindowEvent extends ComponentEvent {
      * @serial New state of the window for window state change event.
      */
     int newState;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -1567959133147912127L;
 
 
     /**

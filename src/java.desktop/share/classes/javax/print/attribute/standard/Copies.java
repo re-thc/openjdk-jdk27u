@@ -65,14 +65,9 @@ import javax.print.attribute.PrintRequestAttribute;
  * @author David Mendenhall
  * @author Alan Kamihensky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class Copies extends IntegerSyntax
         implements PrintRequestAttribute, PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -6426631521680023833L;
 
     /**
      * Construct a new copies attribute with the given integer value.

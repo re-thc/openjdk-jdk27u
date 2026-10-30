@@ -32,9 +32,8 @@ package jdk.javadoc.internal.doclets.toolkit;
  * @apiNote This is primarily intended for the benefit of the builder API
  *  in {@code jdk.javadoc.internal.doclets.toolkit.builders}.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DocletException extends Exception {
-
-    private static final long serialVersionUID = 1L;
 
     /**
      * Creates a DocletException with a given detail message.

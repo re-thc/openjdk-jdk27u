@@ -39,6 +39,7 @@ import java.io.Serial;
  * @see         java.awt.Container
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Insets implements Cloneable, java.io.Serializable {
 
     /**
@@ -80,12 +81,6 @@ public class Insets implements Cloneable, java.io.Serializable {
      * @see #clone()
      */
     public int right;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -2272572637695466749L;
 
     static {
         /* ensure that the necessary native libraries are loaded */

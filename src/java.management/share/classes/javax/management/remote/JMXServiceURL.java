@@ -124,9 +124,8 @@ import java.util.StringTokenizer;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class JMXServiceURL implements Serializable {
-
-    private static final long serialVersionUID = 8173364409860779292L;
 
     /**
      * <p>Constructs a <code>JMXServiceURL</code> by parsing a Service URL

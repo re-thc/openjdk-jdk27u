@@ -37,10 +37,8 @@ package java.rmi;
  * @see     java.rmi.registry.Registry#lookup(String)
  * @see     java.rmi.registry.Registry#unbind(String)
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NotBoundException extends java.lang.Exception {
-
-    /* indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = -1857741824849069317L;
 
     /**
      * Constructs a <code>NotBoundException</code> with no

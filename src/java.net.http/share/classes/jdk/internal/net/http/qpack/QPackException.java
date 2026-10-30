@@ -31,10 +31,8 @@ import jdk.internal.net.http.http3.Http3Error;
  * Represents a QPack related failure as a failure cause and
  * an HTTP/3 error code.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class QPackException extends RuntimeException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 8443631555257118370L;
 
     private final boolean isConnectionError;
     private final Http3Error http3Error;

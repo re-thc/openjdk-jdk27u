@@ -75,6 +75,7 @@ public abstract class Rectangle2D extends RectangularShape {
      * coordinates.
      * @since 1.2
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Float extends Rectangle2D implements Serializable {
         /**
          * The X coordinate of this {@code Rectangle2D}.
@@ -297,11 +298,6 @@ public abstract class Rectangle2D extends RectangularShape {
                 ",h=" + height + "]";
         }
 
-        /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 3798716824173675777L;
     }
 
     /**
@@ -309,6 +305,7 @@ public abstract class Rectangle2D extends RectangularShape {
      * double coordinates.
      * @since 1.2
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Double extends Rectangle2D implements Serializable {
         /**
          * The X coordinate of this {@code Rectangle2D}.
@@ -492,11 +489,6 @@ public abstract class Rectangle2D extends RectangularShape {
                 ",h=" + height + "]";
         }
 
-        /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 7771313791441850493L;
     }
 
     /**

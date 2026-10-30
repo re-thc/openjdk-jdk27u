@@ -149,14 +149,9 @@ import javax.print.attribute.PrintRequestAttribute;
  * @see SheetCollate
  * @see Sides
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MultipleDocumentHandling extends EnumSyntax
     implements PrintRequestAttribute, PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 8098326460746413466L;
 
     /**
      * Single document -- see above for <a href="#sdfi">further information</a>.

@@ -32,9 +32,8 @@ package com.sun.jdi;
  * @author James McIlree
  * @since  1.3
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidTypeException extends Exception {
-
-    private static final long serialVersionUID = 2256667231949650806L;
 
     public InvalidTypeException() {
         super();

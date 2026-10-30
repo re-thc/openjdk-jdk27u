@@ -37,13 +37,8 @@ import java.io.Serial;
  * @see SystemSleepListener#systemAwoke(SystemSleepEvent)
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SystemSleepEvent extends AppEvent {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 11372269824930549L;
 
     /**
      * Constructs a {@code SystemSleepEvent}.

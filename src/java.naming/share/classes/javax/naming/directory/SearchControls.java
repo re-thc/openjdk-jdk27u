@@ -40,6 +40,7 @@ package javax.naming.directory;
   * @since 1.3
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SearchControls implements java.io.Serializable {
     /**
      * Search the named object.
@@ -329,8 +330,4 @@ public class SearchControls implements java.io.Serializable {
         attributesToReturn = attrs;
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability.
-     */
-    private static final long serialVersionUID = -2480540967773454797L;
 }

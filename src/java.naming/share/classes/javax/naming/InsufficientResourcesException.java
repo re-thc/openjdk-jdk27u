@@ -45,6 +45,7 @@ package javax.naming;
   * @since 1.3
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InsufficientResourcesException extends NamingException {
     /**
      * Constructs a new instance of InsufficientResourcesException using an
@@ -65,8 +66,4 @@ public class InsufficientResourcesException extends NamingException {
         super();
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = 6227672693037844532L;
 }

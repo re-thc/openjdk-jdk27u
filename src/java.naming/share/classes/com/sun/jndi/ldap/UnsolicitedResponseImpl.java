@@ -34,6 +34,7 @@ import java.util.Vector;
  * A concrete implementation of an UnsolicitedNotification.
  * @author Rosanna Lee
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class UnsolicitedResponseImpl implements UnsolicitedNotification {
     private String oid;
     private String[] referrals;
@@ -111,5 +112,4 @@ final class UnsolicitedResponseImpl implements UnsolicitedNotification {
         return controls;
     }
 
-    private static final long serialVersionUID = 5913778898401784775L;
 }

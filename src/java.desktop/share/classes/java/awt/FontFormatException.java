@@ -35,14 +35,9 @@ import java.io.Serial;
  * @see     java.awt.Font
  * @since   1.3
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public
 class FontFormatException extends Exception {
-
-    /**
-     * Use serialVersionUID from JDK 1.6 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4481290147811361272L;
 
     /**
      * Report a FontFormatException for the reason specified.

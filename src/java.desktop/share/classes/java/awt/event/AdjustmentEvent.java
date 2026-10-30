@@ -56,6 +56,7 @@ import java.lang.annotation.Native;
  * @author Amy Fowler
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AdjustmentEvent extends AWTEvent {
 
     /**
@@ -140,12 +141,6 @@ public class AdjustmentEvent extends AWTEvent {
      */
     boolean isAdjusting;
 
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = 5700290645205279921L;
 
 
     /**

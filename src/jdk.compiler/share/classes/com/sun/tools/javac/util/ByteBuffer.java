@@ -311,9 +311,8 @@ public class ByteBuffer {
 
     /** Thrown when trying to read past the end of the buffer.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class UnderflowException extends Exception {
-
-        private static final long serialVersionUID = 0;
 
         private final int length;
 

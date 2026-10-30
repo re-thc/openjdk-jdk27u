@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.nio.charset.Charset;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PerfStringCounter extends PerfByteArrayCounter
     implements StringCounter {
 
@@ -86,5 +87,4 @@ public class PerfStringCounter extends PerfByteArrayCounter
                                          stringValue());
     }
 
-    private static final long serialVersionUID = 6802913433363692452L;
 }

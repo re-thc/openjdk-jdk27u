@@ -46,10 +46,8 @@ package java.rmi;
  * @author  Ann Wollrath
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RemoteException extends java.io.IOException {
-
-    /* indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = -5148567311918794206L;
 
     /**
      * The cause of the remote exception.

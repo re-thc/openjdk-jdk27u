@@ -48,10 +48,8 @@ import sun.security.util.DerValue;
  *
  * @serial include
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class KeyImpl implements SecretKey, Destroyable, Serializable {
-
-    @Serial
-    private static final long serialVersionUID = -7889313790214321193L;
 
     private transient byte[] keyBytes;
     private transient int keyType;

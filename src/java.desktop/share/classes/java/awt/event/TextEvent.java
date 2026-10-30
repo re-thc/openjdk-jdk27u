@@ -52,6 +52,7 @@ import java.io.Serial;
  * @since 1.1
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class TextEvent extends AWTEvent {
 
     /**
@@ -68,12 +69,6 @@ public class TextEvent extends AWTEvent {
      * This event id indicates that object's text changed.
      */
     public static final int TEXT_VALUE_CHANGED  = TEXT_FIRST;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 6269902291250941179L;
 
     /**
      * Constructs a {@code TextEvent} object.

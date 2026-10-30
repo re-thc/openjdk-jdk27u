@@ -31,12 +31,8 @@ package javax.transaction.xa;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class XAException extends Exception {
-
-    /**
-     * Specify serialVersionUID for backward compatibility
-     */
-    private static final long serialVersionUID = -8249683284832867751L;
 
     /**
      * The error code with which to create the SystemException.

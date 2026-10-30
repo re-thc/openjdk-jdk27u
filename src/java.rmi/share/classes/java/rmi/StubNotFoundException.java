@@ -33,10 +33,8 @@ package java.rmi;
  * @since   1.1
  * @see     java.rmi.server.UnicastRemoteObject
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class StubNotFoundException extends RemoteException {
-
-    /* indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = -7088199405468872373L;
 
     /**
      * Constructs a <code>StubNotFoundException</code> with the specified

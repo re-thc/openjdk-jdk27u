@@ -55,16 +55,10 @@ import java.util.TooManyListenersException;
  * @since 1.2
  */
 
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "serial"})
 @Deprecated(since = "23", forRemoval = true)
 public class      BeanContextServicesSupport extends BeanContextSupport
        implements BeanContextServices {
-
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -8494482757288719206L;
 
     /**
      * <p>
@@ -164,13 +158,8 @@ public class      BeanContextServicesSupport extends BeanContextSupport
      * A protected nested class containing per-child information
      * in the {@code children} hashtable.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class BCSSChild extends BeanContextSupport.BCSChild  {
-
-        /**
-         * Use serialVersionUID from JDK 1.7 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -3263851306889194873L;
 
         /*
          * private nested class to map serviceClass to Provider and requestors
@@ -605,13 +594,8 @@ public class      BeanContextServicesSupport extends BeanContextSupport
          * each BeanContextServicesProvider.
          */
 
+        @SuppressWarnings("serial") // Serial version compatibility is not maintained.
         protected static class BCSSServiceProvider implements Serializable {
-
-            /**
-             * Use serialVersionUID from JDK 1.7 for interoperability.
-             */
-            @Serial
-            private static final long serialVersionUID = 861278251667444782L;
 
             BCSSServiceProvider(Class<?> sc, BeanContextServiceProvider bcsp) {
                 super();

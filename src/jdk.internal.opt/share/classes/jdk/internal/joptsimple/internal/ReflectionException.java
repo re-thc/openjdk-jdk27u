@@ -60,9 +60,8 @@ package jdk.internal.joptsimple.internal;
  *
  * @author <a href="mailto:pholser@alumni.rice.edu">Paul Holser</a>
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ReflectionException extends RuntimeException {
-    private static final long serialVersionUID = -2L;
-
     ReflectionException( Throwable cause ) {
         super( cause );
     }

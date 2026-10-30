@@ -305,9 +305,8 @@ public final class CommandLine {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class UnmatchedQuote extends Exception {
-        private static final long serialVersionUID = 0;
-
         public final String variableName;
 
         UnmatchedQuote(String variable) {

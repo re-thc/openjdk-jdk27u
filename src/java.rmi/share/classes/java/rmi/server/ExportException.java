@@ -35,10 +35,8 @@ package java.rmi.server;
  * @since   1.1
  * @see java.rmi.server.UnicastRemoteObject
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ExportException extends java.rmi.RemoteException {
-
-    /* indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = -9155485338494060170L;
 
     /**
      * Constructs an <code>ExportException</code> with the specified

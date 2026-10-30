@@ -96,13 +96,8 @@ import java.io.Serial;
  * @author  Arthur van Hoff
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class GridLayout implements LayoutManager, java.io.Serializable {
-
-    /**
-     * Use serialVersionUID from JDK 1.6 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -7411804673224730901L;
 
     /**
      * This is the horizontal gap (in pixels) which specifies the space

@@ -39,6 +39,7 @@ import sun.management.MappedMXBeanType;
  * This class avoids the performance penalty paid to the
  * construction of a CompositeData use in the local case.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class VMOptionCompositeData extends LazyCompositeData {
     @SuppressWarnings("serial") // Type of field is not Serializable
     private final VMOption option;
@@ -132,5 +133,4 @@ public class VMOptionCompositeData extends LazyCompositeData {
         }
     }
 
-    private static final long serialVersionUID = -2395573975093578470L;
 }

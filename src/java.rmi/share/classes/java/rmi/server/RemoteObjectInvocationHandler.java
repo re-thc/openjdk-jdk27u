@@ -49,12 +49,11 @@ import sun.rmi.server.WeakClassHashMap;
  * @author  Ann Wollrath
  * @since   1.5
  **/
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RemoteObjectInvocationHandler
     extends RemoteObject
     implements InvocationHandler
 {
-    private static final long serialVersionUID = 2L;
-
     /**
      * A weak hash map, mapping classes to weak hash maps that map
      * method objects to method hashes.

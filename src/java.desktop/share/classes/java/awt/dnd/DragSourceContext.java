@@ -90,14 +90,9 @@ import sun.awt.ComponentFactory;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DragSourceContext
     implements DragSourceListener, DragSourceMotionListener, Serializable {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -115407898692194719L;
 
     // used by updateCurrentCursor
 

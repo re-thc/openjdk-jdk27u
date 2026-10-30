@@ -85,15 +85,10 @@ import static sun.java2d.cmm.ProfileDataVerifier.HEADER_SIZE;
  *
  * @see ICC_ColorSpace
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public sealed class ICC_Profile implements Serializable
     permits ICC_ProfileGray,
             ICC_ProfileRGB {
-
-    /**
-     * Use serialVersionUID from JDK 1.2 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -3938515861990936766L;
 
     /**
      * The implementation specific CMM profile, {@code null} if this

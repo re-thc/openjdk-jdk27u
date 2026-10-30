@@ -39,8 +39,6 @@ import com.sun.tools.javac.util.Context;
  *  deletion without notice.</b>
  */
 class TypeEnvs {
-    private static final long serialVersionUID = 571524752489954631L;
-
     protected static final Context.Key<TypeEnvs> typeEnvsKey = new Context.Key<>();
     public static TypeEnvs instance(Context context) {
         TypeEnvs instance = context.get(typeEnvsKey);

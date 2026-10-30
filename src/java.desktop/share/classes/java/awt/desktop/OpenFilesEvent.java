@@ -38,13 +38,8 @@ import java.util.List;
  * @see OpenFilesHandler#openFiles
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class OpenFilesEvent extends FilesEvent {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -3982871005867718956L;
 
     /**
      * @serial The search term used to find the files.

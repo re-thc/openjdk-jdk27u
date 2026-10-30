@@ -179,8 +179,8 @@ public class TimeZoneRegression {
     private void sub4109314(TimeZone PST) {
         GregorianCalendar testCal = (GregorianCalendar)Calendar.getInstance();
         Object[] testData = {
-            PST, new Date(98,Calendar.APRIL,4,22,0), new Date(98, Calendar.APRIL, 5,6,0),
-            PST, new Date(98,Calendar.OCTOBER,24,22,0), new Date(98,Calendar.OCTOBER,25,6,0),
+            PST, new Date(98,Calendar.APRIL,4,22,0, 0), new Date(98, Calendar.APRIL, 5,6,0, 0),
+            PST, new Date(98,Calendar.OCTOBER,24,22,0, 0), new Date(98,Calendar.OCTOBER,25,6,0, 0),
         };
         boolean pass=true;
         for (int i=0; i<testData.length; i+=3) {
@@ -313,7 +313,7 @@ public class TimeZoneRegression {
         TimeZone.setDefault(tz);
         cal.setTimeZone(tz);
 
-        Date dt = new Date(1998-1900, Calendar.APRIL, 5, 10, 0);
+        Date dt = new Date(1998-1900, Calendar.APRIL, 5, 10, 0, 0);
         // the dt value is local time in PST.
         if (!tz.inDaylightTime(dt))
             fail("We're not in Daylight Savings Time and we should be.\n");
@@ -719,7 +719,7 @@ public class TimeZoneRegression {
 
                 // Must construct the Date object AFTER setting the default zone
                 int[] p = (int[])DATA[j+1];
-                Date d = new Date(p[0], p[1], p[2], p[3], p[4]);
+                Date d = new Date(p[0], p[1], p[2], p[3], p[4], 0);
                 boolean transitionExpected = ((Boolean)DATA[j+2]).booleanValue();
 
                 System.out.println(tz.getID() + ":");

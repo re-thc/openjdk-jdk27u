@@ -40,6 +40,7 @@ import javax.swing.SwingUtilities;
  * @author Igor Kushnirskiy
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SwingPropertyChangeSupport extends PropertyChangeSupport {
 
     /**
@@ -111,12 +112,6 @@ public final class SwingPropertyChangeSupport extends PropertyChangeSupport {
     public boolean isNotifyOnEDT() {
         return notifyOnEDT;
     }
-
-    /**
-     * Use serialVersionUID from JDK 1.2 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 7162625831330845068L;
 
     /**
      * whether to notify listeners on EDT

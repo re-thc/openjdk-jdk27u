@@ -42,9 +42,8 @@ import java.security.interfaces.ECPublicKey;
  * @since 1.6
  * @author  Stanley Man-Kit Ho
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 abstract class CKey implements Key, Length {
-    private static final long serialVersionUID = -1088859394025049194L;
-
     static class NativeHandles {
 
         long hCryptProv = 0;

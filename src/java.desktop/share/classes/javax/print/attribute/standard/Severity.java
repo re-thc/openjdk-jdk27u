@@ -60,13 +60,8 @@ import javax.print.attribute.EnumSyntax;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class Severity extends EnumSyntax implements Attribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 8781881462717925380L;
 
     /**
      * Indicates that the {@link PrinterStateReason PrinterStateReason} is a

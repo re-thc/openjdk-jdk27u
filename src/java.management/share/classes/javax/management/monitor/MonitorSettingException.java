@@ -35,10 +35,8 @@ package javax.management.monitor;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MonitorSettingException extends javax.management.JMRuntimeException {
-
-    /* Serial version */
-    private static final long serialVersionUID = -8807913418190202007L;
 
     /**
      * Default constructor.

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -481,6 +482,12 @@ void PhaseChaitin::Register_Allocate() {
     return;
   }
   // If we have a guaranteed spill, might as well spill now
+#ifndef PRODUCT
+  if (trace_spilling()) {
+    tty->print_cr("CCINITIAL must_spill=%u before initial Split", must_spill);
+    dump();
+  }
+#endif
   if (must_spill) {
     if(!_lrg_map.max_lrg_id()) {
       return;

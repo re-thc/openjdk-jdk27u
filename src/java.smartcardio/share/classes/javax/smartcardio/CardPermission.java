@@ -70,9 +70,8 @@ import java.security.Permission;
  * @author  Andreas Sterbenz
  * @author  JSR 268 Expert Group
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CardPermission extends Permission {
-
-    private static final long serialVersionUID = 7146787880530705613L;
 
     private static final int A_CONNECT              = 0x01;
     private static final int A_EXCLUSIVE            = 0x02;

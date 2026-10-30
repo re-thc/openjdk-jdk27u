@@ -72,6 +72,7 @@ package javax.naming;
   * fields of its Reference superclass.
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LinkRef extends Reference {
     /* code for link handling */
     static final String linkClassName = LinkRef.class.getName();
@@ -109,8 +110,4 @@ public class LinkRef extends Reference {
         }
         throw new MalformedLinkException();
     }
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = -5386290613498931298L;
 }

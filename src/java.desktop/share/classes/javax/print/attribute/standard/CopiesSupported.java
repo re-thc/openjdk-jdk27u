@@ -46,14 +46,9 @@ import javax.print.attribute.SupportedValuesAttribute;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class CopiesSupported extends SetOfIntegerSyntax
         implements SupportedValuesAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 6927711687034846001L;
 
     /**
      * Construct a new copies supported attribute containing a single integer.

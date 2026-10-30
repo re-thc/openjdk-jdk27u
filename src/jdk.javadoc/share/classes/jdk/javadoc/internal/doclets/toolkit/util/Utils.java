@@ -1377,8 +1377,6 @@ public class Utils {
             instance.setStrength(strength);
 
             keys = new LinkedHashMap<>(MAX_SIZE + 1, 0.75f, true) {
-                private static final long serialVersionUID = 1L;
-
                 @Override
                 protected boolean removeEldestEntry(Entry<String, CollationKey> eldest) {
                     return size() > MAX_SIZE;

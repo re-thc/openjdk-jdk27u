@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +29,7 @@
  *      fraction digits allowed is one less than the position of the first
  *      significant digit in the double.
  * @run junit RoundingTiesNearZeroTest
+ * @run junit/othervm -Djdk.compat.DecimalFormat=true RoundingTiesNearZeroTest
  */
 
 import org.junit.jupiter.params.ParameterizedTest;
