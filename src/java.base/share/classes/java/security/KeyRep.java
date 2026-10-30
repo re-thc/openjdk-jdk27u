@@ -54,10 +54,8 @@ import java.util.Locale;
  * @since 1.5
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class KeyRep implements Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -4757683898830641853L;
 
     /**
      * Key type.

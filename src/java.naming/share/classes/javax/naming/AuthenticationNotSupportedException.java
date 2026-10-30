@@ -52,6 +52,7 @@ package javax.naming;
   * @since 1.3
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AuthenticationNotSupportedException extends NamingSecurityException {
     /**
      * Constructs a new instance of AuthenticationNotSupportedException using
@@ -73,8 +74,4 @@ public class AuthenticationNotSupportedException extends NamingSecurityException
         super();
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = -7149033933259492300L;
 }

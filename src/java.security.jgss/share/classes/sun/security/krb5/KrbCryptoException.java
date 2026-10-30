@@ -37,10 +37,8 @@ import java.io.Serial;
  *
  * @author Yanni Zhang
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class KrbCryptoException extends KrbException {
-
-    @Serial
-    private static final long serialVersionUID = -1657367919979982250L;
 
     public KrbCryptoException(String s) {
         super(s);

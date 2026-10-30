@@ -41,10 +41,8 @@ import java.io.Serial;
  * @see     java.lang.instrument.ClassFileTransformer#transform
  * @since   1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IllegalClassFormatException extends Exception {
-
-    @Serial
-    private static final long serialVersionUID = -3841736710924794009L;
 
     /**
      * Constructs an <code>IllegalClassFormatException</code> with no

@@ -169,23 +169,23 @@ public final class StandardAppImageFileOption {
             .mutate(setPlatformScope(OperatingSystem.MACOS))
             .toOptionValueBuilder().id(StandardOption.MAC_APP_STORE.id()).create();
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static final class InvalidOptionValueException extends RuntimeException {
 
         InvalidOptionValueException(String str, Throwable t) {
             super(str, t);
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static final class MissingMandatoryOptionException extends RuntimeException {
 
         MissingMandatoryOptionException(String str) {
             super(str);
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
 

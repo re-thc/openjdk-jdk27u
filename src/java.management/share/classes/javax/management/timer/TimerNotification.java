@@ -34,11 +34,9 @@ package javax.management.timer;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class TimerNotification extends javax.management.Notification {
 
-
-    /* Serial version */
-    private static final long serialVersionUID = 1798492029603825750L;
 
     /*
      * ------------------------------------------

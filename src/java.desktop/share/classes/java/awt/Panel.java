@@ -43,15 +43,10 @@ import javax.accessibility.AccessibleRole;
  * @see     java.awt.FlowLayout
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Panel extends Container implements Accessible {
     private static final String base = "panel";
     private static int nameCounter = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = -2728009084054400034L;
 
     /**
      * Creates a new panel using the default layout manager.
@@ -121,13 +116,8 @@ public class Panel extends Container implements Accessible {
      * Java Accessibility API appropriate to panel user-interface elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTPanel extends AccessibleAWTContainer {
-
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -6409552226660031050L;
 
         /**
          * Constructs an {@code AccessibleAWTPanel}.

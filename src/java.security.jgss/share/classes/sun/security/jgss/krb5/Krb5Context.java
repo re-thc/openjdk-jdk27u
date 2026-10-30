@@ -1156,10 +1156,8 @@ class Krb5Context implements GSSContextSpi {
     /**
      * The session key returned by inquireSecContext(KRB5_INQ_SSPI_SESSION_KEY)
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class KerberosSessionKey implements Key {
-        @Serial
-        private static final long serialVersionUID = 699307378954123869L;
-
         @SuppressWarnings("serial") // Not statically typed as Serializable
         private final EncryptionKey key;
 

@@ -171,6 +171,7 @@ import javax.accessibility.AccessibleValue;
  * @see         java.awt.event.AdjustmentListener
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Scrollbar extends Component implements Adjustable, Accessible {
 
     /**
@@ -280,12 +281,6 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
 
     private static final String base = "scrollbar";
     private static int nameCounter = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 8451667562882310543L;
 
     /**
      * Initialize JNI field and method IDs.
@@ -1268,15 +1263,10 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * user-interface elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTScrollBar extends AccessibleAWTComponent
         implements AccessibleValue
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -344337268523697807L;
-
         /**
          * Constructs an {@code AccessibleAWTScrollBar}.
          */

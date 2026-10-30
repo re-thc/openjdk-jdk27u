@@ -44,13 +44,12 @@ import javax.management.ObjectName;
  * ObjectNames). The role value is always represented as an ArrayList
  * collection (of ObjectNames) to homogenize the access.
  *
- * <p>The <b>serialVersionUID</b> of this class is <code>-279985518429862552L</code>.
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Role implements Serializable {
 
-    private static final long serialVersionUID = -279985518429862552L;
     /**
      * @serialField name String Role name
      * @serialField objectNameList List {@link List} of {@link ObjectName}s of referenced MBeans

@@ -34,9 +34,8 @@ import com.sun.jdi.VirtualMachine;
  * The name "action" is used to avoid confusion
  * with JDI events.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class VMAction extends EventObject {
-
-    private static final long serialVersionUID = -1701944679310296090L;
 
     // Event ids
     static final int VM_SUSPENDED = 1;

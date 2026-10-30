@@ -75,6 +75,7 @@ import sun.awt.AWTAccessor;
  * @see        java.awt.MenuShortcut
  * @since      1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MenuBar extends MenuComponent implements MenuContainer, Accessible {
 
     static {
@@ -118,12 +119,6 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
 
     private static final String base = "menubar";
     private static int nameCounter = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = -4930327919388951260L;
 
     /**
      * Creates a new menu bar.
@@ -511,14 +506,9 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
      * Java Accessibility API appropriate to menu bar user-interface elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTMenuBar extends AccessibleAWTMenuComponent
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -8577604491830083815L;
-
         /**
          * Constructs an {@code AccessibleAWTMenuBar}.
          */

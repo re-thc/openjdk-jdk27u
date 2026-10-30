@@ -33,10 +33,8 @@ import java.security.cert.*;
  *
  * @author Andreas Sterbenz
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ValidatorException extends CertificateException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -2836879718282292155L;
 
     public static final Object T_NO_TRUST_ANCHOR =
         "No trusted certificate found";

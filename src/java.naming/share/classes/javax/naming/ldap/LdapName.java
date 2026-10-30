@@ -102,13 +102,11 @@ import java.io.IOException;
  * @since 1.5
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LdapName implements Name {
 
     private transient List<Rdn> rdns;   // parsed name components
     private transient String unparsed;  // if non-null, the DN in unparsed form
-
-    @java.io.Serial
-    private static final long serialVersionUID = -1595520034788997356L;
 
     /**
      * Constructs an LDAP name from the given distinguished name.

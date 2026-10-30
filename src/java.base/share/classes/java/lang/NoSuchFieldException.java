@@ -30,10 +30,8 @@ package java.lang;
  *
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NoSuchFieldException extends ReflectiveOperationException {
-    @java.io.Serial
-    private static final long serialVersionUID = -6143714805279938260L;
-
     /**
      * Constructor.
      */

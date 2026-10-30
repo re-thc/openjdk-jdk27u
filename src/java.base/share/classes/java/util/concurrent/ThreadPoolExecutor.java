@@ -577,16 +577,11 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * state to a negative value, and clear it upon start (in
      * runWorker).
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private final class Worker
         extends AbstractQueuedSynchronizer
         implements Runnable
     {
-        /**
-         * This class will never be serialized, but we provide a
-         * serialVersionUID to suppress a javac warning.
-         */
-        private static final long serialVersionUID = 6138294804551838833L;
-
         /** Thread this worker is running in.  Null if factory fails. */
         @SuppressWarnings("serial") // Unlikely to be serializable
         final Thread thread;

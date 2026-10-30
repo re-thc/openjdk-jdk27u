@@ -86,6 +86,7 @@ import jdk.internal.util.ArraysSupport;
  * @param <E> the type of elements held in this deque
  * @since   1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ArrayDeque<E> extends AbstractCollection<E>
                            implements Deque<E>, Cloneable, Serializable
 {
@@ -1154,9 +1155,6 @@ public class ArrayDeque<E> extends AbstractCollection<E>
             throw new AssertionError();
         }
     }
-
-    @java.io.Serial
-    private static final long serialVersionUID = 2340985798034038923L;
 
     /**
      * Saves this deque to a stream (that is, serializes it).

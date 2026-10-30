@@ -74,6 +74,7 @@ import jdk.internal.access.SharedSecrets;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Level implements java.io.Serializable {
     private static final String defaultBundle =
         "sun.util.logging.resources.logging";
@@ -430,9 +431,6 @@ public class Level implements java.io.Serializable {
     public final int intValue() {
         return value;
     }
-
-    @Serial
-    private static final long serialVersionUID = -8176160795706313070L;
 
     /**
      * Returns a {@code Level} instance with the same {@code name},

@@ -48,6 +48,7 @@ import javax.naming.Name;
   * @since 1.3
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LimitExceededException extends NamingException {
     /**
      * Constructs a new instance of LimitExceededException with
@@ -67,8 +68,4 @@ public class LimitExceededException extends NamingException {
         super(explanation);
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = -776898738660207856L;
 }

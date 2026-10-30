@@ -31,7 +31,6 @@ import static org.testng.Assert.assertEquals;
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.offsetByCodePoints.
  * @run testng/othervm -XX:+CompactStrings OffsetByCodePoints
- * @run testng/othervm -XX:-CompactStrings OffsetByCodePoints
  */
 
 public class OffsetByCodePoints extends CompactString {

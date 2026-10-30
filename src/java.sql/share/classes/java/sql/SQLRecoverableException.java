@@ -35,6 +35,7 @@ package java.sql;
  *
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SQLRecoverableException extends java.sql.SQLException {
 
         /**
@@ -170,5 +171,4 @@ public class SQLRecoverableException extends java.sql.SQLException {
         super(reason, SQLState, vendorCode, cause);
     }
 
-   private static final long serialVersionUID = -4144386502923131579L;
 }

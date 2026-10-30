@@ -34,10 +34,8 @@ package javax.security.auth;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DestroyFailedException extends Exception {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -7790152857282749162L;
 
     /**
      * Constructs a DestroyFailedException with no detail message. A detail

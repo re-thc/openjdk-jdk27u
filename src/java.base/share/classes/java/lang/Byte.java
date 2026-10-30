@@ -58,6 +58,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * @see     java.lang.Number
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class Byte extends Number implements Comparable<Byte>, Constable {
 
@@ -590,7 +591,4 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      */
     public static final int BYTES = SIZE / Byte.SIZE;
 
-    /** use serialVersionUID from JDK 1.1. for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = -7183698231559129828L;
 }

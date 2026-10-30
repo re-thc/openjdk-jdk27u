@@ -42,10 +42,8 @@ import java.util.Objects;
  * @author Mayank Upadhyay
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class GSSException extends Exception {
-
-    @Serial
-    private static final long serialVersionUID = -2706218945227726672L;
 
     /**
      * Channel bindings mismatch.

@@ -29,9 +29,8 @@ import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
  * {@link com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolver} goes wrong.
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ResourceResolverException extends XMLSecurityException {
-
-    private static final long serialVersionUID = 1L;
 
     private String uri;
 

@@ -36,10 +36,8 @@ package java.lang;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NoSuchMethodError extends IncompatibleClassChangeError {
-    @java.io.Serial
-    private static final long serialVersionUID = -3765521442372831335L;
-
     /**
      * Constructs a {@code NoSuchMethodError} with no detail message.
      */

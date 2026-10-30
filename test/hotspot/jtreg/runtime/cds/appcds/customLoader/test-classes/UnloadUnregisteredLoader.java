@@ -107,7 +107,7 @@ public class UnloadUnregisteredLoader {
         public Class<?> myDefineClass(byte[] b, int off, int len)
             throws ClassFormatError
         {
-            return super.defineClass(b, off, len);
+            return super.defineClass(null, b, off, len);
         }
     }
 }

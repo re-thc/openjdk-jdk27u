@@ -47,9 +47,8 @@ import java.security.Principal;
  * @see javax.security.auth.Subject
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class JMXPrincipal implements Principal, Serializable {
-
-    private static final long serialVersionUID = -4184480100214577411L;
 
     /**
      * @serial The JMX Remote API name for the identity represented by

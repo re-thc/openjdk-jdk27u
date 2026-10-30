@@ -54,11 +54,9 @@ import java.util.Arrays;
  * @author Gadi Guy
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SecureRandom extends SecureRandomSpi
 implements java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 3581829991155417889L;
 
     private static final int DIGEST_SIZE = 20;
     private transient MessageDigest digest;

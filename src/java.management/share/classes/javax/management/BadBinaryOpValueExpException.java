@@ -34,11 +34,9 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class BadBinaryOpValueExpException extends Exception   {
 
-
-    /* Serial version */
-    private static final long serialVersionUID = 5068475589449021227L;
 
     /**
      * @serial the {@link ValueExp} that originated this exception

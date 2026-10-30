@@ -31,13 +31,8 @@ import java.io.Serial;
  * {@link BufferedImageOp} or {@link RasterOp} filter methods cannot
  * process the image.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ImagingOpException extends java.lang.RuntimeException {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 8026288481846276658L;
 
     /**
      * Constructs an {@code ImagingOpException} object with the

@@ -41,10 +41,8 @@ package java.lang;
  * @see     Thread##thread-interruption Thread Interruption
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InterruptedException extends Exception {
-    @java.io.Serial
-    private static final long serialVersionUID = 6700697376100628473L;
-
     /**
      * Constructs an {@code InterruptedException} with no detail  message.
      */

@@ -33,9 +33,8 @@ class Reflect {                                 // package-private
 
     private Reflect() { }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class ReflectionError extends Error {
-        @java.io.Serial
-        private static final long serialVersionUID = -8659519328078164097L;
         ReflectionError(Throwable x) {
             super(x);
         }

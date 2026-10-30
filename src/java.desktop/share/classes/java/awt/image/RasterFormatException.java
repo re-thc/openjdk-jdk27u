@@ -30,13 +30,8 @@ import java.io.Serial;
  * The {@code RasterFormatException} is thrown if there is
  * invalid layout information in the {@link Raster}.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RasterFormatException extends java.lang.RuntimeException {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 96598996116164315L;
 
     /**
      * Constructs a new {@code RasterFormatException} with the

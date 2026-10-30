@@ -14,9 +14,8 @@ package jdk.internal.org.jline.reader;
  * interrupt character (ctrl-C). The partially entered line is
  * available via the {@link #getPartialLine()} method.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UserInterruptException extends RuntimeException {
-    private static final long serialVersionUID = 6172232572140736750L;
-
     private final String partialLine;
 
     public UserInterruptException(Throwable cause) {

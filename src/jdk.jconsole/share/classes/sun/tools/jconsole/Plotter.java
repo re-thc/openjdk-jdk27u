@@ -996,8 +996,8 @@ public class Plotter extends JComponent
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SaveDataFileChooser extends JFileChooser {
-        private static final long serialVersionUID = -5182890922369369669L;
         SaveDataFileChooser() {
             setFileFilter(new FileNameExtensionFilter("CSV file", "csv"));
         }
@@ -1055,8 +1055,8 @@ public class Plotter extends JComponent
         return accessibleContext;
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessiblePlotter extends AccessibleJComponent {
-        private static final long serialVersionUID = -3847205410473510922L;
         protected AccessiblePlotter() {
             setAccessibleName(Messages.PLOTTER_ACCESSIBLE_NAME);
         }

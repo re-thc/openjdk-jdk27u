@@ -34,10 +34,8 @@ package java.lang;
  *
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AbstractMethodError extends IncompatibleClassChangeError {
-    @java.io.Serial
-    private static final long serialVersionUID = -1654391082989018462L;
-
     /**
      * Constructs an {@code AbstractMethodError} with no detail  message.
      */

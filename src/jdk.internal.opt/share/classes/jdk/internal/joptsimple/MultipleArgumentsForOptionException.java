@@ -62,9 +62,8 @@ import static java.util.Collections.*;
  *
  * @author <a href="mailto:pholser@alumni.rice.edu">Paul Holser</a>
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class MultipleArgumentsForOptionException extends OptionException {
-    private static final long serialVersionUID = -1L;
-
     MultipleArgumentsForOptionException( OptionSpec<?> options ) {
         super( singleton( options ) );
     }

@@ -35,15 +35,9 @@ import java.util.Iterator;
  * </p>
  */
 
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "serial"})
 @Deprecated(since="23", forRemoval=true)
 public class BeanContextServiceAvailableEvent extends BeanContextEvent {
-
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -5333985775656400778L;
 
     /**
      * Construct a {@code BeanContextAvailableServiceEvent}.

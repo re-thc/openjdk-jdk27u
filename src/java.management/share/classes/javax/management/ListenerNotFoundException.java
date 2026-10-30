@@ -31,10 +31,8 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ListenerNotFoundException extends OperationsException   {
-
-    /* Serial version */
-    private static final long serialVersionUID = -7242605822448519061L;
 
     /**
      * Default constructor.

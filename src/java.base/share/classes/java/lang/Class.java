@@ -214,9 +214,10 @@ import sun.reflect.annotation.*;
  * Class<String>}.  Use {@code Class<?>} if the class being modeled is
  * unknown.
  *
- * @see     java.lang.ClassLoader#defineClass(byte[], int, int)
+ * @see     java.lang.ClassLoader#defineClass(String, byte[], int, int)
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @AOTSafeClassInitializer
 public final class Class<T> implements java.io.Serializable,
                               GenericDeclaration,
@@ -3275,10 +3276,6 @@ public final class Class<T> implements java.io.Serializable,
         }
         return sb.append(')').toString();
     }
-
-    /** use serialVersionUID from JDK 1.1 for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = 3206093459760846163L;
 
 
     /**

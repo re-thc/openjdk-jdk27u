@@ -218,6 +218,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * @author  Ulf Zibis
  * @since   1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final
 class Character implements java.io.Serializable, Comparable<Character>, Constable {
@@ -9395,10 +9396,6 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      */
     private final char value;
 
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
-    @java.io.Serial
-    private static final long serialVersionUID = 3786198910865385080L;
-
     /**
      * Constructs a newly allocated {@code Character} object that
      * represents the specified {@code char} value.
@@ -10659,8 +10656,6 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      *          {@code false} otherwise.
      * @see     Character#isDigit(char)
      * @see     Character#isJavaIdentifierStart(char)
-     * @see     Character#isJavaLetter(char)
-     * @see     Character#isJavaLetterOrDigit(char)
      * @see     Character#isLetterOrDigit(char)
      * @see     Character#isLowerCase(char)
      * @see     Character#isTitleCase(char)
@@ -10727,8 +10722,6 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      *          {@code false} otherwise.
      * @see     Character#isDigit(char)
      * @see     Character#isJavaIdentifierPart(char)
-     * @see     Character#isJavaLetter(char)
-     * @see     Character#isJavaLetterOrDigit(char)
      * @see     Character#isLetter(char)
      * @see     Character#isUnicodeIdentifierPart(char)
      * @since   1.0.2
@@ -10762,72 +10755,6 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             (1 << Character.OTHER_LETTER) |
             (1 << Character.DECIMAL_DIGIT_NUMBER)) >> getType(codePoint)) & 1)
             != 0;
-    }
-
-    /**
-     * Determines if the specified character is permissible as the first
-     * character in a Java identifier.
-     * <p>
-     * A character may start a Java identifier if and only if
-     * one of the following conditions is true:
-     * <ul>
-     * <li> {@link #isLetter(char) isLetter(ch)} returns {@code true}
-     * <li> {@link #getType(char) getType(ch)} returns {@code LETTER_NUMBER}
-     * <li> {@code ch} is a currency symbol (such as {@code '$'})
-     * <li> {@code ch} is a connecting punctuation character (such as {@code '_'}).
-     * </ul>
-     *
-     * @param   ch the character to be tested.
-     * @return  {@code true} if the character may start a Java
-     *          identifier; {@code false} otherwise.
-     * @see     Character#isJavaLetterOrDigit(char)
-     * @see     Character#isJavaIdentifierStart(char)
-     * @see     Character#isJavaIdentifierPart(char)
-     * @see     Character#isLetter(char)
-     * @see     Character#isLetterOrDigit(char)
-     * @see     Character#isUnicodeIdentifierStart(char)
-     * @since   1.0.2
-     * @deprecated Replaced by isJavaIdentifierStart(char).
-     */
-    @Deprecated(since="1.1")
-    public static boolean isJavaLetter(char ch) {
-        return isJavaIdentifierStart(ch);
-    }
-
-    /**
-     * Determines if the specified character may be part of a Java
-     * identifier as other than the first character.
-     * <p>
-     * A character may be part of a Java identifier if and only if one
-     * of the following conditions is true:
-     * <ul>
-     * <li>  it is a letter
-     * <li>  it is a currency symbol (such as {@code '$'})
-     * <li>  it is a connecting punctuation character (such as {@code '_'})
-     * <li>  it is a digit
-     * <li>  it is a numeric letter (such as a Roman numeral character)
-     * <li>  it is a combining mark
-     * <li>  it is a non-spacing mark
-     * <li> {@code isIdentifierIgnorable} returns
-     * {@code true} for the character.
-     * </ul>
-     *
-     * @param   ch the character to be tested.
-     * @return  {@code true} if the character may be part of a
-     *          Java identifier; {@code false} otherwise.
-     * @see     Character#isJavaLetter(char)
-     * @see     Character#isJavaIdentifierStart(char)
-     * @see     Character#isJavaIdentifierPart(char)
-     * @see     Character#isLetter(char)
-     * @see     Character#isLetterOrDigit(char)
-     * @see     Character#isUnicodeIdentifierPart(char)
-     * @see     Character#isIdentifierIgnorable(char)
-     * @since   1.0.2
-     * @deprecated Replaced by isJavaIdentifierPart(char).
-     */
-    @Deprecated(since="1.1")
-    public static boolean isJavaLetterOrDigit(char ch) {
-        return isJavaIdentifierPart(ch);
     }
 
     /**
@@ -11727,48 +11654,6 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      */
     public static int getNumericValue(int codePoint) {
         return CharacterData.of(codePoint).getNumericValue(codePoint);
-    }
-
-    /**
-     * Determines if the specified character is ISO-LATIN-1 white space.
-     * This method returns {@code true} for the following five
-     * characters only:
-     * <table class="striped">
-     * <caption style="display:none">truechars</caption>
-     * <thead>
-     * <tr><th scope="col">Character
-     *     <th scope="col">Code
-     *     <th scope="col">Name
-     * </thead>
-     * <tbody>
-     * <tr><th scope="row">{@code '\t'}</th>            <td>{@code U+0009}</td>
-     *     <td>{@code HORIZONTAL TABULATION}</td></tr>
-     * <tr><th scope="row">{@code '\n'}</th>            <td>{@code U+000A}</td>
-     *     <td>{@code NEW LINE}</td></tr>
-     * <tr><th scope="row">{@code '\f'}</th>            <td>{@code U+000C}</td>
-     *     <td>{@code FORM FEED}</td></tr>
-     * <tr><th scope="row">{@code '\r'}</th>            <td>{@code U+000D}</td>
-     *     <td>{@code CARRIAGE RETURN}</td></tr>
-     * <tr><th scope="row">{@code ' '}</th>  <td>{@code U+0020}</td>
-     *     <td>{@code SPACE}</td></tr>
-     * </tbody>
-     * </table>
-     *
-     * @param      ch   the character to be tested.
-     * @return     {@code true} if the character is ISO-LATIN-1 white
-     *             space; {@code false} otherwise.
-     * @see        Character#isSpaceChar(char)
-     * @see        Character#isWhitespace(char)
-     * @deprecated Replaced by isWhitespace(char).
-     */
-    @Deprecated(since="1.1")
-    public static boolean isSpace(char ch) {
-        return (ch <= 0x0020) &&
-            (((((1L << 0x0009) |
-            (1L << 0x000A) |
-            (1L << 0x000C) |
-            (1L << 0x000D) |
-            (1L << 0x0020)) >> ch) & 1L) != 0);
     }
 
 

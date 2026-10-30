@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +30,6 @@ import static org.testng.Assert.assertEquals;
  * @test
  * @bug 4914802 8257511
  * @summary Test StringBuilder.insert sanity tests
- * @run testng/othervm -XX:-CompactStrings Insert
  * @run testng/othervm -XX:+CompactStrings Insert
  */
 @Test
@@ -39,6 +39,7 @@ public class Insert {
         // Caused an infinite loop before 4914802
         StringBuilder sb = new StringBuilder();
         assertEquals("false", sb.insert(0, false).toString());
+        assertEquals("\u0100false", new StringBuilder("\u0100").insert(1, false).toString());
     }
 
     public void insertOffset() {
@@ -47,6 +48,10 @@ public class Insert {
         assertEquals("efabc", new StringBuilder("abc").insert(0, new StringBuilder("def"),   1, 3).toString());
         // insert(I[CII) and insert(ILjava/lang/CharSequence;II) are inconsistently specified
         assertEquals("efabc", new StringBuilder("abc").insert(0, new char[] {'d', 'e', 'f'}, 1, 2).toString());
+
+        assertEquals("\u0100efabc", new StringBuilder("\u0100abc").insert(1, "\u0100def", 2, 4).toString());
+        assertEquals("\u0100efabc", new StringBuilder("\u0100abc").insert(1, new StringBuilder("\u0100def"), 2, 4).toString());
+        assertEquals("\u0100efabc", new StringBuilder("\u0100abc").insert(1, new char[] {'\u0100', 'd', 'e', 'f'}, 2, 2).toString());
     }
 
 }

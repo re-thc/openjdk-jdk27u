@@ -40,6 +40,7 @@ package javax.naming;
   * @author Scott Seligman
   * @since 1.3
   */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CommunicationException extends NamingException {
     /**
      * Constructs a new instance of CommunicationException using the
@@ -59,8 +60,4 @@ public class CommunicationException extends NamingException {
         super();
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = 3618507780299986611L;
 }

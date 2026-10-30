@@ -91,7 +91,7 @@ public class TCKValueRangeSerialization extends AbstractTCKTest {
 
 
     /**
-     * Verify Serialized bytes of a ValueRange.
+     * Verify serialized bytes of a ValueRange with this fork's UID.
      * @throws IOException if thrown during serialization is an unexpected test tailure
      */
     @Test
@@ -100,8 +100,8 @@ public class TCKValueRangeSerialization extends AbstractTCKTest {
             (byte)172, (byte)237,   0,   5, 115, 114,   0,  29, 106,  97, /* \u00ac \u00ed \u0000 \u0005 s r \u0000 \u001d j a */
             118,  97,  46, 116, 105, 109, 101,  46, 116, 101, /* v a . t i m e . t e */
             109, 112, 111, 114,  97, 108,  46,  86,  97, 108, /* m p o r a l . V a l */
-            117, 101,  82,  97, 110, 103, 101, (byte)154, 113, (byte)169, /* u e R a n g e \u009a q \u00a9 */
-             86, (byte)242, (byte)205,  90, (byte)184,   2,   0,   4,  74,   0, /* V \u00f2 \u00cd Z \u00b8 \u0002 \u0000 \u0004 J \u0000 */
+            117, 101,  82,  97, 110, 103, 101, (byte)91, 78, (byte)167,
+             -89, (byte)103, (byte)98,  52, (byte)21,   2,   0,   4,  74,   0,
              10, 109,  97, 120,  76,  97, 114, 103, 101, 115, /*  m a x L a r g e s */
             116,  74,   0,  11, 109,  97, 120,  83, 109,  97, /* t J \u0000 \u000b m a x S m a */
             108, 108, 101, 115, 116,  74,   0,  10, 109, 105,/* l l e s t J \u0000 m i */
@@ -129,8 +129,8 @@ public class TCKValueRangeSerialization extends AbstractTCKTest {
             (byte)172, (byte)237,   0,   5, 115, 114,   0,  29, 106,  97, /* \u00ac \u00ed \u0000 \u0005 s r \u0000 \u001d j a */
             118,  97,  46, 116, 105, 109, 101,  46, 116, 101, /* v a . t i m e . t e */
             109, 112, 111, 114,  97, 108,  46,  86,  97, 108, /* m p o r a l . V a l */
-            117, 101,  82,  97, 110, 103, 101, (byte)154, 113, (byte)169, /* u e R a n g e \u009a q \u00a9 */
-             86, (byte)242, (byte)205,  90, (byte)184,   2,   0,   4,  74,   0, /* V \u00f2 \u00cd Z \u00b8 \u0002 \u0000 \u0004 J \u0000 */
+            117, 101,  82,  97, 110, 103, 101, (byte)91, 78, (byte)167,
+             -89, (byte)103, (byte)98,  52, (byte)21,   2,   0,   4,  74,   0,
              10, 109,  97, 120,  76,  97, 114, 103, 101, 115, /*  m a x L a r g e s */
             116,  74,   0,  11, 109,  97, 120,  83, 109,  97, /* t J \u0000 \u000b m a x S m a */
             108, 108, 101, 115, 116,  74,   0,  10, 109, 105,/* l l e s t J \u0000 m i */

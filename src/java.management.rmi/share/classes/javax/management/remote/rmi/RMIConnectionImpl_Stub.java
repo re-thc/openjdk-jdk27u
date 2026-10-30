@@ -32,13 +32,10 @@ package javax.management.remote.rmi;
  *
  * @since 1.5
  */
-@SuppressWarnings({"deprecation", "rawtypes", "unchecked"})
+@SuppressWarnings({"deprecation", "rawtypes", "unchecked", "serial"})
 public final class RMIConnectionImpl_Stub
         extends java.rmi.server.RemoteStub
         implements javax.management.remote.rmi.RMIConnection {
-    @java.io.Serial
-    private static final long serialVersionUID = 2;
-
     private static java.lang.reflect.Method $method_addNotificationListener_0;
     private static java.lang.reflect.Method $method_addNotificationListeners_1;
     private static java.lang.reflect.Method $method_close_2;

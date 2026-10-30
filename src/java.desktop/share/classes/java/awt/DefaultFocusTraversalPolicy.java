@@ -68,15 +68,10 @@ import java.io.Serial;
  * @see Component#setFocusable
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DefaultFocusTraversalPolicy
     extends ContainerOrderFocusTraversalPolicy
 {
-    /**
-     * Use serialVersionUID from JDK 1.6 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 8876966522510157497L;
-
     /**
      * Constructs a {@code DefaultFocusTraversalPolicy}.
      */

@@ -32,9 +32,8 @@ package com.sun.tools.javac.util;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CompilerInternalException extends RuntimeException {
-    private static final long serialVersionUID = 0;
-
     @SuppressWarnings("this-escape")
     public CompilerInternalException(boolean dumpStackTraceOnError) {
         /* by default the stacktrace wont be filled, meaning that method CompilerInternalException::fillInStackTrace

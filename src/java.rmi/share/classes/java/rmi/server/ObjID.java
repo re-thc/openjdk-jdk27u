@@ -65,6 +65,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author      Peter Jones
  * @since       1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ObjID implements Serializable {
 
     /** Object number for well-known <code>ObjID</code> of the registry. */
@@ -78,9 +79,6 @@ public final class ObjID implements Serializable {
      * the distributed garbage collector.
      */
     public static final int DGC_ID = 2;
-
-    /** indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = -6386392263968365220L;
 
     private static final AtomicLong nextObjNum = new AtomicLong();
     private static final UID mySpace = new UID();

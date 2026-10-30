@@ -36,10 +36,8 @@ import java.security.PrivateKey;
  * @author Stanley Man-Kit Ho
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class CPrivateKey extends CKey implements PrivateKey {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 8113152807912338063L;
 
     private CPrivateKey(String alg, NativeHandles handles, int keyLength) {
         super(alg, handles, keyLength, false);

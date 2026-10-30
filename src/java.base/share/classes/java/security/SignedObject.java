@@ -116,10 +116,8 @@ import java.io.*;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SignedObject implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 720502720485447167L;
 
     /**
      * @serial The original content is "deep copied" in its serialized format

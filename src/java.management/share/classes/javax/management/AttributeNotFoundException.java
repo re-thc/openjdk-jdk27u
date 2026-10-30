@@ -31,10 +31,8 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AttributeNotFoundException extends OperationsException {
-
-    /* Serial version */
-    private static final long serialVersionUID = 6511584241791106926L;
 
     /**
      * Default constructor.

@@ -37,10 +37,8 @@ package java.rmi;
  * @author  Ann Wollrath
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ServerError extends RemoteException {
-
-    /* indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = 8455284893909696482L;
 
     /**
      * Constructs a <code>ServerError</code> with the specified

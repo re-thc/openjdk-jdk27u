@@ -33,9 +33,8 @@ package com.sun.tools.javac.util;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Abort extends Error {
-    private static final long serialVersionUID = 0;
-
     public Abort(Throwable cause) {
         super(cause);
     }

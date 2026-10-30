@@ -42,14 +42,9 @@ import javax.print.attribute.PrintServiceAttribute;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class QueuedJobCount extends IntegerSyntax
     implements PrintServiceAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 7499723077864047742L;
 
     /**
      * Construct a new queued job count attribute with the given integer value.

@@ -147,6 +147,7 @@ import jdk.internal.access.SharedSecrets;
  * @since   1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IdentityHashMap<K,V>
     extends AbstractMap<K,V>
     implements Map<K,V>, java.io.Serializable, Cloneable
@@ -1276,9 +1277,6 @@ public class IdentityHashMap<K,V>
             return new EntrySpliterator<>(IdentityHashMap.this, 0, -1, 0, 0);
         }
     }
-
-    @java.io.Serial
-    private static final long serialVersionUID = 8188218128353913216L;
 
     /**
      * Saves the state of the {@code IdentityHashMap} instance to a stream

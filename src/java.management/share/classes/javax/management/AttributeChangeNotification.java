@@ -49,10 +49,8 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AttributeChangeNotification extends javax.management.Notification {
-
-    /* Serial version */
-    private static final long serialVersionUID = 535176054565814134L;
 
     /**
      * Notification type which indicates that the observed MBean attribute value has changed.

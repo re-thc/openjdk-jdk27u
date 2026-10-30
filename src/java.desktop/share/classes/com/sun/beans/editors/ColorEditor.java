@@ -37,13 +37,8 @@ import java.beans.PropertyChangeSupport;
 import java.beans.PropertyEditor;
 import java.io.Serial;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ColorEditor extends Panel implements PropertyEditor {
-
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 1781257185164716054L;
 
     @SuppressWarnings("deprecation")
     public ColorEditor() {

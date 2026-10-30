@@ -32,9 +32,8 @@ package com.sun.jdi;
  * @author Gordon Hirsch
  * @since  1.3
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InternalException extends RuntimeException {
-
-    private static final long serialVersionUID = -9171606393104480607L;
 
     /** @serial */
     private int errorCode;

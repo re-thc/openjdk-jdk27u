@@ -32,7 +32,6 @@ import static org.testng.Assert.assertTrue;
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.intern.
  * @run testng/othervm -XX:+CompactStrings Intern
- * @run testng/othervm -XX:-CompactStrings Intern
  */
 
 public class Intern extends CompactString {

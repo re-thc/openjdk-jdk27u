@@ -29,6 +29,7 @@ import sun.management.counter.*;
 
 /**
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MethodInfo implements java.io.Serializable {
     private String name;
     private long type;
@@ -73,7 +74,5 @@ public class MethodInfo implements java.io.Serializable {
         return getName() + " type = " + getType() +
             " compileSize = " + getCompileSize();
     }
-
-    private static final long serialVersionUID = 6992337162326171013L;
 
 }

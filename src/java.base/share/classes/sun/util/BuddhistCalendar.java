@@ -33,14 +33,12 @@ import java.util.Map;
 import java.util.TimeZone;
 import sun.util.locale.provider.CalendarDataUtility;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class BuddhistCalendar extends GregorianCalendar {
 
 //----------------
 // Class Variables
 //----------------
-
-    @java.io.Serial
-    private static final long serialVersionUID = -8527488697350388578L;
 
     private static final int BUDDHIST_YEAR_OFFSET = 543;
 

@@ -33,9 +33,8 @@ package javax.xml.stream;
  * @author Copyright (c) 2009 by Oracle Corporation. All Rights Reserved.
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class FactoryConfigurationError extends Error {
-    private static final long serialVersionUID = -2994412584589975744L;
-
   /**
    * @serial The nested exception.
    */

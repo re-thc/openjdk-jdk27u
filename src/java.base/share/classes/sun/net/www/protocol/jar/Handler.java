@@ -169,7 +169,10 @@ public class Handler extends java.net.URLStreamHandler {
             int bangSlash = indexOfBangSlash(file);
             file = canonicalizeString(file, bangSlash);
         }
-        setURL(url, "jar", "", -1, file, ref);
+        int queryIndex = file.lastIndexOf('?');
+        String path = queryIndex == -1 ? file : file.substring(0, queryIndex);
+        String query = queryIndex == -1 ? null : file.substring(queryIndex + 1);
+        setURL(url, "jar", "", -1, null, null, path, query, ref);
     }
 
     private String parseAbsoluteSpec(String spec) {

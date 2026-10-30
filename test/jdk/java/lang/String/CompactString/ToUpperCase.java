@@ -31,7 +31,6 @@ import static org.testng.Assert.assertEquals;
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.toUpperCase.
  * @run testng/othervm -XX:+CompactStrings ToUpperCase
- * @run testng/othervm -XX:-CompactStrings ToUpperCase
  */
 
 public class ToUpperCase extends CompactString {

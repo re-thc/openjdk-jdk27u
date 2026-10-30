@@ -68,9 +68,8 @@ import java.io.Serializable;
  * @since 1.8
  * @author Doug Lea
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LongAdder extends Striped64 implements Serializable {
-    private static final long serialVersionUID = 7249069246863182397L;
-
     /**
      * Creates a new adder with initial sum of zero.
      */
@@ -213,9 +212,8 @@ public class LongAdder extends Striped64 implements Serializable {
      * Striped64 superclass in serialized forms.
      * @serial include
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class SerializationProxy implements Serializable {
-        private static final long serialVersionUID = 7249069246863182397L;
-
         /**
          * The current value returned by sum().
          * @serial

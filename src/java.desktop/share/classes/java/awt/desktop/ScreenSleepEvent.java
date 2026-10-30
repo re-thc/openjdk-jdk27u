@@ -38,13 +38,8 @@ import java.io.Serial;
  * @see ScreenSleepListener#screenAwoke(ScreenSleepEvent)
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ScreenSleepEvent extends AppEvent {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 7521606180376544150L;
 
     /**
      * Constructs a {@code ScreenSleepEvent}.

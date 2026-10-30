@@ -75,6 +75,7 @@ import javax.accessibility.AccessibleRole;
  * @author      Arthur van Hoff
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Choice extends Component implements ItemSelectable, Accessible {
     /**
      * The items for the {@code Choice}.
@@ -102,12 +103,6 @@ public class Choice extends Component implements ItemSelectable, Accessible {
 
     private static final String base = "choice";
     private static int nameCounter = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4075310674757313071L;
 
     static {
         /* ensure that the necessary native libraries are loaded */
@@ -767,15 +762,10 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * Java Accessibility API appropriate to choice user-interface elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTChoice extends AccessibleAWTComponent
         implements AccessibleAction
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 7175603582428509322L;
-
         /**
          * Constructor for {@code AccessibleAWTChoice}
          */

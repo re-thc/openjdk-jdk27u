@@ -31,9 +31,8 @@ package com.sun.jdi.request;
  * @author Robert Field
  * @since  1.3
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DuplicateRequestException extends RuntimeException {
-
-    private static final long serialVersionUID = -3719784920313411060L;
 
     public DuplicateRequestException() {
         super();

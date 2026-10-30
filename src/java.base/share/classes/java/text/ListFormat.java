@@ -100,10 +100,8 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
  * @since 22
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ListFormat extends Format {
-
-    @Serial
-    private static final long serialVersionUID = 5272525550078071946L;
 
     private static final int START = 0;
     private static final int MIDDLE = 1;
