@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +40,7 @@ import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.util.Architecture;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
@@ -230,7 +232,130 @@ public final class ScopedMemoryAccess {
             if (bSession != null) {
                 bSession.checkValidStateRaw();
             }
+            if ((a == null || b == null) && log2ArrayIndexScale >= 0 && log2ArrayIndexScale <= 3) {
+                boolean aarch64 = Architecture.isAARCH64();
+                int minimum = (aarch64 ? 512 : 128) >> log2ArrayIndexScale;
+                if (length >= 0 && length < minimum) {
+                    // Bound short native ranges so C2 retains the Java loop
+                    // without constructing the bulk dispatch and chunk loop.
+                    return ArraysSupport.vectorizedMismatch(a, aOffset, b, bOffset, length & (minimum - 1),
+                            log2ArrayIndexScale);
+                }
+                // Bound native-address mismatch calls, including C1's existing
+                // intrinsic. The loop between chunks provides safepoint polls.
+                int maximum = 65536 >> log2ArrayIndexScale;
+                if (length > maximum) {
+                    if (aarch64) {
+                        if (a == null) {
+                            return vectorizedMismatchLarge(null, aOffset, b, bOffset, length, log2ArrayIndexScale);
+                        }
+                        return vectorizedMismatchLarge(a, aOffset, null, bOffset, length, log2ArrayIndexScale);
+                    }
+                    return vectorizedMismatchLarge(a, aOffset, b, bOffset, length, log2ArrayIndexScale);
+                }
+                if (aarch64 && length >= minimum) {
+                    // Expose the checked bounds before C2 intrinsification;
+                    // the guarded length and original Java arguments are unchanged.
+                    // A view's array-typed base can still be null. Preserve
+                    // the native operand's type before C2 selects its range.
+                    int boundedLength = Math.min(Math.max(length, minimum), maximum);
+                    if (a == null) {
+                        return ArraysSupport.vectorizedMismatch(null, aOffset, b, bOffset,
+                                boundedLength, log2ArrayIndexScale);
+                    }
+                    return ArraysSupport.vectorizedMismatch(a, aOffset, null, bOffset,
+                            boundedLength, log2ArrayIndexScale);
+                }
+            }
+            if (Architecture.isAARCH64() && log2ArrayIndexScale >= 0 && log2ArrayIndexScale <= 3) {
+                int heapLimit = 2048 >> log2ArrayIndexScale;
+                if (length > heapLimit) {
+                    // Positive native ranges returned above. Keep larger heap
+                    // comparisons in Java, exposing the checked lower bound.
+                    return ArraysSupport.vectorizedMismatch(a, aOffset, b, bOffset,
+                            Math.max(length, heapLimit + 1), log2ArrayIndexScale);
+                }
+            }
             return ArraysSupport.vectorizedMismatch(a, aOffset, b, bOffset, length, log2ArrayIndexScale);
+        } finally {
+            Reference.reachabilityFence(aSession);
+            Reference.reachabilityFence(bSession);
+        }
+    }
+
+    // Compares in chunks of at most 64 KiB. The loop advances by the elements
+    // each chunk compared, as reported by its result, so its stride is not a
+    // constant: C2 compiles a non-counted loop, which keeps a safepoint poll on
+    // every iteration whatever the GC and loop strip-mining settings.
+    @ForceInline
+    private int vectorizedMismatchLarge(Object a, long aOffset, Object b, long bOffset,
+                                       int length, int log2ArrayIndexScale) {
+        int chunk = 65536 >> log2ArrayIndexScale;
+        int offset = 0;
+        int remaining = length;
+        while (remaining > chunk) {
+            long byteOffset = (long) offset << log2ArrayIndexScale;
+            int result = ArraysSupport.vectorizedMismatch(a, aOffset + byteOffset,
+                    b, bOffset + byteOffset, chunk, log2ArrayIndexScale);
+            if (result >= 0) {
+                return offset + result;
+            }
+            // A chunk is a multiple of the word width, so its tail ~result is
+            // empty; any tail would be compared again by the next chunk.
+            int compared = chunk - ~result;
+            offset += compared;
+            remaining -= compared;
+        }
+        long byteOffset = (long) offset << log2ArrayIndexScale;
+        int result = ArraysSupport.vectorizedMismatch(a, aOffset + byteOffset,
+                b, bOffset + byteOffset, remaining, log2ArrayIndexScale);
+        return result >= 0 ? offset + result : result;
+    }
+
+    // Long byte ranges use one scoped boundary for the whole scan. Its Java
+    // backedge polls between bounded leaf calls without rechecking sessions
+    // for every chunk. Keep this boundary even when both bases are heap arrays.
+    @ForceInline
+    public long vectorizedMismatchLargeForBytes(MemorySessionImpl aSession, MemorySessionImpl bSession,
+                                               Object a, long aOffset, Object b, long bOffset, long length) {
+        try {
+            return vectorizedMismatchLargeForBytesInternal(aSession, bSession,
+                    a, aOffset, b, bOffset, length);
+        } catch (ScopedAccessError ex) {
+            throw ex.newRuntimeException();
+        }
+    }
+
+    @ForceInline @Scoped
+    private long vectorizedMismatchLargeForBytesInternal(MemorySessionImpl aSession, MemorySessionImpl bSession,
+                                                        Object a, long aOffset, Object b, long bOffset, long length) {
+        try {
+            if (aSession != null) {
+                aSession.checkValidStateRaw();
+            }
+            if (bSession != null) {
+                bSession.checkValidStateRaw();
+            }
+            int javaLimit = Architecture.isAARCH64() ? 512 : 128;
+            if (length >= 0 && length < javaLimit && (a == null || b == null)) {
+                // As in vectorizedMismatchInternal.
+                return ArraysSupport.vectorizedMismatch(a, aOffset, b, bOffset, (int) length & (javaLimit - 1),
+                        ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
+            }
+            long offset = 0;
+            long remaining = length;
+            while (remaining > 7) {
+                int size = (int) Math.min(remaining, 65536);
+                int result = ArraysSupport.vectorizedMismatch(a, aOffset + offset,
+                        b, bOffset + offset, size, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
+                if (result >= 0) {
+                    return offset + result;
+                }
+                int scanned = size - ~result;
+                offset += scanned;
+                remaining -= scanned;
+            }
+            return ~remaining;
         } finally {
             Reference.reachabilityFence(aSession);
             Reference.reachabilityFence(bSession);

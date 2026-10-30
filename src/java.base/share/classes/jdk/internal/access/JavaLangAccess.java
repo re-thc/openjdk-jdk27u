@@ -48,6 +48,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Stream;
 
+import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.loader.NativeLibraries;
 import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.module.ServicesCatalog;
@@ -642,9 +643,21 @@ public interface JavaLangAccess {
     String getLoaderNameID(ClassLoader loader);
 
     /**
-     * Copy the string bytes to an existing segment, avoiding intermediate copies.
+     * Copy the string's internal bytes to an existing segment, avoiding intermediate
+     * copies. Source indices and lengths are in chars. UTF-16 storage uses native
+     * byte order; callers must establish compatibility with the destination.
      */
     void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int srcLength);
+
+    /**
+     * Copy UTF-16 string storage to a checked native-order destination without
+     * constructing a segment view. The caller bounds each copy, establishes the
+     * destination range and writability, and keeps its owning buffer reachable.
+     * The existing session (or null for an ordinary direct buffer) enforces lifetime
+     * and thread checks during the copy.
+     */
+    void copyUTF16ToNative(String string, int srcIndex, int srcLength,
+                           MemorySessionImpl dstSession, long dstAddress);
 
     /**
      * Are the string bytes compatible with the given charset?

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +102,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_currentThread();
   address generate_Float_float16ToFloat_entry();
   address generate_Float_floatToFloat16_entry();
+  address generate_vectorizedMismatch_entry();
 
   // Some platforms don't need registers, other need two. Unused function is
   // left unimplemented.

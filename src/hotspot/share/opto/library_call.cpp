@@ -833,6 +833,8 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
     return inline_digestBase_implCompressMB_predicate(predicate);
   case vmIntrinsics::_galoisCounterMode_AESCrypt:
     return inline_galoisCounterMode_AESCrypt_predicate();
+  case vmIntrinsics::_vectorizedMismatch:
+    return inline_vectorizedMismatch_predicate();
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
@@ -6741,6 +6743,63 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
   return true;
 }
 
+static constexpr int aarch64_mismatch_bulk_minimum_bytes = 512;
+
+static bool aarch64_mismatch_java_range(const TypeInt* length, int scale) {
+  return length->_hi < (aarch64_mismatch_bulk_minimum_bytes >> scale) &&
+         (!length->is_con() || length->get_con() != (128 >> scale));
+}
+
+
+Node* LibraryCallKit::inline_vectorizedMismatch_predicate() {
+  const TypeInt* scale = _gvn.type(argument(7))->isa_int();
+  if (scale == nullptr || !scale->is_con() || scale->get_con() < 0 || scale->get_con() > 3) {
+    Node* slow_control = control();
+    set_control(top());
+    return slow_control;
+  }
+  int minimum = 128 >> scale->get_con();
+  int maximum = (64 * K) >> scale->get_con();
+  bool native_access = _gvn.type(argument(0)) == TypePtr::NULL_PTR ||
+                       _gvn.type(argument(3)) == TypePtr::NULL_PTR;
+  if (AARCH64_ONLY(true) NOT_AARCH64(false) && !native_access) {
+    // Keep larger heap scans in their typed Java caller, with its polls.
+    maximum = (2 * K) >> scale->get_con();
+  }
+  if (AARCH64_ONLY(true) NOT_AARCH64(false) && native_access &&
+      aarch64_mismatch_java_range(_gvn.type(argument(6))->is_int(), scale->get_con())) {
+    Node* slow_control = control();
+    set_control(top());
+    return slow_control;
+  }
+  // The unsigned range also excludes empty/negative inputs.
+  Node* adjusted = _gvn.transform(new SubINode(argument(6), intcon(minimum)));
+  Node* cmp = _gvn.transform(new CmpUNode(adjusted, intcon(maximum - minimum)));
+  Node* outside = _gvn.transform(new BoolNode(cmp, BoolTest::gt));
+  Node* slow_control = generate_guard(outside, nullptr, PROB_FAIR);
+  if (AARCH64_ONLY(true) NOT_AARCH64(false) && native_access && !stopped()) {
+    // The exact minimum has a complete scalar-prefix exit. Intermediate
+    // native ranges retain Java instead of paying for the prefix and a stub.
+    int bulk_minimum = aarch64_mismatch_bulk_minimum_bytes >> scale->get_con();
+    Node* short_adjusted = _gvn.transform(new SubINode(argument(6), intcon(minimum + 1)));
+    Node* short_cmp = _gvn.transform(new CmpUNode(short_adjusted, intcon(bulk_minimum - minimum - 2)));
+    Node* short_range = _gvn.transform(new BoolNode(short_cmp, BoolTest::le));
+    Node* short_control = generate_guard(short_range, nullptr, PROB_FAIR);
+    if (short_control != nullptr) {
+      if (slow_control == nullptr) {
+        slow_control = short_control;
+      } else {
+        RegionNode* slow_region = new RegionNode(3);
+        slow_region->init_req(1, slow_control);
+        slow_region->init_req(2, short_control);
+        record_for_igvn(slow_region);
+        slow_control = _gvn.transform(slow_region);
+      }
+    }
+  }
+  return slow_control;
+}
+
 //-------------inline_vectorizedMismatch------------------------------
 bool LibraryCallKit::inline_vectorizedMismatch() {
   assert(UseVectorizedMismatchIntrinsic, "not implemented on this platform");
@@ -6755,14 +6814,38 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 
   const TypeAryPtr* obja_t = _gvn.type(obja)->isa_aryptr();
   const TypeAryPtr* objb_t = _gvn.type(objb)->isa_aryptr();
-  if (obja_t == nullptr || obja_t->elem() == Type::BOTTOM ||
-      objb_t == nullptr || objb_t->elem() == Type::BOTTOM ||
+  bool a_native = _gvn.type(obja) == TypePtr::NULL_PTR;
+  bool b_native = _gvn.type(objb) == TypePtr::NULL_PTR;
+  if ((!a_native && (obja_t == nullptr || obja_t->elem() == Type::BOTTOM)) ||
+      (!b_native && (objb_t == nullptr || objb_t->elem() == Type::BOTTOM)) ||
       scale == top()) {
     return false; // failed input validation
   }
 
+  bool native_access = a_native || b_native;
+  const bool aarch64_mismatch = AARCH64_ONLY(true) NOT_AARCH64(false);
+  const bool has_java_path = native_access || aarch64_mismatch;
+  const bool heap_access = aarch64_mismatch && !native_access;
+  int intrinsic_limit = 0;
+  if (has_java_path) {
+    const TypeInt* scale_type = _gvn.type(scale)->is_int();
+    if (!scale_type->is_con() || scale_type->get_con() < 0 || scale_type->get_con() > 3) {
+      return false;
+    }
+    intrinsic_limit = (native_access ? 64 * K : 2 * K) >> scale_type->get_con();
+    const TypeInt* length_type = _gvn.type(length)->is_int();
+    int minimum = 128 >> scale_type->get_con();
+    if (length_type->_lo > intrinsic_limit || length_type->_hi < minimum ||
+        (aarch64_mismatch && native_access && aarch64_mismatch_java_range(length_type, scale_type->get_con()))) {
+      return false;
+    }
+    C->set_has_unsafe_access(true);
+  }
+
   Node* obja_adr = make_unsafe_address(obja, aoffset);
   Node* objb_adr = make_unsafe_address(objb, boffset);
+  const bool needs_cpu_membar = has_java_path &&
+      (has_wide_mem(_gvn, obja_adr, obja) || has_wide_mem(_gvn, objb_adr, objb));
 
   // Partial inlining handling for inputs smaller than ArrayOperationPartialInlineSize bytes in size.
   //
@@ -6781,15 +6864,123 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   //      return Phi(result1, result2);
   //
   enum { inline_path = 1,  // input is small enough to process it all at once
-         stub_path   = 2,  // input is too large; call into the VM
-         PATH_LIMIT  = 3
+         stub_path   = 2,  // bounded stub result
+         java_path   = 3,  // input is outside the intrinsic range
+         first_word_path = 4, // an input differs in its scalar prefix
+         matched_prefix_path = 5, // the scalar prefix covers the complete range
+         PATH_LIMIT  = 6
   };
 
-  Node* exit_block = new RegionNode(PATH_LIMIT);
+  Node* exit_block = new RegionNode(has_java_path ? PATH_LIMIT : java_path);
   Node* result_phi = new PhiNode(exit_block, TypeInt::INT);
   Node* memory_phi = new PhiNode(exit_block, Type::MEMORY, TypePtr::BOTTOM);
+  Node* io_phi = has_java_path ? new PhiNode(exit_block, Type::ABIO) : nullptr;
 
-  Node* call_stub_path = control();
+  if (has_java_path) {
+    // Retain size selection if input types become known after predication.
+    // The range guard dominates the scalar-prefix loads below.
+    int minimum = 128 >> _gvn.type(scale)->is_int()->get_con();
+    Node* adjusted = _gvn.transform(new SubINode(length, intcon(minimum)));
+    Node* bound_cmp = _gvn.transform(new CmpUNode(adjusted, intcon(intrinsic_limit - minimum)));
+    Node* out_of_bounds = _gvn.transform(new BoolNode(bound_cmp, BoolTest::gt));
+    RegionNode* slow_region = new RegionNode(1);
+    record_for_igvn(slow_region);
+    generate_slow_guard(out_of_bounds, slow_region);
+    if (aarch64_mismatch && native_access && !stopped()) {
+      int bulk_minimum = aarch64_mismatch_bulk_minimum_bytes >> _gvn.type(scale)->is_int()->get_con();
+      Node* short_adjusted = _gvn.transform(new SubINode(length, intcon(minimum + 1)));
+      Node* short_cmp = _gvn.transform(new CmpUNode(short_adjusted, intcon(bulk_minimum - minimum - 2)));
+      Node* short_range = _gvn.transform(new BoolNode(short_cmp, BoolTest::le));
+      generate_slow_guard(short_range, slow_region);
+    }
+    Node* slow_control = _gvn.transform(slow_region);
+    if (slow_control != top()) {
+      PreserveJVMState pjvms(this);
+      set_control(slow_control);
+      CallJavaNode* slow_call = generate_method_call_static(vmIntrinsics::_vectorizedMismatch, false);
+      Node* slow_result = set_results_for_java_call(slow_call);
+      exit_block->init_req(java_path, control());
+      memory_phi->init_req(java_path, reset_memory());
+      io_phi->init_req(java_path, i_o());
+      result_phi->init_req(java_path, slow_result);
+    }
+  }
+
+  if (has_java_path && !stopped()) {
+    // The range guard makes these pinned, unaligned prefix loads safe.
+    // Avoid stub entry for early heap and native/scoped mismatches, retaining
+    // the original Java arguments for deoptimization.
+    if (needs_cpu_membar) {
+      // Mixed unsafe addresses can alias any preceding heap store.
+      insert_mem_bar(Op_MemBarCPUOrder);
+    }
+    int prefix_words = aarch64_mismatch ? (native_access ? 16 : 2) : 1;
+    RegionNode* different_region = new RegionNode(1);
+    PhiNode* different_word = new PhiNode(different_region, TypeLong::LONG);
+    PhiNode* different_offset = new PhiNode(different_region, TypeInt::INT);
+    record_for_igvn(different_region);
+    // Nullable array bases with unrestricted offsets also use raw addresses.
+    Node* a_base = obja_adr->bottom_type()->make_ptr()->isa_oopptr() != nullptr ? obja : top();
+    Node* b_base = objb_adr->bottom_type()->make_ptr()->isa_oopptr() != nullptr ? objb : top();
+    for (int i = 0; i < prefix_words && !stopped(); i++) {
+      int byte_offset = i * BytesPerLong;
+      Node* a_adr = byte_offset == 0 ? obja_adr
+          : basic_plus_adr(a_base, obja_adr, byte_offset);
+      Node* b_adr = byte_offset == 0 ? objb_adr
+          : basic_plus_adr(b_base, objb_adr, byte_offset);
+      Node* a_word = make_load(control(), a_adr, TypeLong::LONG, T_LONG, MemNode::unordered,
+                               LoadNode::Pinned, false, true, true, true);
+      Node* b_word = make_load(control(), b_adr, TypeLong::LONG, T_LONG, MemNode::unordered,
+                               LoadNode::Pinned, false, true, true, true);
+      Node* diff = _gvn.transform(new XorLNode(a_word, b_word));
+      Node* cmp = _gvn.transform(new CmpLNode(diff, longcon(0)));
+      Node* different = _gvn.transform(new BoolNode(cmp, BoolTest::ne));
+      Node* mismatch_control = generate_guard(different, nullptr, PROB_FAIR);
+      if (mismatch_control != nullptr) {
+        different_region->add_req(mismatch_control);
+        different_word->add_req(diff);
+        different_offset->add_req(intcon(byte_offset));
+      }
+    }
+    if (different_region->req() > 1) {
+      PreserveJVMState pjvms(this);
+      set_control(_gvn.transform(different_region));
+      Node* diff = _gvn.transform(different_word);
+      Node* byte_offset = _gvn.transform(different_offset);
+      int scale_value = _gvn.type(scale)->is_int()->get_con();
+      // A differing word already identifies an eight-byte element.
+      Node* word_index = intcon(0);
+      if (scale_value < LogBytesPerLong) {
+#ifdef VM_LITTLE_ENDIAN
+        Node* zeros = _gvn.transform(new CountTrailingZerosLNode(diff));
+#else
+        Node* zeros = _gvn.transform(new CountLeadingZerosLNode(diff));
+#endif
+        word_index = _gvn.transform(new RShiftINode(zeros, intcon(3 + scale_value)));
+      }
+      Node* offset_index = _gvn.transform(new RShiftINode(byte_offset, intcon(scale_value)));
+      Node* index = _gvn.transform(new AddINode(offset_index, word_index));
+      exit_block->init_req(first_word_path, control());
+      memory_phi->init_req(first_word_path, map()->memory());
+      io_phi->init_req(first_word_path, i_o());
+      result_phi->init_req(first_word_path, index);
+    }
+  }
+
+  if (aarch64_mismatch && native_access && !stopped()) {
+    // Every byte of the minimum native range has already compared equal.
+    Node* cmp = _gvn.transform(new CmpINode(length, intcon(128 >> _gvn.type(scale)->is_int()->get_con())));
+    Node* complete = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
+    Node* complete_control = generate_guard(complete, nullptr, PROB_MIN);
+    if (complete_control != nullptr) {
+      exit_block->init_req(matched_prefix_path, complete_control);
+      memory_phi->init_req(matched_prefix_path, map()->memory());
+      io_phi->init_req(matched_prefix_path, i_o());
+      result_phi->init_req(matched_prefix_path, intcon(-1));
+    }
+  }
+
+  Node* call_stub_path = stopped() ? nullptr : control();
 
   BasicType elem_bt = T_ILLEGAL;
 
@@ -6810,7 +7001,9 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 
   if (elem_bt != T_ILLEGAL && ArrayOperationPartialInlineSize > 0) {
     inline_limit = ArrayOperationPartialInlineSize / type2aelembytes(elem_bt);
-    do_partial_inline = inline_limit >= 16;
+    // Guarded native ranges contain at least 128 bytes; omit an unreachable
+    // masked path.
+    do_partial_inline = inline_limit >= 16 && (!native_access || ArrayOperationPartialInlineSize >= 128);
   }
 
   if (do_partial_inline) {
@@ -6841,6 +7034,7 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 
         exit_block->init_req(inline_path, control());
         memory_phi->init_req(inline_path, map()->memory());
+        if (io_phi != nullptr) io_phi->init_req(inline_path, i_o());
         result_phi->init_req(inline_path, result);
 
         C->set_max_vector_size(MAX2((uint)ArrayOperationPartialInlineSize, C->max_vector_size()));
@@ -6852,18 +7046,39 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   if (call_stub_path != nullptr) {
     set_control(call_stub_path);
 
+    // The heap guard admits at most 2 KiB. Retain the explicit cap as well.
+    Node* stub_length = heap_access
+        ? _gvn.transform(new MinINode(length, intcon((2 * K) >> scale_t->get_con()))) : length;
+    address mismatch_stub = StubRoutines::vectorizedMismatch();
+    const char* mismatch_name = "vectorizedMismatch";
+#ifdef AMD64
+    // Only proven primitive heap accesses may omit the native fault setup.
+    // Use the original base types: a speculative unsafe-address cast alone
+    // must not route nullable or uncertain inputs through the heap-only entry.
+    if (obja_t != nullptr && objb_t != nullptr &&
+        !TypePtr::NULL_PTR->higher_equal(obja_t) && !TypePtr::NULL_PTR->higher_equal(objb_t) &&
+        is_java_primitive(obja_t->elem()->array_element_basic_type()) &&
+        is_java_primitive(objb_t->elem()->array_element_basic_type()) &&
+        !has_wide_mem(_gvn, obja_adr, obja) && !has_wide_mem(_gvn, objb_adr, objb)) {
+      mismatch_stub = StubRoutines::x86::vectorizedMismatchHeap();
+      mismatch_name = "vectorizedMismatchHeap";
+      assert(mismatch_stub != nullptr, "heap mismatch stub must be generated with the generic entry");
+    }
+#endif
     Node* call = make_runtime_call(RC_LEAF,
                                    OptoRuntime::vectorizedMismatch_Type(),
-                                   StubRoutines::vectorizedMismatch(), "vectorizedMismatch", TypePtr::BOTTOM,
-                                   obja_adr, objb_adr, length, scale);
-
+                                   mismatch_stub, mismatch_name, TypePtr::BOTTOM,
+                                   obja_adr, objb_adr, stub_length, scale);
+    Node* stub_result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
     exit_block->init_req(stub_path, control());
     memory_phi->init_req(stub_path, map()->memory());
-    result_phi->init_req(stub_path, _gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+    if (io_phi != nullptr) io_phi->init_req(stub_path, i_o());
+    result_phi->init_req(stub_path, stub_result);
   }
 
   exit_block = _gvn.transform(exit_block);
   memory_phi = _gvn.transform(memory_phi);
+  if (io_phi != nullptr) io_phi = _gvn.transform(io_phi);
   result_phi = _gvn.transform(result_phi);
 
   record_for_igvn(exit_block);
@@ -6872,6 +7087,11 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
 
   set_control(exit_block);
   set_all_memory(memory_phi);
+  if (io_phi != nullptr) set_i_o(io_phi);
+  if (needs_cpu_membar) {
+    // Preserve ordering with subsequent heap accesses on every normal exit.
+    insert_mem_bar(Op_MemBarCPUOrder);
+  }
   set_result(result_phi);
 
   return true;

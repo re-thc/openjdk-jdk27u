@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -425,12 +426,271 @@ public class ArraysSupport {
         return result;
     }
 
+    private static final int MISMATCH_INLINE_BYTES = 512;
+    private static final int MISMATCH_ADMISSION_BYTES = 128;
+    private static final int MISMATCH_HEAP_STUB_BYTES = 2 * 1024;
+
+    // The caller has at least one word; compare at most the first two words.
+    private static int mismatchPrefix(Object a, long aOffset, Object b, long bOffset,
+                                      int length, int log2ArrayIndexScale) {
+        long diff = U.getLongUnaligned(a, aOffset) ^ U.getLongUnaligned(b, bOffset);
+        int index = 0;
+        if (diff == 0) {
+            index = Math.min(length - (8 >> log2ArrayIndexScale), 8 >> log2ArrayIndexScale);
+            if (index == 0) return -1;
+            long offset = (long) index << log2ArrayIndexScale;
+            diff = U.getLongUnaligned(a, aOffset + offset) ^ U.getLongUnaligned(b, bOffset + offset);
+            if (diff == 0) return -1;
+        }
+        int zeros = BIG_ENDIAN ? Long.numberOfLeadingZeros(diff) : Long.numberOfTrailingZeros(diff);
+        return index + (log2ArrayIndexScale == LOG2_ARRAY_LONG_INDEX_SCALE
+                ? 0 : zeros >> (LOG2_BYTE_BIT_SIZE + log2ArrayIndexScale));
+    }
+
+    // The typed caller has compared prefixBytes. Scan only the bounded
+    // inline range; the last word overlaps already equal bytes if needed.
+    private static int mismatchSmall(Object a, long aOffset, Object b, long bOffset,
+                                     int length, int log2ArrayIndexScale, int prefixBytes) {
+        int last = (length << log2ArrayIndexScale) - Long.BYTES;
+        if (log2ArrayIndexScale == LOG2_ARRAY_LONG_INDEX_SCALE) {
+            // Eight-byte array elements and their offsets are naturally aligned.
+            // Avoid the Java unaligned-access helper on the interpreter path.
+            for (int offset = prefixBytes; offset <= last; offset += Long.BYTES) {
+                if (U.getLong(a, aOffset + offset) != U.getLong(b, bOffset + offset)) {
+                    return offset >> LOG2_ARRAY_LONG_INDEX_SCALE;
+                }
+            }
+            return -1;
+        }
+        for (int offset = prefixBytes; offset < last; offset += Long.BYTES) {
+            long diff = U.getLongUnaligned(a, aOffset + offset) ^ U.getLongUnaligned(b, bOffset + offset);
+            if (diff != 0) return mismatchIndex(diff, offset, log2ArrayIndexScale);
+        }
+        long diff = U.getLongUnaligned(a, aOffset + last) ^ U.getLongUnaligned(b, bOffset + last);
+        return diff == 0 ? -1 : mismatchIndex(diff, last, log2ArrayIndexScale);
+    }
+
+    private static int mismatchIndex(long diff, int byteOffset, int log2ArrayIndexScale) {
+        int index = byteOffset >> log2ArrayIndexScale;
+        if (log2ArrayIndexScale == LOG2_ARRAY_LONG_INDEX_SCALE) return index;
+        int zeros = BIG_ENDIAN ? Long.numberOfLeadingZeros(diff) : Long.numberOfTrailingZeros(diff);
+        return index + (zeros >> (LOG2_BYTE_BIT_SIZE + log2ArrayIndexScale));
+    }
+
+    // Bulk scans retain the typed Java implementation and its canonical NaN handling.
+    private static int mismatchLarge(boolean[] a, int aFromIndex,
+                                     boolean[] b, int bFromIndex, int length) {
+        int i = 0;
+        if (length > 7) {
+            if (a[aFromIndex] != b[bFromIndex])
+                return 0;
+            long aOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + aFromIndex;
+            long bOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + bFromIndex;
+            i = vectorizedMismatch(
+                    a, aOffset,
+                    b, bOffset,
+                    length, LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
+            if (i >= 0)
+                return i;
+            i = length - ~i;
+        }
+        for (; i < length; i++) {
+            if (a[aFromIndex + i] != b[bFromIndex + i])
+                return i;
+        }
+        return -1;
+    }
+
+    private static int mismatchLarge(byte[] a, int aFromIndex,
+                                     byte[] b, int bFromIndex, int length) {
+        // assert 0 <= aFromIndex < a.length
+        // assert 0 <= aFromIndex + length <= a.length
+        // assert 0 <= bFromIndex < b.length
+        // assert 0 <= bFromIndex + length <= b.length
+        // assert length >= 0
+
+        int i = 0;
+        if (length > 7) {
+            if (a[aFromIndex] != b[bFromIndex])
+                return 0;
+            long aOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + aFromIndex;
+            long bOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + bFromIndex;
+            i = vectorizedMismatch(
+                    a, aOffset,
+                    b, bOffset,
+                    length, LOG2_ARRAY_BYTE_INDEX_SCALE);
+            if (i >= 0)
+                return i;
+            i = length - ~i;
+        }
+        for (; i < length; i++) {
+            if (a[aFromIndex + i] != b[bFromIndex + i])
+                return i;
+        }
+        return -1;
+    }
+
+    private static int mismatchLarge(char[] a, int aFromIndex,
+                                     char[] b, int bFromIndex, int length) {
+        int i = 0;
+        if (length > 3) {
+            if (a[aFromIndex] != b[bFromIndex])
+                return 0;
+            long aOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
+            i = vectorizedMismatch(
+                    a, aOffset,
+                    b, bOffset,
+                    length, LOG2_ARRAY_CHAR_INDEX_SCALE);
+            if (i >= 0)
+                return i;
+            i = length - ~i;
+        }
+        for (; i < length; i++) {
+            if (a[aFromIndex + i] != b[bFromIndex + i])
+                return i;
+        }
+        return -1;
+    }
+
+    private static int mismatchLarge(short[] a, int aFromIndex,
+                                     short[] b, int bFromIndex, int length) {
+        int i = 0;
+        if (length > 3) {
+            if (a[aFromIndex] != b[bFromIndex])
+                return 0;
+            long aOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
+            i = vectorizedMismatch(
+                    a, aOffset,
+                    b, bOffset,
+                    length, LOG2_ARRAY_SHORT_INDEX_SCALE);
+            if (i >= 0)
+                return i;
+            i = length - ~i;
+        }
+        for (; i < length; i++) {
+            if (a[aFromIndex + i] != b[bFromIndex + i])
+                return i;
+        }
+        return -1;
+    }
+
+    private static int mismatchLarge(int[] a, int aFromIndex,
+                                     int[] b, int bFromIndex, int length) {
+        int i = 0;
+        if (length > 1) {
+            if (a[aFromIndex] != b[bFromIndex])
+                return 0;
+            long aOffset = Unsafe.ARRAY_INT_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_INT_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
+            i = vectorizedMismatch(
+                    a, aOffset,
+                    b, bOffset,
+                    length, LOG2_ARRAY_INT_INDEX_SCALE);
+            if (i >= 0)
+                return i;
+            i = length - ~i;
+        }
+        for (; i < length; i++) {
+            if (a[aFromIndex + i] != b[bFromIndex + i])
+                return i;
+        }
+        return -1;
+    }
+
+    private static int mismatchLarge(long[] a, int aFromIndex,
+                                     long[] b, int bFromIndex, int length) {
+        if (length == 0) {
+            return -1;
+        }
+        if (a[aFromIndex] != b[bFromIndex])
+            return 0;
+        long aOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
+        long bOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE);
+        int i = vectorizedMismatch(
+                a, aOffset,
+                b, bOffset,
+                length, LOG2_ARRAY_LONG_INDEX_SCALE);
+        return i >= 0 ? i : -1;
+    }
+
+    private static int mismatchLarge(float[] a, int aFromIndex,
+                                     float[] b, int bFromIndex, int length) {
+        int i = 0;
+        if (length > 1) {
+            if (Float.floatToRawIntBits(a[aFromIndex]) == Float.floatToRawIntBits(b[bFromIndex])) {
+                long aOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
+                long bOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
+                i = vectorizedMismatch(
+                        a, aOffset,
+                        b, bOffset,
+                        length, LOG2_ARRAY_FLOAT_INDEX_SCALE);
+            }
+            // Mismatched
+            if (i >= 0) {
+                // Check if mismatch is not associated with two NaN values
+                if (!Float.isNaN(a[aFromIndex + i]) || !Float.isNaN(b[bFromIndex + i]))
+                    return i;
+
+                // Mismatch on two different NaN values that are normalized to match
+                // Fall back to slow mechanism
+                // ISSUE: Consider looping over vectorizedMismatch adjusting ranges
+                // However, requires that returned value be relative to input ranges
+                i++;
+            }
+            // Matched
+            else {
+                i = length - ~i;
+            }
+        }
+        for (; i < length; i++) {
+            if (Float.floatToIntBits(a[aFromIndex + i]) != Float.floatToIntBits(b[bFromIndex + i]))
+                return i;
+        }
+        return -1;
+    }
+
+    private static int mismatchLarge(double[] a, int aFromIndex,
+                                     double[] b, int bFromIndex, int length) {
+        if (length == 0) {
+            return -1;
+        }
+        int i = 0;
+        if (Double.doubleToRawLongBits(a[aFromIndex]) == Double.doubleToRawLongBits(b[bFromIndex])) {
+            long aOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
+            i = vectorizedMismatch(
+                    a, aOffset,
+                    b, bOffset,
+                    length, LOG2_ARRAY_DOUBLE_INDEX_SCALE);
+        }
+        if (i >= 0) {
+            // Check if mismatch is not associated with two NaN values
+            if (!Double.isNaN(a[aFromIndex + i]) || !Double.isNaN(b[bFromIndex + i]))
+                return i;
+
+            // Mismatch on two different NaN values that are normalized to match
+            // Fall back to slow mechanism
+            // ISSUE: Consider looping over vectorizedMismatch adjusting ranges
+            // However, requires that returned value be relative to input ranges
+            i++;
+            for (; i < length; i++) {
+                if (Double.doubleToLongBits(a[aFromIndex + i]) != Double.doubleToLongBits(b[bFromIndex + i]))
+                    return i;
+            }
+        }
+
+        return -1;
+    }
+
     // Booleans
     // Each boolean element takes up one byte
 
     public static int mismatch(boolean[] a,
                                boolean[] b,
                                int length) {
+        if (PlatformProps.TARGET_ARCH_IS_AARCH64) return mismatch(a, 0, b, 0, length);
         int i = 0;
         if (length > 7) {
             if (a[0] != b[0])
@@ -455,14 +715,40 @@ public class ArraysSupport {
                                int length) {
         int i = 0;
         if (length > 7) {
+            // Larger suffixes cannot use C2's heap leaf; retain the Java route.
+            if (PlatformProps.TARGET_ARCH_IS_AARCH64 &&
+                    length <= MISMATCH_HEAP_STUB_BYTES + MISMATCH_ADMISSION_BYTES) {
+                if (a[aFromIndex] != b[bFromIndex]) return 0;
+                long aOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
+                long bOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
+                int firstMismatch = mismatchPrefix(a, aOffset, b, bOffset,
+                        length, LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
+                if (firstMismatch >= 0) return firstMismatch;
+                if (firstMismatch < 0 && length <= (16 >> LOG2_ARRAY_BOOLEAN_INDEX_SCALE)) return -1;
+                int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_BOOLEAN_INDEX_SCALE)
+                        ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_BOOLEAN_INDEX_SCALE;
+                int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
+                        prefixLength, LOG2_ARRAY_BOOLEAN_INDEX_SCALE, 16);
+                if (prefixMismatch >= 0) return prefixMismatch;
+                if (length == prefixLength) return -1;
+                int result = mismatchLarge(a, aFromIndex + prefixLength,
+                        b, bFromIndex + prefixLength, length - prefixLength);
+                return result < 0 ? -1 : prefixLength + result;
+            }
+
             if (a[aFromIndex] != b[bFromIndex])
                 return 0;
             long aOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + aFromIndex;
             long bOffset = Unsafe.ARRAY_BOOLEAN_BASE_OFFSET + bFromIndex;
+            // On AArch64 this path is above the cap. Expose that bound to C2
+            // before intrinsification; the guarded length is unchanged.
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
-                    length, LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
+                    PlatformProps.TARGET_ARCH_IS_AARCH64
+                            ? Math.max(length, MISMATCH_HEAP_STUB_BYTES + MISMATCH_ADMISSION_BYTES + 1)
+                            : length,
+                    LOG2_ARRAY_BOOLEAN_INDEX_SCALE);
             if (i >= 0)
                 return i;
             i = length - ~i;
@@ -473,7 +759,6 @@ public class ArraysSupport {
         }
         return -1;
     }
-
 
     // Bytes
 
@@ -493,6 +778,7 @@ public class ArraysSupport {
     public static int mismatch(byte[] a,
                                byte[] b,
                                int length) {
+        if (PlatformProps.TARGET_ARCH_IS_AARCH64) return mismatch(a, 0, b, 0, length);
         // ISSUE: defer to index receiving methods if performance is good
         // assert length <= a.length
         // assert length <= b.length
@@ -548,14 +834,40 @@ public class ArraysSupport {
 
         int i = 0;
         if (length > 7) {
+            // Larger suffixes cannot use C2's heap leaf; retain the Java route.
+            if (PlatformProps.TARGET_ARCH_IS_AARCH64 &&
+                    length <= MISMATCH_HEAP_STUB_BYTES + MISMATCH_ADMISSION_BYTES) {
+                if (a[aFromIndex] != b[bFromIndex]) return 0;
+                long aOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_BYTE_INDEX_SCALE);
+                long bOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_BYTE_INDEX_SCALE);
+                int firstMismatch = mismatchPrefix(a, aOffset, b, bOffset,
+                        length, LOG2_ARRAY_BYTE_INDEX_SCALE);
+                if (firstMismatch >= 0) return firstMismatch;
+                if (firstMismatch < 0 && length <= (16 >> LOG2_ARRAY_BYTE_INDEX_SCALE)) return -1;
+                int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_BYTE_INDEX_SCALE)
+                        ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_BYTE_INDEX_SCALE;
+                int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
+                        prefixLength, LOG2_ARRAY_BYTE_INDEX_SCALE, 16);
+                if (prefixMismatch >= 0) return prefixMismatch;
+                if (length == prefixLength) return -1;
+                int result = mismatchLarge(a, aFromIndex + prefixLength,
+                        b, bFromIndex + prefixLength, length - prefixLength);
+                return result < 0 ? -1 : prefixLength + result;
+            }
+
             if (a[aFromIndex] != b[bFromIndex])
                 return 0;
             long aOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + aFromIndex;
             long bOffset = Unsafe.ARRAY_BYTE_BASE_OFFSET + bFromIndex;
+            // On AArch64 this path is above the cap. Expose that bound to C2
+            // before intrinsification; the guarded length is unchanged.
             i = vectorizedMismatch(
                     a, aOffset,
                     b, bOffset,
-                    length, LOG2_ARRAY_BYTE_INDEX_SCALE);
+                    PlatformProps.TARGET_ARCH_IS_AARCH64
+                            ? Math.max(length, MISMATCH_HEAP_STUB_BYTES + MISMATCH_ADMISSION_BYTES + 1)
+                            : length,
+                    LOG2_ARRAY_BYTE_INDEX_SCALE);
             if (i >= 0)
                 return i;
             i = length - ~i;
@@ -573,6 +885,7 @@ public class ArraysSupport {
     public static int mismatch(char[] a,
                                char[] b,
                                int length) {
+        if (PlatformProps.TARGET_ARCH_IS_AARCH64) return mismatch(a, 0, b, 0, length);
         int i = 0;
         if (length > 3) {
             if (a[0] != b[0])
@@ -595,6 +908,31 @@ public class ArraysSupport {
     public static int mismatch(char[] a, int aFromIndex,
                                char[] b, int bFromIndex,
                                int length) {
+        if (PlatformProps.TARGET_ARCH_IS_AARCH64) {
+            if (length < (8 >> LOG2_ARRAY_CHAR_INDEX_SCALE)) {
+                for (int j = 0; j < length; j++) {
+                    if (a[aFromIndex + j] != b[bFromIndex + j]) return j;
+                }
+                return -1;
+            }
+            if (a[aFromIndex] != b[bFromIndex]) return 0;
+            long aOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_CHAR_INDEX_SCALE);
+            int i = mismatchPrefix(a, aOffset, b, bOffset,
+                    length, LOG2_ARRAY_CHAR_INDEX_SCALE);
+            if (i >= 0) return i;
+            if (i < 0 && length <= (16 >> LOG2_ARRAY_CHAR_INDEX_SCALE)) return -1;
+            int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_CHAR_INDEX_SCALE)
+                    ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_CHAR_INDEX_SCALE;
+            int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
+                    prefixLength, LOG2_ARRAY_CHAR_INDEX_SCALE, 16);
+            if (prefixMismatch >= 0) return prefixMismatch;
+            if (length == prefixLength) return -1;
+            int result = mismatchLarge(a, aFromIndex + prefixLength,
+                    b, bFromIndex + prefixLength, length - prefixLength);
+            return result < 0 ? -1 : prefixLength + result;
+        }
+
         int i = 0;
         if (length > 3) {
             if (a[aFromIndex] != b[bFromIndex])
@@ -622,6 +960,7 @@ public class ArraysSupport {
     public static int mismatch(short[] a,
                                short[] b,
                                int length) {
+        if (PlatformProps.TARGET_ARCH_IS_AARCH64) return mismatch(a, 0, b, 0, length);
         int i = 0;
         if (length > 3) {
             if (a[0] != b[0])
@@ -644,6 +983,31 @@ public class ArraysSupport {
     public static int mismatch(short[] a, int aFromIndex,
                                short[] b, int bFromIndex,
                                int length) {
+        if (PlatformProps.TARGET_ARCH_IS_AARCH64) {
+            if (length < (8 >> LOG2_ARRAY_SHORT_INDEX_SCALE)) {
+                for (int j = 0; j < length; j++) {
+                    if (a[aFromIndex + j] != b[bFromIndex + j]) return j;
+                }
+                return -1;
+            }
+            if (a[aFromIndex] != b[bFromIndex]) return 0;
+            long aOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_SHORT_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_SHORT_INDEX_SCALE);
+            int i = mismatchPrefix(a, aOffset, b, bOffset,
+                    length, LOG2_ARRAY_SHORT_INDEX_SCALE);
+            if (i >= 0) return i;
+            if (i < 0 && length <= (16 >> LOG2_ARRAY_SHORT_INDEX_SCALE)) return -1;
+            int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_SHORT_INDEX_SCALE)
+                    ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_SHORT_INDEX_SCALE;
+            int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
+                    prefixLength, LOG2_ARRAY_SHORT_INDEX_SCALE, 16);
+            if (prefixMismatch >= 0) return prefixMismatch;
+            if (length == prefixLength) return -1;
+            int result = mismatchLarge(a, aFromIndex + prefixLength,
+                    b, bFromIndex + prefixLength, length - prefixLength);
+            return result < 0 ? -1 : prefixLength + result;
+        }
+
         int i = 0;
         if (length > 3) {
             if (a[aFromIndex] != b[bFromIndex])
@@ -671,6 +1035,7 @@ public class ArraysSupport {
     public static int mismatch(int[] a,
                                int[] b,
                                int length) {
+        if (PlatformProps.TARGET_ARCH_IS_AARCH64) return mismatch(a, 0, b, 0, length);
         int i = 0;
         if (length > 1) {
             if (a[0] != b[0])
@@ -693,6 +1058,31 @@ public class ArraysSupport {
     public static int mismatch(int[] a, int aFromIndex,
                                int[] b, int bFromIndex,
                                int length) {
+        if (PlatformProps.TARGET_ARCH_IS_AARCH64) {
+            if (length < (8 >> LOG2_ARRAY_INT_INDEX_SCALE)) {
+                for (int j = 0; j < length; j++) {
+                    if (a[aFromIndex + j] != b[bFromIndex + j]) return j;
+                }
+                return -1;
+            }
+            if (a[aFromIndex] != b[bFromIndex]) return 0;
+            long aOffset = Unsafe.ARRAY_INT_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_INT_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_INT_INDEX_SCALE);
+            int i = mismatchPrefix(a, aOffset, b, bOffset,
+                    length, LOG2_ARRAY_INT_INDEX_SCALE);
+            if (i >= 0) return i;
+            if (i < 0 && length <= (16 >> LOG2_ARRAY_INT_INDEX_SCALE)) return -1;
+            int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_INT_INDEX_SCALE)
+                    ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_INT_INDEX_SCALE;
+            int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
+                    prefixLength, LOG2_ARRAY_INT_INDEX_SCALE, 16);
+            if (prefixMismatch >= 0) return prefixMismatch;
+            if (length == prefixLength) return -1;
+            int result = mismatchLarge(a, aFromIndex + prefixLength,
+                    b, bFromIndex + prefixLength, length - prefixLength);
+            return result < 0 ? -1 : prefixLength + result;
+        }
+
         int i = 0;
         if (length > 1) {
             if (a[aFromIndex] != b[bFromIndex])
@@ -726,6 +1116,39 @@ public class ArraysSupport {
     public static int mismatch(float[] a, int aFromIndex,
                                float[] b, int bFromIndex,
                                int length) {
+        if (PlatformProps.TARGET_ARCH_IS_AARCH64) {
+            if (length <= 0) return -1;
+            // Different raw representations match only when both values are NaNs.
+            int av = Float.floatToRawIntBits(a[aFromIndex]);
+            int bv = Float.floatToRawIntBits(b[bFromIndex]);
+            if (av != bv && ((av & 0x7fffffff) <= 0x7f800000 ||
+                             (bv & 0x7fffffff) <= 0x7f800000)) return 0;
+            if (length > 1) {
+                long aOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE) + 4;
+                long bOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE) + 4;
+                av = U.getIntUnaligned(a, aOffset);
+                bv = U.getIntUnaligned(b, bOffset);
+                if (av != bv && ((av & 0x7fffffff) <= 0x7f800000 ||
+                                 (bv & 0x7fffffff) <= 0x7f800000)) return 1;
+            }
+            if (length <= 2) return -1;
+            long aOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_FLOAT_INDEX_SCALE);
+            int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_FLOAT_INDEX_SCALE)
+                    ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_FLOAT_INDEX_SCALE;
+            int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
+                    prefixLength, LOG2_ARRAY_FLOAT_INDEX_SCALE, 8);
+            if (prefixMismatch >= 0) {
+                if (!Float.isNaN(a[aFromIndex + prefixMismatch]) ||
+                        !Float.isNaN(b[bFromIndex + prefixMismatch])) return prefixMismatch;
+                prefixLength = prefixMismatch + 1;
+            }
+            if (length == prefixLength) return -1;
+            int result = mismatchLarge(a, aFromIndex + prefixLength,
+                    b, bFromIndex + prefixLength, length - prefixLength);
+            return result < 0 ? -1 : prefixLength + result;
+        }
+
         int i = 0;
         if (length > 1) {
             if (Float.floatToRawIntBits(a[aFromIndex]) == Float.floatToRawIntBits(b[bFromIndex])) {
@@ -767,6 +1190,7 @@ public class ArraysSupport {
     public static int mismatch(long[] a,
                                long[] b,
                                int length) {
+        if (PlatformProps.TARGET_ARCH_IS_AARCH64) return mismatch(a, 0, b, 0, length);
         if (length == 0) {
             return -1;
         }
@@ -782,6 +1206,27 @@ public class ArraysSupport {
     public static int mismatch(long[] a, int aFromIndex,
                                long[] b, int bFromIndex,
                                int length) {
+        if (PlatformProps.TARGET_ARCH_IS_AARCH64) {
+            if (length <= 0) return -1;
+            if (a[aFromIndex] != b[bFromIndex]) return 0;
+            if (length == 1) return -1;
+            long aOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE) + 8;
+            long bOffset = Unsafe.ARRAY_LONG_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_LONG_INDEX_SCALE) + 8;
+            if (U.getLongUnaligned(a, aOffset) != U.getLongUnaligned(b, bOffset)) return 1;
+            if (length == 2) return -1;
+            aOffset -= Long.BYTES;
+            bOffset -= Long.BYTES;
+            int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_LONG_INDEX_SCALE)
+                    ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_LONG_INDEX_SCALE;
+            int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
+                    prefixLength, LOG2_ARRAY_LONG_INDEX_SCALE, 16);
+            if (prefixMismatch >= 0) return prefixMismatch;
+            if (length == prefixLength) return -1;
+            int result = mismatchLarge(a, aFromIndex + prefixLength,
+                    b, bFromIndex + prefixLength, length - prefixLength);
+            return result < 0 ? -1 : prefixLength + result;
+        }
+
         if (length == 0) {
             return -1;
         }
@@ -808,6 +1253,39 @@ public class ArraysSupport {
     public static int mismatch(double[] a, int aFromIndex,
                                double[] b, int bFromIndex,
                                int length) {
+        if (PlatformProps.TARGET_ARCH_IS_AARCH64) {
+            if (length <= 0) return -1;
+            // Different raw representations match only when both values are NaNs.
+            long av = Double.doubleToRawLongBits(a[aFromIndex]);
+            long bv = Double.doubleToRawLongBits(b[bFromIndex]);
+            if (av != bv && ((av & Long.MAX_VALUE) <= 0x7ff0000000000000L ||
+                             (bv & Long.MAX_VALUE) <= 0x7ff0000000000000L)) return 0;
+            if (length > 1) {
+                long aOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE) + 8;
+                long bOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE) + 8;
+                av = U.getLongUnaligned(a, aOffset);
+                bv = U.getLongUnaligned(b, bOffset);
+                if (av != bv && ((av & Long.MAX_VALUE) <= 0x7ff0000000000000L ||
+                                 (bv & Long.MAX_VALUE) <= 0x7ff0000000000000L)) return 1;
+            }
+            if (length <= 2) return -1;
+            long aOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + ((long) aFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
+            long bOffset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + ((long) bFromIndex << LOG2_ARRAY_DOUBLE_INDEX_SCALE);
+            int prefixLength = length <= (MISMATCH_INLINE_BYTES >> LOG2_ARRAY_DOUBLE_INDEX_SCALE)
+                    ? length : MISMATCH_ADMISSION_BYTES >> LOG2_ARRAY_DOUBLE_INDEX_SCALE;
+            int prefixMismatch = mismatchSmall(a, aOffset, b, bOffset,
+                    prefixLength, LOG2_ARRAY_DOUBLE_INDEX_SCALE, 16);
+            if (prefixMismatch >= 0) {
+                if (!Double.isNaN(a[aFromIndex + prefixMismatch]) ||
+                        !Double.isNaN(b[bFromIndex + prefixMismatch])) return prefixMismatch;
+                prefixLength = prefixMismatch + 1;
+            }
+            if (length == prefixLength) return -1;
+            int result = mismatchLarge(a, aFromIndex + prefixLength,
+                    b, bFromIndex + prefixLength, length - prefixLength);
+            return result < 0 ? -1 : prefixLength + result;
+        }
+
         if (length == 0) {
             return -1;
         }

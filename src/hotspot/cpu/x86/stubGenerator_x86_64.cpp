@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3737,18 +3738,24 @@ address StubGenerator::generate_multiplyToLen() {
 *  Input:
 *    c_rarg0   - obja     address
 *    c_rarg1   - objb     address
-*    c_rarg3   - length   length
-*    c_rarg4   - scale    log2_array_indxscale
+*    c_rarg2   - length   length
+*    c_rarg3   - scale    log2_array_indxscale
 *
 *  Output:
 *        rax   - int >= mismatched index, < 0 bitwise complement of tail
 */
-address StubGenerator::generate_vectorizedMismatch() {
-  StubId stub_id = StubId::stubgen_vectorizedMismatch_id;
+address StubGenerator::generate_vectorizedMismatch(bool unsafe_access) {
+  StubId stub_id = unsafe_access ? StubId::stubgen_vectorizedMismatch_id
+                                : StubId::stubgen_vectorizedMismatchHeap_id;
   int entry_count = StubInfo::entry_count(stub_id);
   assert(entry_count == 1, "sanity check");
-  address start = load_archive_data(stub_id);
+  GrowableArray<address> extras;
+  address start = load_archive_data(stub_id, nullptr, unsafe_access ? &extras : nullptr);
   if (start != nullptr) {
+    if (unsafe_access) {
+      assert(extras.length() == UnsafeMemoryAccess::COLUMN_COUNT, "unexpected handler count");
+      register_unsafe_access_handlers(extras, 0, 1);
+    }
     return start;
   }
   __ align(CodeEntryAlignment);
@@ -3781,14 +3788,41 @@ address StubGenerator::generate_vectorizedMismatch() {
   const XMMRegister vec1 = xmm1;
   const XMMRegister vec2 = xmm2;
 
-  __ vectorized_mismatch(obja, objb, length, scale, result, tmp1, tmp2, vec0, vec1, vec2);
+  // Buffer and segment callers can supply mapped addresses. A fault in the
+  // protected PC range raises an asynchronous InternalError. As around C2's
+  // Unsafe.copyMemory calls, the thread flag tells the signal handler that
+  // this is an unsafe access; other stubs in the table keep crashing the VM.
+  // C2's proven heap-only entry shares the kernel without this native setup.
+  const Address doing_unsafe_access(r15_thread, JavaThread::doing_unsafe_access_offset());
+  if (unsafe_access) {
+    __ movb(doing_unsafe_access, 1);
+  }
+  {
+    UnsafeMemoryAccessMark umam(this, unsafe_access, true);
+    __ vectorized_mismatch(obja, objb, length, scale, result, tmp1, tmp2, vec0, vec1, vec2);
+    if (unsafe_access) {
+      __ movb(doing_unsafe_access, 0);
+    }
+    __ vzeroupper();
+    __ leave();
+    __ ret(0);
+  }
+  if (unsafe_access) {
+    // A fault skips the kernel, including its element-index scaling. Return a
+    // valid index while the pending asynchronous InternalError is delivered.
+    __ movb(doing_unsafe_access, 0);
+    __ xorl(result, result);
+    __ vzeroupper();
+    __ leave();
+    __ ret(0);
+  }
 
-  __ vzeroupper();
-  __ leave();
-  __ ret(0);
-
-  // record the stub entry and end
-  store_archive_data(stub_id, start, __ pc());
+  address end = __ pc();
+  if (unsafe_access) {
+    retrieve_unsafe_access_handlers(start, end, extras);
+    assert(extras.length() == UnsafeMemoryAccess::COLUMN_COUNT, "unexpected handler count");
+  }
+  store_archive_data(stub_id, start, end, nullptr, unsafe_access ? &extras : nullptr);
 
   return start;
 }
@@ -4736,7 +4770,7 @@ void StubGenerator::generate_initial_stubs() {
 
   // Initialize table for unsafe copy memeory check.
   if (UnsafeMemoryAccess::_table == nullptr) {
-    UnsafeMemoryAccess::create_table(16 + 4); // 16 for copyMemory; 4 for setMemory
+    UnsafeMemoryAccess::create_table(16 + 4 + 1); // copyMemory, setMemory, vectorizedMismatch
   }
 
   // entry points that exist in all platforms Note: This is code
@@ -4821,7 +4855,10 @@ void StubGenerator::generate_final_stubs() {
 #endif // COMPILER2
 
   if (UseVectorizedMismatchIntrinsic) {
-    StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch();
+    StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch(true);
+#ifdef COMPILER2
+    StubRoutines::x86::_vectorizedMismatchHeap = generate_vectorizedMismatch(false);
+#endif
   }
 
   StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();

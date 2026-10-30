@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +25,8 @@
 package compiler.intrinsics;
 
 /*
- * @test
- * @requires vm.opt.final.UseVectorizedMismatchIntrinsic == true
+ * @test id=x64
+ * @requires vm.opt.final.UseVectorizedMismatchIntrinsic == true & os.simpleArch == "x64"
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.util
  *
@@ -40,10 +41,27 @@ package compiler.intrinsics;
  *                     compiler.intrinsics.VectorizedMismatchTest
  */
 
+/*
+ * @test id=default
+ * @requires vm.opt.final.UseVectorizedMismatchIntrinsic == true
+ * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.util
+ *
+ *  @run main/othervm -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,*::test*
+ *                    -Xbatch -XX:-TieredCompilation
+ *                     compiler.intrinsics.VectorizedMismatchTest
+ *
+ *  @run main/othervm -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,*::test*
+ *                    -Xbatch -XX:TieredStopAtLevel=1
+ *                     compiler.intrinsics.VectorizedMismatchTest
+ */
+
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 
 public class VectorizedMismatchTest {
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
     private boolean[] boolean_a = new boolean[128];
     private boolean[] boolean_b = new boolean[128];
 
@@ -238,9 +256,69 @@ public class VectorizedMismatchTest {
 
     /* ==================================================================================== */
 
+    // Empty ranges followed by elements that differ: nothing is compared, so
+    // the result is -1 (no tail) whatever follows the range.
+    private byte[] empty_byte_a = new byte[16];
+    private byte[] empty_byte_b = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+    private char[] empty_char_a = new char[8];
+    private char[] empty_char_b = {1, 2, 3, 4, 5, 6, 7, 8};
+    private int[] empty_int_a = new int[4];
+    private int[] empty_int_b = {1, 2, 3, 4};
+    private long[] empty_long_a = new long[2];
+    private long[] empty_long_b = {1, 2};
+    private static final long EMPTY_NATIVE_A = UNSAFE.allocateMemory(16);
+    private static final long EMPTY_NATIVE_B = UNSAFE.allocateMemory(16);
+    static {
+        for (int i = 0; i < 16; i++) {
+            UNSAFE.putByte(EMPTY_NATIVE_A + i, (byte) 0);
+            UNSAFE.putByte(EMPTY_NATIVE_B + i, (byte) (i + 1));
+        }
+    }
+
+    int testEmptyByte(int length) {
+        return ArraysSupport.vectorizedMismatch(empty_byte_a, Unsafe.ARRAY_BYTE_BASE_OFFSET,
+                                                empty_byte_b, Unsafe.ARRAY_BYTE_BASE_OFFSET,
+                                                length, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
+    }
+
+    int testEmptyChar(int length) {
+        return ArraysSupport.vectorizedMismatch(empty_char_a, Unsafe.ARRAY_CHAR_BASE_OFFSET,
+                                                empty_char_b, Unsafe.ARRAY_CHAR_BASE_OFFSET,
+                                                length, ArraysSupport.LOG2_ARRAY_CHAR_INDEX_SCALE);
+    }
+
+    int testEmptyInt(int length) {
+        return ArraysSupport.vectorizedMismatch(empty_int_a, Unsafe.ARRAY_INT_BASE_OFFSET,
+                                                empty_int_b, Unsafe.ARRAY_INT_BASE_OFFSET,
+                                                length, ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE);
+    }
+
+    int testEmptyLong(int length) {
+        return ArraysSupport.vectorizedMismatch(empty_long_a, Unsafe.ARRAY_LONG_BASE_OFFSET,
+                                                empty_long_b, Unsafe.ARRAY_LONG_BASE_OFFSET,
+                                                length, ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE);
+    }
+
+    int testEmptyNative(int length) {
+        return ArraysSupport.vectorizedMismatch(null, EMPTY_NATIVE_A, null, EMPTY_NATIVE_B,
+                                                length, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
+    }
+
+    private static void checkEmpty(String kind, int result) {
+        if (result != -1) {
+            throw new AssertionError("empty " + kind + " range: expected -1, got " + result);
+        }
+    }
+
     public static void main(String[] args) {
         VectorizedMismatchTest t = new VectorizedMismatchTest();
         for (int i = 0; i < 20_000; i++) {
+            checkEmpty("byte", t.testEmptyByte(0));
+            checkEmpty("char", t.testEmptyChar(0));
+            checkEmpty("int", t.testEmptyInt(0));
+            checkEmpty("long", t.testEmptyLong(0));
+            checkEmpty("native", t.testEmptyNative(0));
+
             t.testBooleanConstantLength0();
             t.testBooleanConstantLength1();
             t.testBooleanConstantLength64();

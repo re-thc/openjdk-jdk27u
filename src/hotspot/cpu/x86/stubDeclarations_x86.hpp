@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,7 +269,10 @@
                                     do_arch_entry,                      \
                                     do_arch_entry_init,                 \
                                     do_arch_entry_array)                \
-  do_arch_blob(final, 33000                                             \
+  do_arch_blob(final, 35000                                             \
                WINDOWS_ONLY(+22000) ZGC_ONLY(+20000))                   \
+  do_stub(final, vectorizedMismatchHeap)                                \
+  do_arch_entry(x86, final, vectorizedMismatchHeap,                      \
+                vectorizedMismatchHeap, vectorizedMismatchHeap)         \
 
 #endif // CPU_X86_STUBDECLARATIONS_HPP

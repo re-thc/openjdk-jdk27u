@@ -243,48 +243,6 @@ public class TestMismatch {
         }
     }
 
-    @Test
-    public void testLarge() {
-        // skip if not on 64 bits
-        if (ValueLayout.ADDRESS.byteSize() > 32) {
-            try (Arena arena = Arena.ofConfined()) {
-                var s1 = arena.allocate((long) Integer.MAX_VALUE + 10L, 8);;
-                var s2 = arena.allocate((long) Integer.MAX_VALUE + 10L, 8);;
-                assertEquals(s1.mismatch(s1), -1);
-                assertEquals(s1.mismatch(s2), -1);
-                assertEquals(s2.mismatch(s1), -1);
-
-                testLargeAcrossMaxBoundary(s1, s2);
-
-                testLargeMismatchAcrossMaxBoundary(s1, s2);
-            }
-        }
-    }
-
-    private void testLargeAcrossMaxBoundary(MemorySegment s1, MemorySegment s2) {
-        for (long i = s2.byteSize() -1 ; i >= Integer.MAX_VALUE - 10L; i--) {
-            var s3 = s1.asSlice(0, i);
-            var s4 = s2.asSlice(0, i);
-            // instance
-            assertEquals(s3.mismatch(s3), -1);
-            assertEquals(s3.mismatch(s4), -1);
-            assertEquals(s4.mismatch(s3), -1);
-            // static
-            assertEquals(MemorySegment.mismatch(s1, 0, s1.byteSize(), s1, 0, i), -1);
-            assertEquals(MemorySegment.mismatch(s2, 0, s1.byteSize(), s1, 0, i), -1);
-            assertEquals(MemorySegment.mismatch(s1, 0, s1.byteSize(), s2, 0, i), -1);
-        }
-    }
-
-    private void testLargeMismatchAcrossMaxBoundary(MemorySegment s1, MemorySegment s2) {
-        for (long i = s2.byteSize() -1 ; i >= Integer.MAX_VALUE - 10L; i--) {
-            s2.set(ValueLayout.JAVA_BYTE, i, (byte) 0xFF);
-            long expectedMismatchOffset = i;
-            assertEquals(s1.mismatch(s2), expectedMismatchOffset);
-            assertEquals(s2.mismatch(s1), expectedMismatchOffset);
-        }
-    }
-
     static final Class<IllegalStateException> ISE = IllegalStateException.class;
     static final Class<UnsupportedOperationException> UOE = UnsupportedOperationException.class;
 

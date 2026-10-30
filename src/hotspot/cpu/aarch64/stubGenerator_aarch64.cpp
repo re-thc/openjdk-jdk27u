@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1044,8 +1045,15 @@ class StubGenerator: public StubCodeGenerator {
   address generate_copy_longs(StubId stub_id, DecoratorSet decorators, Register s, Register d, Register count) {
     int entry_count = StubInfo::entry_count(stub_id);
     assert(entry_count == 1, "sanity check");
-    address start = load_archive_data(stub_id);
+    const bool unsafe_access = stub_id == StubId::stubgen_copy_byte_f_id ||
+                               stub_id == StubId::stubgen_copy_byte_b_id;
+    GrowableArray<address> extras;
+    address start = load_archive_data(stub_id, nullptr, unsafe_access ? &extras : nullptr);
     if (start != nullptr) {
+      if (unsafe_access) {
+        assert(extras.length() == UnsafeMemoryAccess::COLUMN_COUNT, "unexpected handler count");
+        register_unsafe_access_handlers(extras, 0, 1);
+      }
       return start;
     }
     BasicType type;
@@ -1399,8 +1407,16 @@ class StubGenerator: public StubCodeGenerator {
       __ ret(lr);
     }
 
+    address end = __ pc();
+    if (unsafe_access) {
+      // These leaves share the arraycopy stub's frame, including its unsafe error exit.
+      UnsafeMemoryAccess::add_to_table(start, end, UnsafeMemoryAccess::common_exit_stub_pc());
+      retrieve_unsafe_access_handlers(start, end, extras);
+      assert(extras.length() == UnsafeMemoryAccess::COLUMN_COUNT, "unexpected handler count");
+    }
+
     // record the stub entry and end
-    store_archive_data(stub_id, start, __ pc());
+    store_archive_data(stub_id, start, end, nullptr, unsafe_access ? &extras : nullptr);
 
     return start;
   }
@@ -3105,6 +3121,171 @@ class StubGenerator: public StubCodeGenerator {
     assert(extras.length() == extra_count,
            "incorrect handlers count %d", extras.length());
     // record the stub entry and end plus the extras
+    store_archive_data(stub_id, start, end, nullptr, &extras);
+
+    return start;
+  }
+
+  // ArraysSupport.vectorizedMismatch: compares two memory ranges.
+  //
+  //  Input:
+  //    c_rarg0   - address of the first range
+  //    c_rarg1   - address of the second range
+  //    c_rarg2   - length in elements (int)
+  //    c_rarg3   - log2 of the element size (int, 0 to 3)
+  //
+  //  Output:
+  //    r0        - index of the first mismatching element, or -1 if the
+  //                ranges are equal
+  //
+  address generate_vectorizedMismatch() {
+    StubId stub_id = StubId::stubgen_vectorizedMismatch_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    GrowableArray<address> extras;
+    address start = load_archive_data(stub_id, nullptr, &extras);
+    if (start != nullptr) {
+      assert(extras.length() == UnsafeMemoryAccess::COLUMN_COUNT, "unexpected handler count");
+      register_unsafe_access_handlers(extras, 0, 1);
+      return start;
+    }
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+
+    const Register a = c_rarg0, b = c_rarg1, length = c_rarg2, scale = c_rarg3;
+    const Register result = r0;
+    const Register cnt = r4;      // bytes left to compare, adjusted per loop
+    const Register a_start = r5;
+    const Register tmp1 = r6, tmp2 = r7;
+
+    Label LOOP64, TAIL, WORD_LOOP, LAST_WORD, BYTE_LOOP, DIFF64, DIFF_WORD,
+          DIFF_PREV_WORD, DIFF_PREV_BYTE, DIFF_AT, SAME, DONE;
+
+    // Buffer and segment callers can supply mapped addresses. A fault in the
+    // protected PC range raises an asynchronous InternalError. As around C2's
+    // Unsafe.copyMemory calls, the thread flag tells the signal handler that
+    // this is an unsafe access; other stubs in the table keep crashing the VM.
+    const Address doing_unsafe_access(rthread, in_bytes(JavaThread::doing_unsafe_access_offset()));
+    __ enter();
+    __ mov(rscratch1, 1);
+    __ strb(rscratch1, doing_unsafe_access);
+    {
+      // A fault continues after this scope.
+      UnsafeMemoryAccessMark umam(this, true, true);
+
+      __ movw(cnt, length);           // zero-extend the int length
+      __ lslv(cnt, cnt, scale);       // byte count, at most 2^34
+      __ mov(a_start, a);
+
+      __ subs(cnt, cnt, 64);
+      __ br(Assembler::LT, TAIL);
+      __ bind(LOOP64);
+      __ ld1(v0, v1, v2, v3, __ T2D, Address(__ post(a, 64)));
+      __ ld1(v4, v5, v6, v7, __ T2D, Address(__ post(b, 64)));
+      __ eor(v0, __ T16B, v0, v4);
+      __ eor(v1, __ T16B, v1, v5);
+      __ eor(v2, __ T16B, v2, v6);
+      __ eor(v3, __ T16B, v3, v7);
+      __ orr(v16, __ T16B, v0, v1);
+      __ orr(v17, __ T16B, v2, v3);
+      __ orr(v16, __ T16B, v16, v17);
+      __ umov(tmp1, v16, __ D, 0);
+      __ umov(tmp2, v16, __ D, 1);
+      __ orr(tmp1, tmp1, tmp2);
+      __ cbnz(tmp1, DIFF64);
+      __ subs(cnt, cnt, 64);
+      __ br(Assembler::GE, LOOP64);
+
+      // Fewer than 64 bytes are left; cnt holds their count minus 64.
+      __ bind(TAIL);
+      __ adds(cnt, cnt, 64 - wordSize);
+      __ br(Assembler::LT, LAST_WORD);
+      __ bind(WORD_LOOP);
+      __ ldr(tmp1, Address(__ post(a, wordSize)));
+      __ ldr(tmp2, Address(__ post(b, wordSize)));
+      __ eor(tmp1, tmp1, tmp2);
+      __ cbnz(tmp1, DIFF_PREV_WORD);
+      __ subs(cnt, cnt, wordSize);
+      __ br(Assembler::GE, WORD_LOOP);
+
+      // Fewer than 8 bytes are left; cnt holds their count minus 8.
+      __ bind(LAST_WORD);
+      __ adds(cnt, cnt, wordSize);
+      __ br(Assembler::EQ, SAME);
+      __ cmp(a, a_start);
+      __ br(Assembler::EQ, BYTE_LOOP);
+      // At least 8 bytes precede the rest and compared equal: compare the
+      // last word, overlapping them.
+      __ sub(cnt, cnt, wordSize);
+      __ add(a, a, cnt);
+      __ add(b, b, cnt);
+      __ ldr(tmp1, Address(a));
+      __ ldr(tmp2, Address(b));
+      __ eor(tmp1, tmp1, tmp2);
+      __ cbnz(tmp1, DIFF_WORD);
+      __ b(SAME);
+
+      // Fewer than 8 bytes in all.
+      __ bind(BYTE_LOOP);
+      __ ldrb(tmp1, Address(__ post(a, 1)));
+      __ ldrb(tmp2, Address(__ post(b, 1)));
+      __ cmpw(tmp1, tmp2);
+      __ br(Assembler::NE, DIFF_PREV_BYTE);
+      __ subs(cnt, cnt, 1);
+      __ br(Assembler::GT, BYTE_LOOP);
+
+      __ bind(SAME);
+      __ mov(result, -1);
+      __ b(DONE);
+
+      __ bind(DIFF_PREV_BYTE);
+      __ sub(a, a, 1);
+      __ b(DIFF_AT);
+
+      __ bind(DIFF_PREV_WORD);
+      __ sub(a, a, wordSize);
+      __ b(DIFF_WORD);
+
+      // The 64 bytes before a differ: find the first differing word.
+      __ bind(DIFF64);
+      __ sub(a, a, 64);
+      for (int i = 0; i < 8; i++) {
+        __ umov(tmp1, as_FloatRegister(v0->encoding() + i / 2), __ D, i % 2);
+        if (i < 7) {
+          __ cbnz(tmp1, DIFF_WORD);
+          __ add(a, a, wordSize);
+        }
+      }
+
+      // a: the differing word; tmp1: its bits that differ. The lowest set bit
+      // is in the first differing byte.
+      __ bind(DIFF_WORD);
+      __ rbit(tmp1, tmp1);
+      __ clz(tmp1, tmp1);
+      __ add(a, a, tmp1, Assembler::LSR, LogBitsPerByte);
+
+      // a: the first differing byte
+      __ bind(DIFF_AT);
+      __ sub(result, a, a_start);
+      __ lsrv(result, result, scale);
+
+      __ bind(DONE);
+      __ strb(zr, doing_unsafe_access);
+      __ leave();
+      __ ret(lr);
+    }
+    // A fault skips the comparison. Return a valid index while the pending
+    // asynchronous InternalError is delivered.
+    __ strb(zr, doing_unsafe_access);
+    __ mov(result, zr);
+    __ leave();
+    __ ret(lr);
+
+    address end = __ pc();
+    retrieve_unsafe_access_handlers(start, end, extras);
+    assert(extras.length() == UnsafeMemoryAccess::COLUMN_COUNT, "unexpected handler count");
     store_archive_data(stub_id, start, end, nullptr, &extras);
 
     return start;
@@ -12585,7 +12766,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Initialize table for copy memory (arraycopy) check.
     if (UnsafeMemoryAccess::_table == nullptr) {
-      UnsafeMemoryAccess::create_table(8 + 4); // 8 for copyMemory; 4 for setMemory
+      UnsafeMemoryAccess::create_table(10 + 4 + 1); // copyMemory (including bulk leaves), setMemory, vectorizedMismatch
     }
 
     if (UseCRC32Intrinsics) {
@@ -12652,6 +12833,10 @@ class StubGenerator: public StubCodeGenerator {
 
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_setMemory)) {
       StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory();
+    }
+
+    if (UseVectorizedMismatchIntrinsic) {
+      StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch();
     }
 
     StubRoutines::aarch64::set_completed(); // Inidicate that arraycopy and zero_blocks stubs are generated

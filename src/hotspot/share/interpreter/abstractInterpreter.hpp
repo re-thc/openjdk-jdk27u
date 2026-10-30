@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +94,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_Float_float16ToFloat,                             // implementation of java.lang.Float.float16ToFloat()
     java_lang_Float_floatToFloat16,                             // implementation of java.lang.Float.floatToFloat16()
     java_lang_Thread_currentThread,                             // implementation of java.lang.Thread.currentThread()
+    jdk_internal_util_ArraysSupport_vectorizedMismatch,         // implementation of jdk.internal.util.ArraysSupport.vectorizedMismatch()
     number_of_method_entries,
     invalid = -1
   };
