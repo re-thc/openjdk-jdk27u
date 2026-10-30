@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package sun.security.util;
 
 import java.io.BufferedReader;
+import java.io.PushbackInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -34,6 +36,8 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.zip.InflaterInputStream;
+import java.util.zip.Inflater;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -74,8 +78,9 @@ import sun.security.ssl.SSLLogger;
  * JDK installation, but may be updated in future releases or updates.
  *
  * Because of the large number of top-level domains (TLDs) and public
- * suffix rules, we only load the rules on demand -- from a Zip file
- * containing an entry for each TLD.
+ * suffix rules, we only load rules on demand. The build-generated indexed
+ * image has an independently compressed trie for each TLD. Replacement Zip
+ * files containing one entry for each TLD retain the legacy parser.
  *
  * As each entry is loaded, its data is stored permanently in a cache.
  *
@@ -107,8 +112,7 @@ import sun.security.ssl.SSLLogger;
 
 class DomainName {
     /**
-     * For efficiency, the set of rules for each TLD is kept
-     * in text files and only loaded if needed.
+     * For efficiency, the rules for each TLD are loaded only if needed.
      */
     private static final Map<String, Rules> cache = new ConcurrentHashMap<>();
 
@@ -135,9 +139,9 @@ class DomainName {
     }
 
     /**
-     * A Rules object contains a list of rules for a particular TLD.
+     * A Rules object contains an indexed trie or legacy rule sets for a TLD.
      *
-     * Rules are stored in a linked list of RuleSet objects. The list is
+     * Legacy rules are stored in a linked list of RuleSet objects. The list is
      * indexed according to the number of labels in the name (minus one)
      * such that all rules with the same number of labels are stored
      * in the same RuleSet.
@@ -149,8 +153,15 @@ class DomainName {
 
         private final LinkedList<RuleSet> ruleSets = new LinkedList<>();
         private final boolean hasExceptions;
+        private final IndexedRules indexed;
+
+        private Rules(IndexedRules indexed) {
+            this.indexed = indexed;
+            hasExceptions = false;
+        }
 
         private Rules(InputStream is) throws IOException {
+            indexed = null;
             InputStreamReader isr = new InputStreamReader(is, UTF_8);
             BufferedReader reader = new BufferedReader(isr);
             boolean hasExceptions = false;
@@ -186,11 +197,19 @@ class DomainName {
         }
 
         private static Rules createRules(String tld) {
-            try (InputStream pubSuffixStream = getPubSuffixStream()) {
+            try (FileInputStream pubSuffixStream = getPubSuffixStream()) {
                 if (pubSuffixStream == null) {
                     return null;
                 }
-                return getRules(tld, new ZipInputStream(pubSuffixStream));
+                PushbackInputStream input = new PushbackInputStream(pubSuffixStream, 4);
+                byte[] magic = input.readNBytes(4);
+                input.unread(magic);
+                if (magic.length == 4 && magic[0] == 'P' && magic[1] == 'S' &&
+                    magic[2] == 'L' && magic[3] == '1') {
+                    pubSuffixStream.getChannel().position(0);
+                    return IndexedData.rules(tld, pubSuffixStream);
+                }
+                return getRules(tld, new ZipInputStream(input));
             } catch (IOException e) {
                 if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
                     SSLLogger.fine(
@@ -201,8 +220,8 @@ class DomainName {
             }
         }
 
-        private static InputStream getPubSuffixStream() {
-            InputStream is = null;
+        private static FileInputStream getPubSuffixStream() {
+            FileInputStream is = null;
             File f = new File(System.getProperty("java.home"),
                 "lib/security/public_suffix_list.dat");
             try {
@@ -258,6 +277,9 @@ class DomainName {
          * Find a match for the target string.
          */
         Match match(String domain) {
+            if (indexed != null) {
+                return indexed.match(domain);
+            }
             // Start at the end of the rules list, looking for longest match.
             // After we find a normal match, we only look for exceptions.
             Match possibleMatch = null;
@@ -485,6 +507,393 @@ class DomainName {
         }
     }
 
+    /**
+     * A self-describing directory is read afresh for every uncached TLD.
+     * The directory and selected shard use the same open file descriptor;
+     * only a successfully parsed TLD shard enters the existing positive cache.
+     */
+    private static final class IndexedData {
+        private static final int HEADER_LENGTH = 84;
+        private static final int MAX_DIRECTORY_LENGTH = 1024 * 1024;
+        private static final int MAX_SHARD_LENGTH = 8 * 1024 * 1024;
+        private static int find(byte[] prefix, int imageLength, String tld)
+                throws IOException {
+            int count = readInt(prefix, 80);
+            if (count < 0 || count > (prefix.length - HEADER_LENGTH) / 15) {
+                throw new IOException("Invalid public suffix directory size");
+            }
+            int position = HEADER_LENGTH;
+            int previous = 0;
+            int previousLength = 0;
+            int end = prefix.length;
+            int selected = -1;
+            for (int i = 0; i < count; i++) {
+                if (position > prefix.length - 15) {
+                    throw new IOException("Truncated public suffix directory");
+                }
+                int length = readUnsignedShort(prefix, position);
+                if (length == 0 || length > prefix.length - position - 14) {
+                    throw new IOException("Invalid public suffix TLD length");
+                }
+                int name = position + 2;
+                validateLabel(prefix, name, length);
+                if (i > 0 && compareUTF8(prefix, previous, previousLength,
+                                        name, length) >= 0) {
+                    throw new IOException("Unsorted public suffix directory");
+                }
+                previous = name;
+                previousLength = length;
+                int metadata = name + length;
+                int offset = readInt(prefix, metadata);
+                int compressed = readInt(prefix, metadata + 4);
+                int rawLength = readInt(prefix, metadata + 8);
+                if (offset != end || compressed < 1 || compressed > MAX_SHARD_LENGTH ||
+                    rawLength < 14 || rawLength > MAX_SHARD_LENGTH ||
+                    compressed > imageLength - end) {
+                    throw new IOException("Invalid public suffix directory entry");
+                }
+                end += compressed;
+                if (compareUTF8(prefix, name, length, tld) == 0) {
+                    selected = metadata;
+                }
+                position = metadata + 12;
+            }
+            if (position != prefix.length) {
+                throw new IOException("Invalid public suffix directory extent");
+            }
+            if (end != imageLength) {
+                throw new IOException("Trailing public suffix image data");
+            }
+            return selected;
+        }
+
+        static Rules rules(String tld, FileInputStream input) throws IOException {
+            // File size and all reads/seeks refer to this descriptor, even if
+            // the pathname is replaced while the lookup is in progress.
+            long fileLength = input.getChannel().size();
+            byte[] header = new byte[HEADER_LENGTH];
+            if (input.readNBytes(header, 0, header.length) != header.length ||
+                readInt(header, 0) != 0x50534c31 || readInt(header, 4) != 2) {
+                throw new IOException("Unsupported public suffix image header");
+            }
+            int imageLength = readInt(header, 8);
+            int directoryLength = readInt(header, 12);
+            if (imageLength < HEADER_LENGTH || imageLength != fileLength ||
+                directoryLength < HEADER_LENGTH || directoryLength > MAX_DIRECTORY_LENGTH ||
+                directoryLength > imageLength) {
+                throw new IOException("Invalid public suffix image bounds");
+            }
+            byte[] prefix = new byte[directoryLength];
+            System.arraycopy(header, 0, prefix, 0, header.length);
+            if (input.readNBytes(prefix, header.length, prefix.length - header.length)
+                    != prefix.length - header.length) {
+                throw new IOException("Truncated public suffix directory");
+            }
+            int metadata = find(prefix, imageLength, tld);
+            if (metadata < 0) {
+                return null;
+            }
+            int offset = readInt(prefix, metadata);
+            byte[] shard = new byte[readInt(prefix, metadata + 4)];
+            input.getChannel().position(offset);
+            if (input.readNBytes(shard, 0, shard.length) != shard.length) {
+                throw new IOException("Truncated public suffix shard");
+            }
+            return inflate(shard, readInt(prefix, metadata + 8), tld);
+        }
+
+        private static Rules inflate(byte[] bytes, int length, String tld)
+                throws IOException {
+            ByteArrayInputStream encoded = new ByteArrayInputStream(bytes);
+            Inflater inflater = new Inflater();
+            try (InflaterInputStream input = new InflaterInputStream(encoded, inflater)) {
+                byte[] raw = new byte[length];
+                if (input.readNBytes(raw, 0, length) != length || input.read() != -1 ||
+                    !inflater.finished() || inflater.getRemaining() != 0 ||
+                    encoded.available() != 0) {
+                    throw new IOException("Invalid public suffix compressed shard");
+                }
+                return new Rules(new IndexedRules(raw, tld));
+            } finally {
+                inflater.end();
+            }
+        }
+
+        private static int readInt(byte[] bytes, int offset) {
+            return (bytes[offset] & 0xff) << 24 |
+                   (bytes[offset + 1] & 0xff) << 16 |
+                   (bytes[offset + 2] & 0xff) << 8 |
+                   bytes[offset + 3] & 0xff;
+        }
+
+        private static int readUnsignedShort(byte[] bytes, int offset) {
+            return (bytes[offset] & 0xff) << 8 | bytes[offset + 1] & 0xff;
+        }
+
+        // The low word is a Unicode scalar; the high word is the next offset.
+        private static long decodeUTF8(byte[] bytes, int offset, int end)
+                throws IOException {
+            int first = bytes[offset++] & 0xff;
+            if (first < 0x80) {
+                return (long) offset << 32 | first;
+            }
+            int extra;
+            int scalar;
+            int minimum;
+            if (first >= 0xc2 && first <= 0xdf) {
+                extra = 1;
+                scalar = first & 0x1f;
+                minimum = 0x80;
+            } else if (first >= 0xe0 && first <= 0xef) {
+                extra = 2;
+                scalar = first & 0x0f;
+                minimum = 0x800;
+            } else if (first >= 0xf0 && first <= 0xf4) {
+                extra = 3;
+                scalar = first & 7;
+                minimum = 0x10000;
+            } else {
+                throw new IOException("Invalid public suffix UTF-8");
+            }
+            if (extra > end - offset) {
+                throw new IOException("Truncated public suffix UTF-8");
+            }
+            for (int i = 0; i < extra; i++) {
+                int next = bytes[offset++] & 0xff;
+                if ((next & 0xc0) != 0x80) {
+                    throw new IOException("Invalid public suffix UTF-8 continuation");
+                }
+                scalar = scalar << 6 | next & 0x3f;
+            }
+            if (scalar < minimum || scalar > 0x10ffff ||
+                (scalar >= 0xd800 && scalar <= 0xdfff)) {
+                throw new IOException("Invalid public suffix Unicode scalar");
+            }
+            return (long) offset << 32 | scalar;
+        }
+
+        private static void validateLabel(byte[] bytes, int offset, int length)
+                throws IOException {
+            if (length == 0) {
+                throw new IOException("Empty public suffix label");
+            }
+            int end = offset + length;
+            while (offset < end) {
+                long decoded = decodeUTF8(bytes, offset, end);
+                int scalar = (int) decoded;
+                if (scalar == '.' || scalar == '*') {
+                    throw new IOException("Invalid public suffix label");
+                }
+                offset = (int) (decoded >>> 32);
+            }
+        }
+
+        // Compare valid stored UTF-8 in String.compareTo's UTF-16 order.
+        private static int compareUTF8(byte[] bytes, int offset, int length,
+                                       int other, int otherLength)
+                throws IOException {
+            int end = offset + length;
+            int otherEnd = other + otherLength;
+            while (offset < end && other < otherEnd) {
+                long left = decodeUTF8(bytes, offset, end);
+                long right = decodeUTF8(bytes, other, otherEnd);
+                int a = (int) left;
+                int b = (int) right;
+                int firstA = a < 0x10000 ? a : Character.highSurrogate(a);
+                int firstB = b < 0x10000 ? b : Character.highSurrogate(b);
+                if (firstA != firstB) {
+                    return firstA - firstB;
+                }
+                if (a != b) {
+                    return a - b;
+                }
+                offset = (int) (left >>> 32);
+                other = (int) (right >>> 32);
+            }
+            return offset < end ? 1 : other < otherEnd ? -1 : 0;
+        }
+
+        private static int compareUTF8(byte[] bytes, int offset, int length,
+                                       String target) throws IOException {
+            int end = offset + length;
+            int index = 0;
+            int pending = -1;
+            while (offset < end || pending != -1) {
+                if (index == target.length()) {
+                    return 1;
+                }
+                int unit;
+                if (pending != -1) {
+                    unit = pending;
+                    pending = -1;
+                } else {
+                    long decoded = decodeUTF8(bytes, offset, end);
+                    offset = (int) (decoded >>> 32);
+                    int scalar = (int) decoded;
+                    if (scalar >= 0x10000) {
+                        unit = Character.highSurrogate(scalar);
+                        pending = Character.lowSurrogate(scalar);
+                    } else {
+                        unit = scalar;
+                    }
+                }
+                int comparison = unit - target.charAt(index++);
+                if (comparison != 0) {
+                    return comparison;
+                }
+            }
+            return index < target.length() ? -1 : 0;
+        }
+
+    }
+
+    /** Reversed-label BFS trie, with each node's children in UTF-16 order. */
+    private static final class IndexedRules {
+        private final String[] labels;
+        private final int[] first;
+        private final int[] count;
+        private final byte[] flags;
+        private static final RegisteredDomain.Type[] AUTHS =
+            RegisteredDomain.Type.values();
+
+        IndexedRules(byte[] raw, String tld) throws IOException {
+            if (raw.length < 4) {
+                throw new IOException("Truncated public suffix trie");
+            }
+            int size = IndexedData.readInt(raw, 0);
+            if (size < 1 || size > raw.length / 9) {
+                throw new IOException("Invalid public suffix trie size");
+            }
+            labels = new String[size];
+            first = new int[size];
+            count = new int[size];
+            flags = new byte[size];
+            int position = 4;
+            int next = 1;
+            for (int i = 0; i < size; i++) {
+                if (position > raw.length - 2) {
+                    throw new IOException("Truncated public suffix label length");
+                }
+                int length = IndexedData.readUnsignedShort(raw, position);
+                position += 2;
+                if (length == 0 || length > raw.length - position - 7) {
+                    throw new IOException("Invalid public suffix label length");
+                }
+                IndexedData.validateLabel(raw, position, length);
+                labels[i] = new String(raw, position, length, UTF_8);
+                position += length;
+                first[i] = IndexedData.readInt(raw, position);
+                count[i] = IndexedData.readUnsignedShort(raw, position + 4);
+                flags[i] = raw[position + 6];
+                position += 7;
+                if ((i > 0 && i >= next) || first[i] != next ||
+                    count[i] > size - next || (flags[i] & 0xc0) != 0 ||
+                    (flags[i] & 3) == 3 || ((flags[i] >>> 2) & 3) == 3 ||
+                    ((flags[i] >>> 4) & 3) == 3) {
+                    throw new IOException("Invalid public suffix trie node");
+                }
+                next += count[i];
+            }
+            if (next != size || position != raw.length ||
+                !labels[0].equals(tld) || (flags[0] & 0x30) != 0) {
+                throw new IOException("Invalid public suffix trie extent");
+            }
+            for (int i = 0; i < size; i++) {
+                if (((flags[i] >>> 2) & 3) != 0) {
+                    for (int j = first[i]; j < first[i] + count[i]; j++) {
+                        if ((flags[j] & 3) != 0) {
+                            throw new IOException("Overlapping public suffix rules");
+                        }
+                    }
+                }
+                for (int j = first[i] + 1; j < first[i] + count[i]; j++) {
+                    if (labels[j - 1].compareTo(labels[j]) >= 0) {
+                        throw new IOException("Unsorted public suffix children");
+                    }
+                }
+            }
+        }
+
+        Match match(String domain) {
+            int node = 0;
+            int depth = 1;
+            int ordinaryAuth = 0;
+            int ordinarySuffix = 0;
+            Rule.Type ordinaryType = Rule.Type.NORMAL;
+            int exceptionAuth = 0;
+            int exceptionSuffix = 0;
+            while (true) {
+                int suffix = Rules.RuleSet.labels(domain, depth);
+                int normal = flags[node] & 3;
+                if (normal != 0) {
+                    ordinaryAuth = normal;
+                    ordinarySuffix = suffix;
+                    ordinaryType = Rule.Type.NORMAL;
+                }
+                int wildcard = (flags[node] >>> 2) & 3;
+                if (wildcard != 0 && suffix > 0) {
+                    ordinaryAuth = wildcard;
+                    ordinarySuffix = Rules.RuleSet.labels(domain, depth + 1);
+                    ordinaryType = Rule.Type.WILDCARD;
+                }
+                int except = (flags[node] >>> 4) & 3;
+                if (except != 0) {
+                    exceptionAuth = except;
+                    exceptionSuffix = Rules.RuleSet.labels(domain, depth - 1);
+                }
+                int start = Rules.RuleSet.labels(domain, depth + 1);
+                if (start < 0 || suffix <= 0) {
+                    break;
+                }
+                int child = findChild(domain, start, suffix - 1, node);
+                if (child < 0) {
+                    break;
+                }
+                node = child;
+                depth++;
+            }
+            if (exceptionAuth != 0) {
+                return match(domain, Rule.Type.EXCEPTION, exceptionAuth,
+                             exceptionSuffix);
+            }
+            return ordinaryAuth == 0 ? null :
+                match(domain, ordinaryType, ordinaryAuth, ordinarySuffix);
+        }
+
+        private int findChild(String domain, int start, int end, int node) {
+            int low = first[node];
+            int high = low + count[node] - 1;
+            int length = end - start;
+            while (low <= high) {
+                int middle = (low + high) >>> 1;
+                String label = labels[middle];
+                int comparison = 0;
+                for (int i = 0; i < Math.min(length, label.length()); i++) {
+                    comparison = label.charAt(i) - domain.charAt(start + i);
+                    if (comparison != 0) {
+                        break;
+                    }
+                }
+                if (comparison == 0) {
+                    comparison = label.length() - length;
+                }
+                if (comparison < 0) {
+                    low = middle + 1;
+                } else if (comparison > 0) {
+                    high = middle - 1;
+                } else {
+                    return middle;
+                }
+            }
+            return -1;
+        }
+
+        private static Match match(String domain, Rule.Type type, int auth,
+                                   int suffix) {
+            return new CommonMatch(domain, type, AUTHS[auth - 1], suffix);
+        }
+    }
+
     private static class Rule {
         enum Type { EXCEPTION, NORMAL, OTHER, WILDCARD }
 
@@ -547,12 +956,19 @@ class DomainName {
         private final String domain;
         private final int publicSuffix; // index to
         private int registeredDomain; // index to
-        private final Rule rule;
+        private final Rule.Type type;
+        private final RegisteredDomain.Type auth;
 
         CommonMatch(String domain, Rule rule, int publicSuffix) {
+            this(domain, rule.type, rule.auth, publicSuffix);
+        }
+
+        CommonMatch(String domain, Rule.Type type, RegisteredDomain.Type auth,
+                    int publicSuffix) {
             this.domain = domain;
             this.publicSuffix = publicSuffix;
-            this.rule = rule;
+            this.type = type;
+            this.auth = auth;
             // now locate the previous label
             registeredDomain = domain.lastIndexOf('.', publicSuffix - 2);
             if (registeredDomain == -1) {
@@ -568,13 +984,13 @@ class DomainName {
                 return null;
             }
             return new RegisteredDomainImpl(domain.substring(registeredDomain),
-                                            rule.auth,
+                                            auth,
                                             domain.substring(publicSuffix));
         }
 
         @Override
         public Rule.Type type() {
-            return rule.type;
+            return type;
         }
     }
 
