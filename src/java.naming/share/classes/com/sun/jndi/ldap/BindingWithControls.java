@@ -28,6 +28,7 @@ package com.sun.jndi.ldap;
 import javax.naming.*;
 import javax.naming.ldap.*;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class BindingWithControls extends Binding implements HasControls {
     private Control[] controls;
 
@@ -40,5 +41,4 @@ class BindingWithControls extends Binding implements HasControls {
         return controls;
     }
 
-    private static final long serialVersionUID = 9117274533692320040L;
 }

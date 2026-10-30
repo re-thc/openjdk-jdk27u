@@ -127,9 +127,8 @@ class  XSDComplexTypeTraverser extends XSDAbstractParticleTraverser {
 
     private static final boolean DEBUG=false;
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static final class ComplexTypeRecoverableError extends Exception {
-
-        private static final long serialVersionUID = 6802729912091130335L;
 
         @SuppressWarnings("serial") // Array component type is not Serializable
         Object[] errorSubstText=null;

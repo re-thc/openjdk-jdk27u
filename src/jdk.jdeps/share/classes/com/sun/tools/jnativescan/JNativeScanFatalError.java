@@ -27,10 +27,8 @@ package com.sun.tools.jnativescan;
 import java.io.Serial;
 
 // Exception used in case of fatal error that is reasonably expected and handled.
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class JNativeScanFatalError extends RuntimeException {
-    @Serial
-    private static final long serialVersionUID = 1L;
-
     public JNativeScanFatalError(String message) {
         super(message);
     }

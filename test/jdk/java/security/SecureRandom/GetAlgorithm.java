@@ -35,7 +35,6 @@ import java.util.List;
 
 public class GetAlgorithm {
 
-    private static final String BASE = System.getProperty("test.src", ".");
     private static final String DRBG_CONFIG = "securerandom.drbg.config";
     private static final String DRBG_CONFIG_VALUE
             = Security.getProperty(DRBG_CONFIG);
@@ -61,20 +60,21 @@ public class GetAlgorithm {
         }
         check("unknown", new MySecureRandom());
 
-        InputStream in = new FileInputStream(
-                new File(BASE, "sha1prng-old.bin"));
-        ObjectInputStream oin = new ObjectInputStream(in);
-        sr = (SecureRandom) oin.readObject();
-        oin.close();
-        check("unknown", sr);
-
-        in = new FileInputStream(new File(BASE, "sha1prng-new.bin"));
-        oin = new ObjectInputStream(in);
-        sr = (SecureRandom) oin.readObject();
-        oin.close();
-        check("SHA1PRNG", sr);
+        check("unknown", roundTrip(new MySecureRandom()));
+        check("SHA1PRNG", roundTrip(SecureRandom.getInstance("SHA1PRNG")));
 
         System.out.println("All tests passed");
+    }
+
+    private static SecureRandom roundTrip(SecureRandom value) throws Exception {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
+            out.writeObject(value);
+        }
+        try (ObjectInputStream in = new ObjectInputStream(
+                new ByteArrayInputStream(bytes.toByteArray()))) {
+            return (SecureRandom) in.readObject();
+        }
     }
 
     private static void check(String s1, SecureRandom sr) throws Exception {

@@ -12,9 +12,9 @@ package jdk.internal.org.jline.reader;
  * This exception is thrown by {@link LineReader#readLine} when
  * user the user types ctrl-D).
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class EndOfFileException extends RuntimeException {
 
-    private static final long serialVersionUID = 528485360925144689L;
     private String partialLine;
 
     public EndOfFileException() {}

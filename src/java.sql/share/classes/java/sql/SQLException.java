@@ -52,6 +52,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  *
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SQLException extends java.lang.Exception
                           implements Iterable<Throwable> {
 
@@ -373,5 +374,4 @@ public class SQLException extends java.lang.Exception
     private static final AtomicReferenceFieldUpdater<SQLException,SQLException> nextUpdater =
             AtomicReferenceFieldUpdater.newUpdater(SQLException.class,SQLException.class,"next");
 
-    private static final long serialVersionUID = 2135244094396331484L;
 }

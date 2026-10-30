@@ -25,7 +25,6 @@
 
 package java.util;
 
-import java.text.DateFormat;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
@@ -191,28 +190,6 @@ public class Date
 
     /**
      * Allocates a {@code Date} object and initializes it so that
-     * it represents the instant at the start of the minute specified by
-     * the {@code year}, {@code month}, {@code date},
-     * {@code hrs}, and {@code min} arguments, in the local
-     * time zone.
-     *
-     * @param   year    the year minus 1900.
-     * @param   month   the month between 0-11.
-     * @param   date    the day of the month between 1-31.
-     * @param   hrs     the hours between 0-23.
-     * @param   min     the minutes between 0-59.
-     * @see     java.util.Calendar
-     * @deprecated As of JDK version 1.1,
-     * replaced by {@code Calendar.set(year + 1900, month, date, hrs, min)}
-     * or {@code GregorianCalendar(year + 1900, month, date, hrs, min)}.
-     */
-    @Deprecated
-    public Date(int year, int month, int date, int hrs, int min) {
-        this(year, month, date, hrs, min, 0);
-    }
-
-    /**
-     * Allocates a {@code Date} object and initializes it so that
      * it represents the instant at the start of the second specified
      * by the {@code year}, {@code month}, {@code date},
      * {@code hrs}, {@code min}, and {@code sec} arguments,
@@ -248,25 +225,6 @@ public class Date
     }
 
     /**
-     * Allocates a {@code Date} object and initializes it so that
-     * it represents the date and time indicated by the string
-     * {@code s}, which is interpreted as if by the
-     * {@link Date#parse} method.
-     *
-     * @param   s   a string representation of the date.
-     * @throws IllegalArgumentException if {@code s} cannot be interpreted as a
-     * representation of a date and time.
-     * @see     java.text.DateFormat
-     * @see     java.util.Date#parse(java.lang.String)
-     * @deprecated As of JDK version 1.1,
-     * replaced by {@code DateFormat.parse(String s)}.
-     */
-    @Deprecated
-    public Date(String s) {
-        this(parse(s));
-    }
-
-    /**
      * Return a copy of this object.
      */
     public Object clone() {
@@ -278,54 +236,6 @@ public class Date
             }
         } catch (CloneNotSupportedException e) {} // Won't happen
         return d;
-    }
-
-    /**
-     * Determines the date and time based on the arguments. The
-     * arguments are interpreted as a year, month, day of the month,
-     * hour of the day, minute within the hour, and second within the
-     * minute, exactly as for the {@code Date} constructor with six
-     * arguments, except that the arguments are interpreted relative
-     * to UTC rather than to the local time zone. The time indicated is
-     * returned represented as the distance, measured in milliseconds,
-     * of that time from the epoch (00:00:00 GMT on January 1, 1970).
-     *
-     * @param   year    the year minus 1900.
-     * @param   month   the month between 0-11.
-     * @param   date    the day of the month between 1-31.
-     * @param   hrs     the hours between 0-23.
-     * @param   min     the minutes between 0-59.
-     * @param   sec     the seconds between 0-59.
-     * @return  the number of milliseconds since January 1, 1970, 00:00:00 GMT for
-     *          the date and time specified by the arguments.
-     * @see     java.util.Calendar
-     * @deprecated As of JDK version 1.1,
-     * replaced by {@code Calendar.set(year + 1900, month, date, hrs, min, sec)}
-     * or {@code GregorianCalendar(year + 1900, month, date, hrs, min, sec)}, using a UTC
-     * {@code TimeZone}, followed by {@code Calendar.getTime().getTime()}.
-     */
-    @Deprecated
-    public static long UTC(int year, int month, int date,
-                           int hrs, int min, int sec) {
-        int y = year + 1900;
-        // month is 0-based. So we have to normalize month to support Long.MAX_VALUE.
-        if (month >= 12) {
-            y += month / 12;
-            month %= 12;
-        } else if (month < 0) {
-            y += CalendarUtils.floorDivide(month, 12);
-            month = CalendarUtils.mod(month, 12);
-        }
-        int m = month + 1;
-        BaseCalendar cal = getCalendarSystem(y);
-        BaseCalendar.Date udate = (BaseCalendar.Date) cal.newCalendarDate(null);
-        udate.setNormalizedDate(y, m, date).setTimeOfDay(hrs, min, sec, 0);
-
-        // Use a Date instance to perform normalization. Its fastTime
-        // is the UTC value after the normalization.
-        Date d = new Date(0);
-        d.normalize(udate);
-        return d.fastTime;
     }
 
     /**
@@ -645,26 +555,6 @@ public class Date
     }
 
     /**
-     * Sets the year of this {@code Date} object to be the specified
-     * value plus 1900. This {@code Date} object is modified so
-     * that it represents a point in time within the specified year,
-     * with the month, date, hour, minute, and second the same as
-     * before, as interpreted in the local time zone. (Of course, if
-     * the date was February 29, for example, and the year is set to a
-     * non-leap year, then the new date will be treated as if it were
-     * on March 1.)
-     *
-     * @param   year    the year value.
-     * @see     java.util.Calendar
-     * @deprecated As of JDK version 1.1,
-     * replaced by {@code Calendar.set(Calendar.YEAR, year + 1900)}.
-     */
-    @Deprecated
-    public void setYear(int year) {
-        getCalendarDate().setNormalizedYear(year + 1900);
-    }
-
-    /**
      * Returns a number representing the month that contains or begins
      * with the instant in time represented by this {@code Date} object.
      * The value returned is between {@code 0} and {@code 11},
@@ -678,37 +568,6 @@ public class Date
     @Deprecated
     public int getMonth() {
         return normalize().getMonth() - 1; // adjust 1-based to 0-based
-    }
-
-    /**
-     * Sets the month of this date to the specified value. This
-     * {@code Date} object is modified so that it represents a point
-     * in time within the specified month, with the year, date, hour,
-     * minute, and second the same as before, as interpreted in the
-     * local time zone. If the date was October 31, for example, and
-     * the month is set to June, then the new date will be treated as
-     * if it were on July 1, because June has only 30 days.
-     *
-     * @param   month   the month value between 0-11.
-     * @see     java.util.Calendar
-     * @deprecated As of JDK version 1.1,
-     * replaced by {@code Calendar.set(Calendar.MONTH, int month)}.
-     */
-    @Deprecated
-    public void setMonth(int month) {
-        int y = 0;
-        if (month >= 12) {
-            y = month / 12;
-            month %= 12;
-        } else if (month < 0) {
-            y = CalendarUtils.floorDivide(month, 12);
-            month = CalendarUtils.mod(month, 12);
-        }
-        BaseCalendar.Date d = getCalendarDate();
-        if (y != 0) {
-            d.setNormalizedYear(d.getNormalizedYear() + y);
-        }
-        d.setMonth(month + 1); // adjust 0-based to 1-based month numbering
     }
 
     /**
@@ -729,45 +588,6 @@ public class Date
     }
 
     /**
-     * Sets the day of the month of this {@code Date} object to the
-     * specified value. This {@code Date} object is modified so that
-     * it represents a point in time within the specified day of the
-     * month, with the year, month, hour, minute, and second the same
-     * as before, as interpreted in the local time zone. If the date
-     * was April 30, for example, and the date is set to 31, then it
-     * will be treated as if it were on May 1, because April has only
-     * 30 days.
-     *
-     * @param   date   the day of the month value between 1-31.
-     * @see     java.util.Calendar
-     * @deprecated As of JDK version 1.1,
-     * replaced by {@code Calendar.set(Calendar.DAY_OF_MONTH, int date)}.
-     */
-    @Deprecated
-    public void setDate(int date) {
-        getCalendarDate().setDayOfMonth(date);
-    }
-
-    /**
-     * Returns the day of the week represented by this date. The
-     * returned value ({@code 0} = Sunday, {@code 1} = Monday,
-     * {@code 2} = Tuesday, {@code 3} = Wednesday, {@code 4} =
-     * Thursday, {@code 5} = Friday, {@code 6} = Saturday)
-     * represents the day of the week that contains or begins with
-     * the instant in time represented by this {@code Date} object,
-     * as interpreted in the local time zone.
-     *
-     * @return  the day of the week represented by this date.
-     * @see     java.util.Calendar
-     * @deprecated As of JDK version 1.1,
-     * replaced by {@code Calendar.get(Calendar.DAY_OF_WEEK)}.
-     */
-    @Deprecated
-    public int getDay() {
-        return normalize().getDayOfWeek() - BaseCalendar.SUNDAY;
-    }
-
-    /**
      * Returns the hour represented by this {@code Date} object. The
      * returned value is a number ({@code 0} through {@code 23})
      * representing the hour within the day that contains or begins
@@ -782,23 +602,6 @@ public class Date
     @Deprecated
     public int getHours() {
         return normalize().getHours();
-    }
-
-    /**
-     * Sets the hour of this {@code Date} object to the specified value.
-     * This {@code Date} object is modified so that it represents a point
-     * in time within the specified hour of the day, with the year, month,
-     * date, minute, and second the same as before, as interpreted in the
-     * local time zone.
-     *
-     * @param   hours   the hour value.
-     * @see     java.util.Calendar
-     * @deprecated As of JDK version 1.1,
-     * replaced by {@code Calendar.set(Calendar.HOUR_OF_DAY, int hours)}.
-     */
-    @Deprecated
-    public void setHours(int hours) {
-        getCalendarDate().setHours(hours);
     }
 
     /**
@@ -817,23 +620,6 @@ public class Date
     }
 
     /**
-     * Sets the minutes of this {@code Date} object to the specified value.
-     * This {@code Date} object is modified so that it represents a point
-     * in time within the specified minute of the hour, with the year, month,
-     * date, hour, and second the same as before, as interpreted in the
-     * local time zone.
-     *
-     * @param   minutes   the value of the minutes.
-     * @see     java.util.Calendar
-     * @deprecated As of JDK version 1.1,
-     * replaced by {@code Calendar.set(Calendar.MINUTE, int minutes)}.
-     */
-    @Deprecated
-    public void setMinutes(int minutes) {
-        getCalendarDate().setMinutes(minutes);
-    }
-
-    /**
      * Returns the number of seconds past the minute represented by this date.
      * The value returned is between {@code 0} and {@code 61}. The
      * values {@code 60} and {@code 61} can only occur on those
@@ -847,23 +633,6 @@ public class Date
     @Deprecated
     public int getSeconds() {
         return normalize().getSeconds();
-    }
-
-    /**
-     * Sets the seconds of this {@code Date} to the specified value.
-     * This {@code Date} object is modified so that it represents a
-     * point in time within the specified second of the minute, with
-     * the year, month, date, hour, and minute the same as before, as
-     * interpreted in the local time zone.
-     *
-     * @param   seconds   the seconds value.
-     * @see     java.util.Calendar
-     * @deprecated As of JDK version 1.1,
-     * replaced by {@code Calendar.set(Calendar.SECOND, int seconds)}.
-     */
-    @Deprecated
-    public void setSeconds(int seconds) {
-        getCalendarDate().setSeconds(seconds);
     }
 
     /**
@@ -1016,8 +785,6 @@ public class Date
      * </ul>
      *
      * @return  a string representation of this date.
-     * @see     java.util.Date#toLocaleString()
-     * @see     java.util.Date#toGMTString()
      */
     public String toString() {
         // "EEE MMM dd HH:mm:ss zzz yyyy";
@@ -1053,135 +820,6 @@ public class Date
         sb.append(Character.toUpperCase(name.charAt(0)));
         sb.append(name.charAt(1)).append(name.charAt(2));
         return sb;
-    }
-
-    /**
-     * Creates a string representation of this {@code Date} object in an
-     * implementation-dependent form. The intent is that the form should
-     * be familiar to the user of the Java application, wherever it may
-     * happen to be running. The intent is comparable to that of the
-     * "{@code %c}" format supported by the {@code strftime()}
-     * function of ISO&nbsp;C.
-     *
-     * @return  a string representation of this date, using the locale
-     *          conventions.
-     * @see     java.text.DateFormat
-     * @see     java.util.Date#toString()
-     * @see     java.util.Date#toGMTString()
-     * @deprecated As of JDK version 1.1,
-     * replaced by {@code DateFormat.format(Date date)}.
-     */
-    @Deprecated
-    public String toLocaleString() {
-        DateFormat formatter = DateFormat.getDateTimeInstance();
-        return formatter.format(this);
-    }
-
-    /**
-     * Creates a string representation of this {@code Date} object of
-     * the form:
-     * <blockquote><pre>
-     * d mon yyyy hh:mm:ss GMT</pre></blockquote>
-     * where:<ul>
-     * <li><i>d</i> is the day of the month ({@code 1} through {@code 31}),
-     *     as one or two decimal digits.
-     * <li><i>mon</i> is the month ({@code Jan, Feb, Mar, Apr, May, Jun, Jul,
-     *     Aug, Sep, Oct, Nov, Dec}).
-     * <li><i>yyyy</i> is the year, as four decimal digits.
-     * <li><i>hh</i> is the hour of the day ({@code 00} through {@code 23}),
-     *     as two decimal digits.
-     * <li><i>mm</i> is the minute within the hour ({@code 00} through
-     *     {@code 59}), as two decimal digits.
-     * <li><i>ss</i> is the second within the minute ({@code 00} through
-     *     {@code 61}), as two decimal digits.
-     * <li><i>GMT</i> is exactly the ASCII letters "{@code GMT}" to indicate
-     *     Greenwich Mean Time.
-     * </ul><p>
-     * The result does not depend on the local time zone.
-     *
-     * @return  a string representation of this date, using the Internet GMT
-     *          conventions.
-     * @see     java.text.DateFormat
-     * @see     java.util.Date#toString()
-     * @see     java.util.Date#toLocaleString()
-     * @deprecated As of JDK version 1.1,
-     * replaced by {@code DateFormat.format(Date date)}, using a
-     * GMT {@code TimeZone}.
-     */
-    @Deprecated
-    public String toGMTString() {
-        // d MMM yyyy HH:mm:ss 'GMT'
-        long t = getTime();
-        BaseCalendar cal = getCalendarSystem(t);
-        BaseCalendar.Date date =
-            (BaseCalendar.Date) cal.getCalendarDate(getTime(), (TimeZone)null);
-        StringBuilder sb = new StringBuilder(32);
-        CalendarUtils.sprintf0d(sb, date.getDayOfMonth(), 1).append(' '); // d
-        convertToAbbr(sb, wtb[date.getMonth() - 1 + 2 + 7]).append(' ');  // MMM
-        sb.append(date.getYear()).append(' ');                            // yyyy
-        CalendarUtils.sprintf0d(sb, date.getHours(), 2).append(':');      // HH
-        CalendarUtils.sprintf0d(sb, date.getMinutes(), 2).append(':');    // mm
-        CalendarUtils.sprintf0d(sb, date.getSeconds(), 2);                // ss
-        sb.append(" GMT");                                                // ' GMT'
-        return sb.toString();
-    }
-
-    /**
-     * Returns the offset, measured in minutes, for the local time zone
-     * relative to UTC that is appropriate for the time represented by
-     * this {@code Date} object.
-     * <p>
-     * For example, in Massachusetts, five time zones west of Greenwich:
-     * <blockquote><pre>
-     * new Date(96, 1, 14).getTimezoneOffset() returns 300</pre></blockquote>
-     * because on February 14, 1996, standard time (Eastern Standard Time)
-     * is in use, which is offset five hours from UTC; but:
-     * <blockquote><pre>
-     * new Date(96, 5, 1).getTimezoneOffset() returns 240</pre></blockquote>
-     * because on June 1, 1996, daylight saving time (Eastern Daylight Time)
-     * is in use, which is offset only four hours from UTC.<p>
-     * This method produces the same result as if it computed:
-     * <blockquote><pre>
-     * (this.getTime() - UTC(this.getYear(),
-     *                       this.getMonth(),
-     *                       this.getDate(),
-     *                       this.getHours(),
-     *                       this.getMinutes(),
-     *                       this.getSeconds())) / (60 * 1000)
-     * </pre></blockquote>
-     *
-     * @return  the time-zone offset, in minutes, for the current time zone.
-     * @see     java.util.Calendar#ZONE_OFFSET
-     * @see     java.util.Calendar#DST_OFFSET
-     * @see     java.util.TimeZone#getDefault
-     * @deprecated As of JDK version 1.1,
-     * replaced by {@code -(Calendar.get(Calendar.ZONE_OFFSET) +
-     * Calendar.get(Calendar.DST_OFFSET)) / (60 * 1000)}.
-     */
-    @Deprecated
-    public int getTimezoneOffset() {
-        int zoneOffset;
-        if (cdate == null) {
-            TimeZone tz = TimeZone.getDefaultRef();
-            if (tz instanceof ZoneInfo) {
-                zoneOffset = ((ZoneInfo)tz).getOffsets(fastTime, null);
-            } else {
-                zoneOffset = tz.getOffset(fastTime);
-            }
-        } else {
-            normalize();
-            zoneOffset = cdate.getZoneOffset();
-        }
-        return -zoneOffset/60000;  // convert to minutes
-    }
-
-    private final BaseCalendar.Date getCalendarDate() {
-        if (cdate == null) {
-            BaseCalendar cal = getCalendarSystem(fastTime);
-            cdate = (BaseCalendar.Date) cal.getCalendarDate(fastTime,
-                                                            TimeZone.getDefaultRef());
-        }
-        return cdate;
     }
 
     private final BaseCalendar.Date normalize() {

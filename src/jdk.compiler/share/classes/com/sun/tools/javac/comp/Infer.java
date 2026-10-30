@@ -136,9 +136,8 @@ public class Infer {
     * This exception class is design to store a list of diagnostics corresponding
     * to inference errors that can arise during a method applicability check.
     */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class InferenceException extends InapplicableMethodException {
-        private static final long serialVersionUID = 0;
-
         transient List<JCDiagnostic> messages = List.nil();
 
         InferenceException(boolean dumpStacktrace) {
@@ -1338,9 +1337,8 @@ public class Infer {
          * A NodeNotFoundException is thrown whenever an inference strategy fails
          * to pick the next node to solve in the inference graph.
          */
+        @SuppressWarnings("serial") // Serial version compatibility is not maintained.
         class NodeNotFoundException extends CompilerInternalException {
-            private static final long serialVersionUID = 0;
-
             transient InferenceGraph graph;
 
             public NodeNotFoundException(InferenceGraph graph, boolean dumpStacktraceOnError) {

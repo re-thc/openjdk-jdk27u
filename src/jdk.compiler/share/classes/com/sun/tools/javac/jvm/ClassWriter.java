@@ -265,12 +265,12 @@ public class ClassWriter extends ClassFile {
 
     /** Thrown when the constant pool is over full.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class PoolOverflow extends RuntimeException {
-        private static final long serialVersionUID = 0;
         public PoolOverflow() {}
     }
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class StringOverflow extends RuntimeException {
-        private static final long serialVersionUID = 0;
         public final String value;
         public StringOverflow(String s) {
             value = s;

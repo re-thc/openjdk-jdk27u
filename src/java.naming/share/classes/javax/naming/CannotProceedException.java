@@ -60,6 +60,7 @@ import java.util.Hashtable;
   */
 
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CannotProceedException extends NamingException {
     /**
      * Contains the remaining unresolved part of the second
@@ -280,8 +281,4 @@ public class CannotProceedException extends NamingException {
     }
 
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = 1219724816191576813L;
 }

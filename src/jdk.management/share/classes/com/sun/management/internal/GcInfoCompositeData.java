@@ -47,6 +47,7 @@ import sun.management.MappedMXBeanType;
  * This class avoids the performance penalty paid to the
  * construction of a CompositeData use in the local case.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class GcInfoCompositeData extends LazyCompositeData {
     @SuppressWarnings("serial") // Type of field is not Serializable
     private final GcInfo info;
@@ -265,5 +266,4 @@ public class GcInfoCompositeData extends LazyCompositeData {
         return baseGcInfoCompositeType;
     }
 
-    private static final long serialVersionUID = -5716428894085882742L;
 }

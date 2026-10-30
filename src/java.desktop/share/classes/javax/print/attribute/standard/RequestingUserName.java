@@ -52,14 +52,9 @@ import javax.print.attribute.TextSyntax;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class RequestingUserName   extends TextSyntax
     implements PrintRequestAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -2683049894310331454L;
 
     /**
      * Constructs a new requesting user name attribute with the given user name

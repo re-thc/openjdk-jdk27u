@@ -1485,14 +1485,14 @@ public abstract class AbstractPreferences extends Preferences {
      * eventQueue so the event dispatch thread knows whether to call
      * childAdded or childRemoved.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class NodeAddedEvent extends NodeChangeEvent {
-        private static final long serialVersionUID = -6743557530157328528L;
         NodeAddedEvent(Preferences parent, Preferences child) {
             super(parent, child);
         }
     }
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class NodeRemovedEvent extends NodeChangeEvent {
-        private static final long serialVersionUID = 8735497392918824837L;
         NodeRemovedEvent(Preferences parent, Preferences child) {
             super(parent, child);
         }

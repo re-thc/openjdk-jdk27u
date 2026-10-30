@@ -57,6 +57,7 @@ import sun.util.logging.PlatformLogger;
  * @since 1.1
  * @sealedGraph
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract sealed class InputEvent extends ComponentEvent
     permits KeyEvent,
             MouseEvent {
@@ -486,12 +487,6 @@ public abstract sealed class InputEvent extends ComponentEvent
     public boolean isConsumed() {
         return consumed;
     }
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -2482525981698309786L;
 
     /**
      * Returns a String describing the extended modifier keys and

@@ -2628,8 +2628,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class CompletionFailure extends RuntimeException {
-        private static final long serialVersionUID = 0;
         public final transient DeferredCompletionFailureHandler dcfh;
         public transient Symbol sym;
 

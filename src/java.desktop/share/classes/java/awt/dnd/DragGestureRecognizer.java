@@ -81,13 +81,8 @@ import java.util.TooManyListenersException;
  * @see java.awt.dnd.DragSource
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class DragGestureRecognizer implements Serializable {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 8996673345831063337L;
 
     /**
      * Construct a new {@code DragGestureRecognizer}

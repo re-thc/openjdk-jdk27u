@@ -27,13 +27,12 @@ package com.sun.org.apache.xml.internal.security.signature;
  *
  * @see InvalidDigestValueException  MissingKeyFailureException  MissingResourceFailureException
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidSignatureValueException extends XMLSignatureException {
 
     /**
      *
      */
-    private static final long serialVersionUID = 1L;
-
     /**
      * Constructor InvalidSignatureValueException
      *

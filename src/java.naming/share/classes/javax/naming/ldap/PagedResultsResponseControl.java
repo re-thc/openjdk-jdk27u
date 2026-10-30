@@ -58,6 +58,7 @@ import com.sun.jndi.ldap.BerDecoder;
  * @see PagedResultsControl
  * @author Vincent Ryan
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class PagedResultsResponseControl extends BasicControl {
 
     /**
@@ -65,8 +66,6 @@ public final class PagedResultsResponseControl extends BasicControl {
      * is 1.2.840.113556.1.4.319.
      */
     public static final String OID = "1.2.840.113556.1.4.319";
-
-    private static final long serialVersionUID = -8819778744844514666L;
 
     /**
      * An estimate of the number of entries in the search result.

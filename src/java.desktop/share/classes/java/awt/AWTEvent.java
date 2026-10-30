@@ -84,6 +84,7 @@ import sun.awt.AWTAccessor;
  * @author Amy Fowler
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class AWTEvent extends EventObject {
 
     /**
@@ -234,12 +235,6 @@ public abstract class AWTEvent extends EventObject {
      * their own event IDs should use IDs greater than this value.
      */
     public static final int RESERVED_ID_MAX = 1999;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -1825314779160409405L;
 
     static {
         /* ensure that the necessary native libraries are loaded */

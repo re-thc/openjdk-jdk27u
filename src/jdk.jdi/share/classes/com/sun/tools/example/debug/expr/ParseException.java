@@ -36,14 +36,8 @@ package com.sun.tools.example.debug.expr;
  * You can modify this class to customize your error reporting
  * mechanisms so long as you retain the public fields.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ParseException extends Exception {
-
-  /**
-   * The version identifier for this Serializable class.
-   * Increment only if the <i>serialized</i> form of the
-   * class changes.
-   */
-  private static final long serialVersionUID = 1L;
 
   /**
    * This constructor is used by the method "generateParseException"

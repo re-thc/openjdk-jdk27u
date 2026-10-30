@@ -26,9 +26,8 @@ package com.sun.org.apache.xalan.internal.xsltc.compiler.util;
  *
  * @LastModified: Oct 2017
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InternalError extends Error {
-    private static final long serialVersionUID = -6690855975016554786L;
-
     /**
      * Construct an <code>InternalError</code> with the specified error message.
      * @param msg the error message

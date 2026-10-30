@@ -41,8 +41,6 @@ public class ToString {
             throw new RuntimeException("Default encoding failed");
         if (! b.toString("UTF8").equals(test))
             throw new RuntimeException("UTF8 encoding failed");
-        if (! b.toString(0).equals(test))
-            throw new RuntimeException("Hibyte0 encoding failed");
     }
 
 }

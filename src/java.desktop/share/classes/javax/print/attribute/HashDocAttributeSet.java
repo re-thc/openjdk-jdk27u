@@ -36,14 +36,9 @@ import java.io.Serializable;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class HashDocAttributeSet extends HashAttributeSet
     implements DocAttributeSet, Serializable {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -1128534486061432528L;
 
     /**
      * Construct a new, empty hash doc attribute set.

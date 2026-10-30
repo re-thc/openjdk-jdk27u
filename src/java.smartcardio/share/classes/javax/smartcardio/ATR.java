@@ -42,9 +42,8 @@ import java.util.*;
  * @author  Andreas Sterbenz
  * @author  JSR 268 Expert Group
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ATR implements java.io.Serializable {
-
-    private static final long serialVersionUID = 6695383790847736493L;
 
     /** @serial */
     private byte[] atr;

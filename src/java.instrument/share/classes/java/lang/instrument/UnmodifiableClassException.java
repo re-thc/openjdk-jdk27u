@@ -35,10 +35,8 @@ import java.io.Serial;
  * @see     java.lang.instrument.Instrumentation#redefineClasses
  * @since   1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnmodifiableClassException extends Exception {
-
-    @Serial
-    private static final long serialVersionUID = 1716652643585309178L;
 
     /**
      * Constructs an <code>UnmodifiableClassException</code> with no

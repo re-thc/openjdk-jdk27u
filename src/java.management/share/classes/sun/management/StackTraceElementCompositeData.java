@@ -40,6 +40,7 @@ import java.util.stream.Stream;
  * This class avoids the performance penalty paid to the
  * construction of a CompositeData use in the local case.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class StackTraceElementCompositeData extends LazyCompositeData {
     private final StackTraceElement ste;
 
@@ -164,5 +165,4 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
                 "Unexpected composite type for StackTraceElement");
         }
     }
-    private static final long serialVersionUID = -2704607706598396827L;
 }

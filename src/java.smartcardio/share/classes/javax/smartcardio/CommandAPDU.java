@@ -62,9 +62,8 @@ import java.nio.ByteBuffer;
  * @author  Andreas Sterbenz
  * @author  JSR 268 Expert Group
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class CommandAPDU implements java.io.Serializable {
-
-    private static final long serialVersionUID = 398698301286670877L;
 
     private static final int MAX_APDU_SIZE = 65544;
 

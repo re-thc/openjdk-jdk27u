@@ -47,9 +47,8 @@ package org.w3c.dom.events;
  * <p>See also the <a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113'>Document Object Model (DOM) Level 2 Events Specification</a>.
  * @since 1.5, DOM Level 2
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class EventException extends RuntimeException {
-    private static final long serialVersionUID = 242753408332692061L;
-
     public EventException(short code, String message) {
        super(message);
        this.code = code;

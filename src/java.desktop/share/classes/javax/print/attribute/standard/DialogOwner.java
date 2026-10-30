@@ -46,6 +46,7 @@ import sun.print.DialogOwnerAccessor;
  *
  * @since 11
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class DialogOwner implements PrintRequestAttribute {
 
     private static class Accessor extends DialogOwnerAccessor {
@@ -60,12 +61,6 @@ public final class DialogOwner implements PrintRequestAttribute {
     static {
              DialogOwnerAccessor.setAccessor(accessor);
     }
-
-    /**
-     * Use serialVersionUID from JDK 11 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -1901909867156076547L;
 
     /**
      * @serial The owner of the dialog.

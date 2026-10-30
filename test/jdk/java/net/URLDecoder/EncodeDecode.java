@@ -26,12 +26,13 @@
  * @bug 4402326
  * @summary  URLDecoder fails with certain input
  */
+import java.nio.charset.Charset;
 import java.net.*;
 
 public class EncodeDecode {
     public static void main(String[] args) {
         String str = "fds@$";
-        String encStr = URLEncoder.encode(str);
+        String encStr = URLEncoder.encode(str, Charset.defaultCharset());
         String decStr = URLDecoder.decode(encStr);
     }
 }

@@ -638,9 +638,8 @@ public class Types {
      * wraps a diagnostic that can be used to generate more details error
      * messages.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class FunctionDescriptorLookupError extends CompilerInternalException {
-        private static final long serialVersionUID = 0;
-
         transient JCDiagnostic diagnostic;
 
         FunctionDescriptorLookupError(boolean dumpStackTraceOnError) {
@@ -5245,9 +5244,8 @@ public class Types {
 
     public abstract class SignatureGenerator {
 
+        @SuppressWarnings("serial") // Serial version compatibility is not maintained.
         public class InvalidSignatureException extends CompilerInternalException {
-            private static final long serialVersionUID = 0;
-
             private final transient Type type;
 
             InvalidSignatureException(Type type, boolean dumpStackTraceOnError) {

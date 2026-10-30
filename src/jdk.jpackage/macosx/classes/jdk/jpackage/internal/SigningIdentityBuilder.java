@@ -44,6 +44,7 @@ import jdk.jpackage.internal.model.SigningIdentity;
 
 final class SigningIdentityBuilder {
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class SigningConfigException extends JPackageException {
         public SigningConfigException(String msg) {
             super(msg);
@@ -53,7 +54,6 @@ final class SigningIdentityBuilder {
             super(msg, cause);
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
     record SigningConfig(SigningIdentity identity, Optional<Keychain> keychain) {

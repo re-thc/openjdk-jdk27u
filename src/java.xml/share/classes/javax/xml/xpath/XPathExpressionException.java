@@ -32,13 +32,12 @@ package javax.xml.xpath;
  * @author  Jeff Suttor
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class XPathExpressionException extends XPathException {
 
     /**
      * Stream Unique Identifier.
      */
-    private static final long serialVersionUID = -1837080260374986980L;
-
     /**
      * Constructs a new {@code XPathExpressionException}
      * with the specified detail {@code message}.

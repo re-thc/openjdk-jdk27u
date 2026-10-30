@@ -40,11 +40,9 @@ import java.io.ObjectInputStream;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AttributeValueExp implements ValueExp  {
 
-
-    /* Serial version */
-    private static final long serialVersionUID = -7768025046539163385L;
 
     /**
      * @serial The name of the attribute
@@ -120,23 +118,6 @@ public class AttributeValueExp implements ValueExp  {
     @Override
     public String toString()  {
         return attr;
-    }
-
-
-    /**
-     * Sets the MBean server on which the query is to be performed.
-     *
-     * @param s The MBean server on which the query is to be performed.
-     *
-     * @deprecated This method has no effect.  The MBean Server used to
-     * obtain an attribute value is {@link QueryEval#getMBeanServer()}.
-     */
-    /* There is no need for this method, because if a query is being
-       evaluated an AttributeValueExp can only appear inside a QueryExp,
-       and that QueryExp will itself have done setMBeanServer.  */
-    @Deprecated
-    @Override
-    public void setMBeanServer(MBeanServer s)  {
     }
 
 

@@ -106,6 +106,7 @@ import com.sun.jndi.ldap.BerEncoder;
  * @see SortResponseControl
  * @author Vincent Ryan
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SortControl extends BasicControl {
 
     /**
@@ -113,8 +114,6 @@ public final class SortControl extends BasicControl {
      * is 1.2.840.113556.1.4.473.
      */
     public static final String OID = "1.2.840.113556.1.4.473";
-
-    private static final long serialVersionUID = -1965961680233330744L;
 
     /**
      * Constructs a control to sort on a single attribute in ascending order.

@@ -1061,9 +1061,8 @@ final class Config {
 
 }
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class ConfigurationException extends IOException {
-    @Serial
-    private static final long serialVersionUID = 254492758807673194L;
     ConfigurationException(String msg) {
         super(msg);
     }

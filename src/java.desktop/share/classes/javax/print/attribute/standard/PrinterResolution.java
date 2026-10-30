@@ -67,14 +67,9 @@ import javax.print.attribute.ResolutionSyntax;
  * @author David Mendenhall
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class PrinterResolution    extends ResolutionSyntax
         implements DocAttribute, PrintRequestAttribute, PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 13090306561090558L;
 
     /**
      * Construct a new printer resolution attribute from the given items.

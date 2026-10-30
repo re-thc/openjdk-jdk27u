@@ -33,13 +33,8 @@ import java.io.Serial;
  * system.
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PrinterException extends Exception {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -3757589981158265819L;
 
     /**
      * Constructs a new {@code PrinterException} object

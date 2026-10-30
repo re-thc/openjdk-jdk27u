@@ -43,6 +43,7 @@ import static sun.management.LazyCompositeData.getString;
  * This class avoids the performance penalty paid to the
  * construction of a CompositeData use in the local case.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class GarbageCollectionNotifInfoCompositeData extends LazyCompositeData {
     @SuppressWarnings("serial") // Type of field is not Serializable
     private final GarbageCollectionNotificationInfo gcNotifInfo;
@@ -210,5 +211,4 @@ public class GarbageCollectionNotifInfoCompositeData extends LazyCompositeData {
         return baseGcNotifInfoCompositeType;
     }
 
-    private static final long serialVersionUID = -1805123446483771292L;
 }

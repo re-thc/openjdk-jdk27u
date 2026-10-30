@@ -56,13 +56,12 @@ import java.lang.System.Logger.Level;
  * an object implementing the RelationType interface, and this object will be
  * used as representing a relation type in the Relation Service.
  *
- * <p>The <b>serialVersionUID</b> of this class is <code>4611072955724144607L</code>.
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RelationTypeSupport implements RelationType {
 
-    private static final long serialVersionUID = 4611072955724144607L;
     /**
      * @serialField typeName String Relation type name
      * @serialField roleName2InfoMap Map {@link Map} holding the mapping:

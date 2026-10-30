@@ -33,10 +33,8 @@ import java.io.Serial;
  *
  * @since 1.7
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IllegalReceiveException extends IllegalStateException {
-    @Serial
-    private static final long serialVersionUID = 2296619040988576224L;
-
     /**
      * Constructs an instance of this class.
      */

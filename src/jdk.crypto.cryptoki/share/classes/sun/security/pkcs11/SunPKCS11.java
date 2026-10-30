@@ -63,10 +63,8 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
  * @author  Andreas Sterbenz
  * @since   1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class SunPKCS11 extends AuthProvider {
-
-    @Serial
-    private static final long serialVersionUID = -1354835039035306505L;
 
     static final Debug debug = Debug.getInstance("sunpkcs11");
     // the PKCS11 object through which we make the native calls

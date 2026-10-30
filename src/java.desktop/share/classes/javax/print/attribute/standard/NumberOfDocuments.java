@@ -42,14 +42,9 @@ import javax.print.attribute.PrintJobAttribute;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class NumberOfDocuments extends IntegerSyntax
     implements PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 7891881310684461097L;
 
     /**
      * Construct a new number of documents attribute with the given integer

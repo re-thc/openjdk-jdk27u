@@ -38,6 +38,7 @@ import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedResultException
 
 public final class Codesign {
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static final class CodesignException extends Exception {
 
         CodesignException(UnexpectedResultException cause) {
@@ -49,7 +50,6 @@ public final class Codesign {
             return (UnexpectedResultException)super.getCause();
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
     public static final class Builder {

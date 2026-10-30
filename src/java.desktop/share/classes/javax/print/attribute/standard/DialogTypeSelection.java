@@ -49,14 +49,9 @@ import javax.print.attribute.PrintRequestAttribute;
  *
  * @since 1.7
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class DialogTypeSelection extends EnumSyntax
         implements PrintRequestAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 7518682952133256029L;
 
     /**
      * The native platform print dialog should be used.

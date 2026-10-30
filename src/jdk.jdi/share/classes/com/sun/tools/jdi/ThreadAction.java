@@ -32,9 +32,8 @@ import com.sun.jdi.ThreadReference;
 /*
  * The name "action" is used to avoid confusion with JDI events.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class ThreadAction extends EventObject {
-
-    private static final long serialVersionUID = 5690763191100515283L;
 
     // Event ids
     /*static final int THREAD_SUSPENDED = 1;*/

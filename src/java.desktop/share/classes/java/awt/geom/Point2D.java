@@ -47,6 +47,7 @@ public abstract class Point2D implements Cloneable {
      * precision.
      * @since 1.2
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Float extends Point2D implements Serializable {
         /**
          * The X coordinate of this {@code Point2D}.
@@ -133,11 +134,6 @@ public abstract class Point2D implements Cloneable {
             return "Point2D.Float["+x+", "+y+"]";
         }
 
-        /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -2870572449815403710L;
     }
 
     /**
@@ -145,6 +141,7 @@ public abstract class Point2D implements Cloneable {
      * {@code double} precision.
      * @since 1.2
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Double extends Point2D implements Serializable {
         /**
          * The X coordinate of this {@code Point2D}.
@@ -218,11 +215,6 @@ public abstract class Point2D implements Cloneable {
             return "Point2D.Double["+x+", "+y+"]";
         }
 
-        /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 6150783262733311327L;
     }
 
     /**

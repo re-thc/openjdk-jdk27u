@@ -38,6 +38,7 @@ package java.sql;
  * @since 1.1
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DataTruncation extends SQLWarning {
 
     /**
@@ -179,10 +180,5 @@ public class DataTruncation extends SQLWarning {
         * @serial
         */
     private int transferSize;
-
-    /**
-     * @serial
-     */
-    private static final long serialVersionUID = 6464298989504059473L;
 
 }

@@ -32,8 +32,8 @@ package javax.xml.parsers;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ParserConfigurationException extends Exception {
-    private static final long serialVersionUID = -3688849216575373917L;
     /**
      * Create a new <code>ParserConfigurationException</code> with no
      * detail message.

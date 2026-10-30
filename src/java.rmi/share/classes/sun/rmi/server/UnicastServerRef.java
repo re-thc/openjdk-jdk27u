@@ -72,7 +72,7 @@ import sun.rmi.transport.tcp.TCPTransport;
  * @author  Roger Riggs
  * @author  Peter Jones
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation", "serial"})
 public class UnicastServerRef extends UnicastRef
     implements ServerRef, Dispatcher
 {
@@ -82,9 +82,6 @@ public class UnicastServerRef extends UnicastRef
     /** server call log */
     public static final Log callLog =
         Log.getLog("sun.rmi.server.call", "RMI", logCalls);
-
-    // use serialVersionUID from JDK 1.2.2 for interoperability
-    private static final long serialVersionUID = -7384275867073752268L;
 
     /** flag to enable writing exceptions to System.err */
     private static final boolean wantExceptionLog =

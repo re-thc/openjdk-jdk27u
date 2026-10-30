@@ -38,14 +38,9 @@ import java.io.Serial;
  * @since 1.1
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public
 class IntrospectionException extends Exception {
-
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -3728150539969542619L;
 
     /**
      * Constructs an {@code IntrospectionException} with a

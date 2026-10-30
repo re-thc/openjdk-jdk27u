@@ -51,6 +51,7 @@ import sun.awt.AWTAccessor;
  * @author      Arthur van Hoff
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class FileDialog extends Dialog {
 
     /**
@@ -137,12 +138,6 @@ public class FileDialog extends Dialog {
 
     private static final String base = "filedlg";
     private static int nameCounter = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = 5035145889651310422L;
 
     static {
         AWTAccessor.setFileDialogAccessor(

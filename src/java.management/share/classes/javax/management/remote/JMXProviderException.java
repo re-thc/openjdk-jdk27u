@@ -37,9 +37,8 @@ import java.io.IOException;
  * @see JMXConnectorServerFactory#newJMXConnectorServer
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class JMXProviderException extends IOException {
-
-    private static final long serialVersionUID = -3166703627550447198L;
 
     /**
      * <p>Constructs a <code>JMXProviderException</code> with no

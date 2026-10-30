@@ -95,15 +95,15 @@ public abstract class Ber {
 
     public static final int ASN_ENUMERATED      = 0x0a;
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class EncodeException extends IOException {
-        private static final long serialVersionUID = -5247359637775781768L;
         EncodeException(String msg) {
             super(msg);
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class DecodeException extends IOException {
-        private static final long serialVersionUID = 8735036969244425583L;
         DecodeException(String msg) {
             super(msg);
         }

@@ -85,7 +85,6 @@ public class DriverManager {
     private static final CopyOnWriteArrayList<DriverInfo> registeredDrivers = new CopyOnWriteArrayList<>();
     private static volatile int loginTimeout = 0;
     private static volatile java.io.PrintWriter logWriter = null;
-    private static volatile java.io.PrintStream logStream = null;
     // Used in println() to synchronize logWriter
     private static final Object logSync = new Object();
     // Used in ensureDriversInitialized() to synchronize driversInitialized
@@ -101,9 +100,6 @@ public class DriverManager {
     /**
      * Retrieves the log writer.
      *
-     * The {@code getLogWriter} and {@code setLogWriter}
-     * methods should be used instead
-     * of the {@code get/setlogStream} methods, which are deprecated.
      * @return a {@code java.io.PrintWriter} object
      * @see #setLogWriter
      * @since 1.2
@@ -122,7 +118,6 @@ public class DriverManager {
      * @since 1.2
      */
     public static void setLogWriter(java.io.PrintWriter out) {
-        logStream = null;
         logWriter = out;
     }
 
@@ -434,37 +429,6 @@ public class DriverManager {
      */
     public static int getLoginTimeout() {
         return (loginTimeout);
-    }
-
-    /**
-     * Sets the logging/tracing PrintStream that is used
-     * by the {@code DriverManager}
-     * and all drivers.
-     *
-     * @param out the new logging/tracing PrintStream; to disable, set to {@code null}
-     * @deprecated Use {@code setLogWriter}
-     * @see #getLogStream
-     */
-    @Deprecated(since="1.2")
-    public static void setLogStream(java.io.PrintStream out) {
-        logStream = out;
-        if ( out != null )
-            logWriter = new java.io.PrintWriter(out);
-        else
-            logWriter = null;
-    }
-
-    /**
-     * Retrieves the logging/tracing PrintStream that is used by the {@code DriverManager}
-     * and all drivers.
-     *
-     * @return the logging/tracing PrintStream; if disabled, is {@code null}
-     * @deprecated  Use {@code getLogWriter}
-     * @see #setLogStream
-     */
-    @Deprecated(since="1.2")
-    public static java.io.PrintStream getLogStream() {
-        return logStream;
     }
 
     /**

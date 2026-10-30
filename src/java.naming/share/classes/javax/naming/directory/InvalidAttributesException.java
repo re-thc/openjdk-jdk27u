@@ -46,6 +46,7 @@ import javax.naming.NamingException;
   * @since 1.3
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidAttributesException extends NamingException {
     /**
      * Constructs a new instance of InvalidAttributesException using an
@@ -65,8 +66,4 @@ public class InvalidAttributesException extends NamingException {
         super();
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = 2607612850539889765L;
 }

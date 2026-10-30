@@ -75,14 +75,9 @@ import javax.print.attribute.PrintRequestAttribute;
  * @see JobKOctets
  * @see JobMediaSheets
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class JobImpressions extends IntegerSyntax
     implements PrintRequestAttribute, PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 8225537206784322464L;
 
     /**
      * Construct a new job impressions attribute with the given integer value.

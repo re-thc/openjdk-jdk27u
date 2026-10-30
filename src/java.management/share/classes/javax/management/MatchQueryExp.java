@@ -34,10 +34,8 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class MatchQueryExp extends QueryEval implements QueryExp {
-
-    /* Serial version */
-    private static final long serialVersionUID = -7156603696948215014L;
 
     /**
      * @serial The attribute value to be matched

@@ -91,7 +91,6 @@ public class XMLEntityScanner implements XMLLocator  {
      * To signal the end of the document entity, this exception will be thrown.
      */
     private static final EOFException END_OF_DOCUMENT_ENTITY = new EOFException() {
-        private static final long serialVersionUID = 980337771224675268L;
         public Throwable fillInStackTrace() {
             return this;
         }

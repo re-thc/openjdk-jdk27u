@@ -25,9 +25,8 @@ package com.sun.org.apache.xerces.internal.utils;
  *
  * @LastModified: Oct 2017
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ConfigurationError extends Error {
-    private static final long serialVersionUID = 8095902236393167968L;
-
     //
     // Data
     //

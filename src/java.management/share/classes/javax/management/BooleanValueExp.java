@@ -33,10 +33,8 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class BooleanValueExp extends QueryEval implements ValueExp {
-
-    /* Serial version */
-    private static final long serialVersionUID = 7754922052666594581L;
 
     /**
      * @serial The boolean value

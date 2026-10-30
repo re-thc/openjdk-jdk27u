@@ -73,9 +73,8 @@ import static jdk.internal.joptsimple.internal.Messages.*;
  *
  * @author <a href="mailto:pholser@alumni.rice.edu">Paul Holser</a>
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class OptionException extends RuntimeException {
-    private static final long serialVersionUID = -1L;
-
     @SuppressWarnings("serial") // Type of field is not Serializable
     private final List<String> options = new ArrayList<>();
 

@@ -41,10 +41,8 @@ import java.util.ResourceBundle;
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</strong></p>
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class Fault extends RuntimeException {
-    @Serial
-    private static final long serialVersionUID = 2L;
-
     private static final String BUNDLE_NAME = "com.sun.tools.javac.resources.launcher";
 
     private static final ResourceBundle RESOURCE_BUNDLE = ResourceBundle.getBundle(BUNDLE_NAME);

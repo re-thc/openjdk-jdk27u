@@ -45,10 +45,8 @@ import java.security.Principal;
  *
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class UserPrincipal implements Principal, java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 892106070870210969L;
 
     /**
      * The principal's name

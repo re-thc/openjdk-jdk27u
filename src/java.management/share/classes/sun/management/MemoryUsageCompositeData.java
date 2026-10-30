@@ -36,6 +36,7 @@ import javax.management.openmbean.OpenDataException;
  * This class avoids the performance penalty paid to the
  * construction of a CompositeData use in the local case.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MemoryUsageCompositeData extends LazyCompositeData {
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private final MemoryUsage usage;
@@ -128,5 +129,4 @@ public class MemoryUsageCompositeData extends LazyCompositeData {
         }
     }
 
-    private static final long serialVersionUID = -8504291541083874143L;
 }

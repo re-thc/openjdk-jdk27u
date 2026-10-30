@@ -32,9 +32,8 @@ package com.sun.jdi;
  * @author Gordon Hirsch
  * @since  1.3
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public non-sealed class NativeMethodException extends OpaqueFrameException {
-    private static final long serialVersionUID = 3924951669039469992L;
-
     public NativeMethodException() {
         super();
     }
