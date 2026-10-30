@@ -35,9 +35,8 @@ package javax.xml.parsers;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class FactoryConfigurationError extends Error {
-    private static final long serialVersionUID = -827108682472263355L;
-
     /**
      * @serial <code>Exception</code> that represents the error.
      */

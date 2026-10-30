@@ -102,6 +102,7 @@ import javax.naming.*;
  */
 
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class DnsName implements Name {
 
     // If non-null, the domain name represented by this DnsName.
@@ -598,5 +599,4 @@ public final class DnsName implements Name {
         }
     }
 
-    private static final long serialVersionUID = 7040187611324710271L;
 }

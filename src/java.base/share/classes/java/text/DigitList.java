@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,22 +293,6 @@ final class DigitList implements Cloneable {
         set(isNegative, source, maximumFractionDigits, true);
     }
 
-    /*
-     * This compatibility option will only be available for a *very* limited
-     * number of releases.
-     * It restores the original behavior to help migrating to the new one,
-     * and is used by adding
-     *      -Djdk.compat.DecimalFormat=true
-     * to the launcher's command line.
-     *
-     * The new behavior differs from the old one only in very rare cases,
-     * so migration should be painless.
-     *
-     * When this option is removed, the old behavior, including relevant
-     * fields and methods, will be removed as well.
-     */
-    private static final boolean COMPAT = Boolean.getBoolean("jdk.compat.DecimalFormat");
-
     /**
      * Set the digit list to a representation of the given double value.
      * This method supports both fixed-point and exponential notation.
@@ -323,7 +308,7 @@ final class DigitList implements Cloneable {
         assert Double.isFinite(source);
 
         FloatingDecimal.BinaryToASCIIBuffer fdConverter =
-                FloatingDecimal.getBinaryToASCIIConverter(source, COMPAT);
+                FloatingDecimal.getBinaryToASCIIConverter(source);
         boolean hasBeenRoundedUp = fdConverter.digitsRoundedUp();
         boolean valueExactAsDecimal = fdConverter.decimalDigitsExact();
 

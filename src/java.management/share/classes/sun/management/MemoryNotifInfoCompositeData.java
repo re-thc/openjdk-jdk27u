@@ -37,6 +37,7 @@ import javax.management.openmbean.OpenDataException;
  * This class avoids the performance penalty paid to the
  * construction of a CompositeData use in the local case.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MemoryNotifInfoCompositeData extends LazyCompositeData {
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private final MemoryNotificationInfo memoryNotifInfo;
@@ -128,5 +129,4 @@ public class MemoryNotifInfoCompositeData extends LazyCompositeData {
         }
     }
 
-    private static final long serialVersionUID = -1805123446483771291L;
 }

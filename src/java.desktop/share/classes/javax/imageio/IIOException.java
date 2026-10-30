@@ -40,13 +40,8 @@ import java.io.Serial;
  * reading from a {@code File} would be stored there.
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IIOException extends IOException {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -3216210718638985251L;
 
     /**
      * Constructs an {@code IIOException} with a given message

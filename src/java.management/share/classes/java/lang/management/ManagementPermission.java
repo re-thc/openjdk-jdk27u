@@ -46,10 +46,9 @@ package java.lang.management;
  * which is no longer supported. There is no replacement for this class.
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public final class ManagementPermission extends java.security.BasicPermission {
-    private static final long serialVersionUID = 1897496590799378737L;
-
     /**
      * Constructs a ManagementPermission with the specified name.
      *

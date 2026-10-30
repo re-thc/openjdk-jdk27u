@@ -33,8 +33,8 @@ package jdk.jfr.internal.util;
  * command line syntax, but instead information about what was wrong with the
  * input.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class UserDataException extends Exception {
-    private static final long serialVersionUID = 6656457380115167810L;
     /**
      * The error message.
      *

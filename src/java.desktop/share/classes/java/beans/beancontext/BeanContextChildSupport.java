@@ -54,15 +54,9 @@ import java.io.Serializable;
  * @see java.beans.beancontext.BeanContextChild
  */
 
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "serial"})
 @Deprecated(since = "23", forRemoval = true)
 public class BeanContextChildSupport implements BeanContextChild, BeanContextServicesListener, Serializable {
-
-    /**
-     * Use serialVersionUID from JDK 1.2 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 6328947014421475877L;
 
     /**
      * construct a BeanContextChildSupport where this class has been

@@ -34,10 +34,8 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class OrQueryExp extends QueryEval implements QueryExp {
-
-    /* Serial version */
-    private static final long serialVersionUID = 2962973084421716523L;
 
     /**
      * @serial The left query expression

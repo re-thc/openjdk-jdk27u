@@ -113,6 +113,7 @@ import java.io.Serial;
  * @author Jim Graham
  * @since 1.2
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AffineTransform implements Cloneable, java.io.Serializable {
 
     /*
@@ -3957,12 +3958,6 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * state variable's value needs to be recalculated on the fly by the
      * readObject method as it is in the 6-argument matrix constructor.
      */
-
-    /**
-     * Use serialVersionUID from JDK 1.2 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 1330973210523860834L;
 
     /**
      * Writes default serializable fields to stream.

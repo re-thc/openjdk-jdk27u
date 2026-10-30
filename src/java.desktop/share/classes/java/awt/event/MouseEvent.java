@@ -189,6 +189,7 @@ import sun.awt.SunToolkit;
  *
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public non-sealed class MouseEvent extends InputEvent {
 
     /**
@@ -381,12 +382,6 @@ public non-sealed class MouseEvent extends InputEvent {
      * @see #isPopupTrigger()
      */
     boolean popupTrigger = false;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -991214153494842848L;
 
     /**
      * A number of buttons available on the mouse at the {@code Toolkit} machinery startup.

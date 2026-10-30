@@ -31,11 +31,9 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class BadStringOperationException extends Exception   {
 
-
-    /* Serial version */
-    private static final long serialVersionUID = 7802201238441662100L;
 
     /**
      * @serial The description of the operation that originated this exception

@@ -34,10 +34,9 @@ package com.sun.jdi;
  * @author Gordon Hirsch
  * @since  1.3
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated
 public class InvalidCodeIndexException extends RuntimeException {
-
-    private static final long serialVersionUID = 7416010225133747805L;
 
     public InvalidCodeIndexException() {
         super();

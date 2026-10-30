@@ -45,6 +45,7 @@ import java.io.Serial;
  * @author Rosanna Lee
  * @author Rob Weltman
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AuthenticationException extends SaslException {
     /**
      * Constructs a new instance of {@code AuthenticationException}.
@@ -80,7 +81,4 @@ public class AuthenticationException extends SaslException {
         super(detail, ex);
     }
 
-    /** Use serialVersionUID from JSR 28 RI for interoperability */
-    @Serial
-    private static final long serialVersionUID = -3579708765071815007L;
 }

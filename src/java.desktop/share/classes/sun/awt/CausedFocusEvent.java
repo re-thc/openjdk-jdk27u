@@ -34,13 +34,8 @@ import java.lang.reflect.Field;
 /**
  * This class exists for deserialization compatibility only.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class CausedFocusEvent extends FocusEvent {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -3647309088427840738L;
 
     private enum Cause {
         UNKNOWN,

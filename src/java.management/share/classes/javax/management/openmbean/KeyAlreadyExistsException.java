@@ -32,9 +32,8 @@ package javax.management.openmbean;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class KeyAlreadyExistsException extends IllegalArgumentException {
-
-    private static final long serialVersionUID = 1845183636745282866L;
 
     /**
      * A KeyAlreadyExistsException with no detail message.

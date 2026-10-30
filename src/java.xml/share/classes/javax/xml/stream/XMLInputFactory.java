@@ -187,29 +187,6 @@ public abstract class XMLInputFactory {
 
   /**
    * Create a new instance of the factory.
-   *
-   * @param factoryId             Name of the factory to find, same as
-   *                              a property name
-   * @param classLoader           classLoader to use
-   * @return the factory implementation
-   * @throws FactoryConfigurationError if an instance of this factory cannot be loaded
-   *
-   * @deprecated  This method has been deprecated to maintain API consistency.
-   *              All newInstance methods have been replaced with corresponding
-   *              newFactory methods. The replacement {@link
-   *              #newFactory(java.lang.String, java.lang.ClassLoader)} method
-   *              defines no changes in behavior.
-   */
-  @Deprecated(since="1.7")
-  public static XMLInputFactory newInstance(String factoryId,
-          ClassLoader classLoader)
-          throws FactoryConfigurationError {
-      //do not fallback if given classloader can't find the class, throw exception
-      return FactoryFinder.find(XMLInputFactory.class, factoryId, classLoader, null);
-  }
-
-  /**
-   * Create a new instance of the factory.
    * If the classLoader argument is null, then the ContextClassLoader is used.
    * <p>
    * This method uses the following ordered lookup procedure to determine

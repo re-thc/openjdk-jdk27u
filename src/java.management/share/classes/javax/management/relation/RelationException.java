@@ -33,10 +33,8 @@ import javax.management.JMException;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RelationException extends JMException {
-
-    /* Serial version */
-    private static final long serialVersionUID = 5434016005679159613L;
 
     /**
      * Default constructor, no message put in exception.

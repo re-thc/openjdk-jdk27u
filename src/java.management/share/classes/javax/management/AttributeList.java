@@ -58,10 +58,8 @@ import java.util.Map;
    the asList() method so you can write
        for (Attribute a : attributeList.asList())
 */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AttributeList extends ArrayList<Object> {
-
-    /* Serial version */
-    private static final long serialVersionUID = -4077085769279709076L;
 
     /**
      * Constructs an empty <CODE>AttributeList</CODE>.

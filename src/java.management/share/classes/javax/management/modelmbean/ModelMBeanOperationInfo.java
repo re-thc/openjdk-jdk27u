@@ -102,15 +102,14 @@ import javax.management.RuntimeOperationsException;
  * <code>currencyTimeLimit</code> field.  To indicate that it is
  * always valid, use a very large number for this field.</p>
  *
- * <p>The <b>serialVersionUID</b> of this class is <code>6532732096650090465L</code>.
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ModelMBeanOperationInfo extends MBeanOperationInfo
          implements DescriptorAccess
 {
 
-        private static final long serialVersionUID = 6532732096650090465L;
         /**
          * @serialField operationDescriptor Descriptor The descriptor
          * containing the appropriate metadata for this instance

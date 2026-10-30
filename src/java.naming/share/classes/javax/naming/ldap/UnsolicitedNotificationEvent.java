@@ -41,6 +41,7 @@ package javax.naming.ldap;
  * @since 1.3
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnsolicitedNotificationEvent extends java.util.EventObject {
     /**
      * The notification that caused this event to be fired.
@@ -80,5 +81,4 @@ public class UnsolicitedNotificationEvent extends java.util.EventObject {
         listener.notificationReceived(this);
     }
 
-    private static final long serialVersionUID = -2382603380799883705L;
 }

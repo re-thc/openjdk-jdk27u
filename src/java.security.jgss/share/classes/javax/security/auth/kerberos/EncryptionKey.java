@@ -47,10 +47,8 @@ import javax.security.auth.DestroyFailedException;
  *
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class EncryptionKey implements SecretKey {
-
-    @Serial
-    private static final long serialVersionUID = 9L;
 
    /**
     * {@code KeyImpl} is serialized by writing out the ASN.1 encoded bytes

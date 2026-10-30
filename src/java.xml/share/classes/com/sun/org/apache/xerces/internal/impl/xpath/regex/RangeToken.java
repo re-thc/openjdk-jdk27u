@@ -26,9 +26,8 @@ package com.sun.org.apache.xerces.internal.impl.xpath.regex;
  * @xerces.internal
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class RangeToken extends Token implements java.io.Serializable {
-
-    private static final long serialVersionUID = 3257568399592010545L;
 
     int[] ranges;
     boolean sorted;

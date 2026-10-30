@@ -33,9 +33,8 @@ package javax.smartcardio;
  * @author  Andreas Sterbenz
  * @author  JSR 268 Expert Group
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class CardException extends Exception {
-
-    private static final long serialVersionUID = 7787607144922050628L;
 
     /**
      * Constructs a new CardException with the specified detail message.

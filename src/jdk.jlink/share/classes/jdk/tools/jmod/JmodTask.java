@@ -97,8 +97,8 @@ import static java.util.stream.Collectors.joining;
  */
 public class JmodTask {
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class CommandException extends RuntimeException {
-        private static final long serialVersionUID = 0L;
         boolean showUsage;
 
         CommandException(String key, Object... args) {

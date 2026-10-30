@@ -85,10 +85,8 @@ import static sun.security.krb5.internal.Krb5.DEBUG;
  * http://www.ietf.org/rfc/rfc4120.txt</a>.
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class KRBError implements java.io.Serializable {
-    @Serial
-    private static final long serialVersionUID = 3643809337475284503L;
-
     private transient int pvno;
     private transient int msgType;
     private transient KerberosTime cTime; //optional

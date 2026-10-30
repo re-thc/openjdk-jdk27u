@@ -58,6 +58,7 @@ import java.io.Serial;
  * @see         ColorSpace
  * @see         AlphaComposite
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Color implements Paint, java.io.Serializable {
 
     /**
@@ -253,12 +254,6 @@ public class Color implements Paint, java.io.Serializable {
      * @see #getColorComponents
      */
     private ColorSpace cs = null;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = 118526816881161077L;
 
     /**
      * Checks the color integer components supplied for validity.

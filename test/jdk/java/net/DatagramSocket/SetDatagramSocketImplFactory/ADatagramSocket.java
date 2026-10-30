@@ -64,7 +64,8 @@ public class ADatagramSocket {
         socket.receive(packet);
 
         // display response
-        String received = new String(packet.getData(), 0);
+        byte[] data = packet.getData();
+        String received = new String(data, 0, 0, data.length);
         System.err.println("Success!! Server current time is: " + received);
 
         socket.close();

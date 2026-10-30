@@ -41,13 +41,8 @@ import java.io.Serializable;
  * @author David Mendenhall
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class IntegerSyntax implements Serializable, Cloneable {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 3644574816328081943L;
 
     /**
      * This integer attribute's integer value.

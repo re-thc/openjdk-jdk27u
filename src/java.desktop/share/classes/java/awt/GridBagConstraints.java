@@ -37,6 +37,7 @@ import java.io.Serial;
  * @see java.awt.GridBagLayout
  * @since 1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class GridBagConstraints implements Cloneable, java.io.Serializable {
 
     /**
@@ -567,12 +568,6 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     transient int centerPadding;
     // Where the baseline lands relative to the center of the component.
     transient int centerOffset;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -1000070633030801713L;
 
     /**
      * Creates a {@code GridBagConstraints} object with

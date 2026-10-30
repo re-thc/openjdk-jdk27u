@@ -128,6 +128,7 @@ import java.io.Serial;
  * @see         java.awt.ComponentOrientation
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class BorderLayout implements LayoutManager2,
                                      java.io.Serializable {
     /**
@@ -345,12 +346,6 @@ public class BorderLayout implements LayoutManager2,
      * @since 1.4
      */
     public static final String LINE_END = AFTER_LINE_ENDS;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = -8658291919501921765L;
 
     /**
      * Constructs a new border layout with

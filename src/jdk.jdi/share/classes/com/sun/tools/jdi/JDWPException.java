@@ -35,9 +35,8 @@ import com.sun.jdi.OpaqueFrameException;
 import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VMOutOfMemoryException;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class JDWPException extends Exception {
-
-    private static final long serialVersionUID = -6321344442751299874L;
 
     short errorCode;
 

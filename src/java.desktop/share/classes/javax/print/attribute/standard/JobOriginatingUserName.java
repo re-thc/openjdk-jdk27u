@@ -50,14 +50,9 @@ import javax.print.attribute.TextSyntax;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class JobOriginatingUserName extends TextSyntax
         implements PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -8052537926362933477L;
 
     /**
      * Constructs a new job originating user name attribute with the given user

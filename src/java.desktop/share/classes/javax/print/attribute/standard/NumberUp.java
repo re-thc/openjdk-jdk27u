@@ -112,14 +112,9 @@ import javax.print.attribute.PrintRequestAttribute;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class NumberUp extends IntegerSyntax
     implements DocAttribute, PrintRequestAttribute, PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -3040436486786527811L;
 
     /**
      * Construct a new number up attribute with the given integer value.

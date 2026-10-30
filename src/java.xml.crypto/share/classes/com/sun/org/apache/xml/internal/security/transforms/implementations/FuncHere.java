@@ -56,13 +56,12 @@ import java.util.List;
  *
  * @see "http://www.w3.org/Signature/Drafts/xmldsig-core/Overview.html#function-here"
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class FuncHere extends Function {
 
     /**
      *
      */
-    private static final long serialVersionUID = 1L;
-
     /**
      * The here function returns a node-set containing the attribute or
      * processing instruction node or the parent element of the text node

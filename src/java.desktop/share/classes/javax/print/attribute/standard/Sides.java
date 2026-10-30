@@ -108,14 +108,9 @@ import javax.print.attribute.PrintRequestAttribute;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class Sides extends EnumSyntax
     implements DocAttribute, PrintRequestAttribute, PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -6890309414893262822L;
 
     /**
      * Imposes each consecutive print-stream page upon the same side of

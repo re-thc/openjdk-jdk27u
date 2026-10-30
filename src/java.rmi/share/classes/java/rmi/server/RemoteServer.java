@@ -39,11 +39,9 @@ import sun.rmi.runtime.Log;
  * @author  Ann Wollrath
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class RemoteServer extends RemoteObject
 {
-    /* indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = -4100238210092549637L;
-
     /**
      * Constructs a <code>RemoteServer</code>.
      * @since 1.1

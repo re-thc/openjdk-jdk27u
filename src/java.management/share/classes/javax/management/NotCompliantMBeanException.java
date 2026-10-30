@@ -31,11 +31,9 @@ package javax.management;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NotCompliantMBeanException  extends OperationsException {
 
-
-    /* Serial version */
-    private static final long serialVersionUID = 5175579583207963577L;
 
     /**
      * Default constructor.

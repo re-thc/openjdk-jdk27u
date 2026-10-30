@@ -51,20 +51,16 @@ import sun.security.util.ECKeySizeParameterSpec;
  *
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class CPublicKey extends CKey implements PublicKey {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -2289561342425825391L;
 
     protected byte[] encoding = null;
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class CECPublicKey extends CPublicKey implements ECPublicKey {
         @SuppressWarnings("serial") // Type of field is not Serializable;
                                     // see writeReplace
         private ECPoint w = null;
-
-        @java.io.Serial
-        private static final long serialVersionUID = 12L;
 
         CECPublicKey(NativeHandles handles, int keyLength) {
             super("EC", handles, keyLength);
@@ -121,13 +117,11 @@ public abstract class CPublicKey extends CKey implements PublicKey {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class CRSAPublicKey extends CPublicKey implements RSAPublicKey {
 
         private BigInteger modulus = null;
         private BigInteger exponent = null;
-
-        @java.io.Serial
-        private static final long serialVersionUID = 12L;
 
         CRSAPublicKey(NativeHandles handles, int keyLength) {
             super("RSA", handles, keyLength);

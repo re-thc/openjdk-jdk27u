@@ -71,10 +71,9 @@ final class URI
    * invalid URI specification.
    *
    */
+  @SuppressWarnings("serial") // Serial version compatibility is not maintained.
   public static class MalformedURIException extends IOException
   {
-    private static final long serialVersionUID = 4651455286983598951L;
-
     /**
      * Constructs a <code>MalformedURIException</code> with no specified
      * detail message.

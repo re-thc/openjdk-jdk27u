@@ -36,6 +36,7 @@ import javax.swing.JRootPane;
  * {@link java.awt.im.spi.InputMethodContext#createInputMethodJFrame}.
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InputMethodJFrame
         extends JFrame
         implements InputMethodWindow {
@@ -72,9 +73,4 @@ public class InputMethodJFrame
         }
     }
 
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4705856747771842549L;
 }

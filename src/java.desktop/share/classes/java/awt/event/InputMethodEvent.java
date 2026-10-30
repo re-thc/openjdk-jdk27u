@@ -60,13 +60,8 @@ import sun.awt.SunToolkit;
  * @author JavaSoft Asia/Pacific
  * @since 1.2
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InputMethodEvent extends AWTEvent {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 4727190874778922661L;
 
     /**
      * Marks the first integer id for the range of input method event ids.

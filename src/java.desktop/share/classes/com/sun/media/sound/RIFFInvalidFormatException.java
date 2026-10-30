@@ -33,13 +33,8 @@ import java.io.Serial;
  *
  * @author Karl Helgason
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class RIFFInvalidFormatException extends InvalidFormatException {
-
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 1L;
 
     public RIFFInvalidFormatException() {
         super("Invalid format!");

@@ -92,7 +92,7 @@ public class JavaScriptScanner extends DocTreePathScanner<Void, Consumer<DocTree
      * Used to indicate a fault when parsing, typically used in
      * lambda methods.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Fault extends RuntimeException {
-        private static final long serialVersionUID = 0L;
     }
 }

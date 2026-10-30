@@ -32,10 +32,8 @@ package javax.management;
  *
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class InstanceOfQueryExp extends QueryEval implements QueryExp {
-
-    /* Serial version */
-    private static final long serialVersionUID = -1081892073854801359L;
 
     /**
      * @serial The {@link StringValueExp} returning the name of the class

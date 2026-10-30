@@ -47,6 +47,7 @@ public abstract class Ellipse2D extends RectangularShape {
      * in {@code float} precision.
      * @since 1.2
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Float extends Ellipse2D implements Serializable {
         /**
          * The X coordinate of the upper-left corner of the
@@ -180,11 +181,6 @@ public abstract class Ellipse2D extends RectangularShape {
             return new Rectangle2D.Float(x, y, width, height);
         }
 
-        /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -6633761252372475977L;
     }
 
     /**
@@ -192,6 +188,7 @@ public abstract class Ellipse2D extends RectangularShape {
      * in {@code double} precision.
      * @since 1.2
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class Double extends Ellipse2D implements Serializable {
         /**
          * The X coordinate of the upper-left corner of the
@@ -306,11 +303,6 @@ public abstract class Ellipse2D extends RectangularShape {
             return new Rectangle2D.Double(x, y, width, height);
         }
 
-        /**
-         * Use serialVersionUID from JDK 1.6 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 5555464816372320683L;
     }
 
     /**

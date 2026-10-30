@@ -99,6 +99,7 @@ import java.lang.annotation.Native;
  * @since 1.4
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MouseWheelEvent extends MouseEvent {
 
     /**
@@ -152,12 +153,6 @@ public class MouseWheelEvent extends MouseEvent {
      * @see #getPreciseWheelRotation
      */
     double preciseWheelRotation;
-
-    /**
-     * Use serialVersionUID from JDK 1.6 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 6459879390515399677L;
 
     /**
      * Constructs a {@code MouseWheelEvent} object with the

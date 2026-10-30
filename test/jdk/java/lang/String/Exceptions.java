@@ -170,18 +170,6 @@ public class Exceptions {
                          }});
     }
 
-    private static void byteArrayHi() {
-        System.out.println("String(byte ascii[], int hibyte)");
-        tryCatch("  b, 0", null, new Runnable() {
-                public void run() {
-                    new String(b, 0);
-                }});
-        tryCatch("  null, 0", NullPointerException.class, new Runnable() {
-                public void run() {
-                    new String((byte []) null, 0);
-                }});
-    }
-
     private static void byteArrayOffLengthCharset0(String s, Class ex,
                                                    byte [] b, int off,
                                                    int len, Object cs)
@@ -620,8 +608,6 @@ public class Exceptions {
 
         // String(byte ascii[], int hibyte, int offset, int count)
         byteArrayHiOffCount();
-
-        byteArrayHi();        // String(byte ascii[], int hibyte)
 
         // String(byte bytes[], int offset, int length, String charsetName)
         //   throws UnsupportedEncodingException

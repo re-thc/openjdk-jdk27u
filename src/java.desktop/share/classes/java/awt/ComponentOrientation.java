@@ -89,14 +89,9 @@ import java.util.ResourceBundle;
   * This is unsafe, since more constants may be added in the future and
   * since it is not guaranteed that orientation objects will be unique.
   */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class ComponentOrientation implements java.io.Serializable
 {
-    /**
-     * Use serialVersionUID from JDK 1.6 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4113291392143563828L;
-
     // Internal constants used in the implementation
     private static final int UNK_BIT      = 1;
     private static final int HORIZ_BIT    = 2;

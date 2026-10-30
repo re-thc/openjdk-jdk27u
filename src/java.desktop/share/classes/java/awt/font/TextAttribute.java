@@ -240,6 +240,7 @@ import jdk.internal.access.SharedSecrets;
  * @see java.awt.font.TextLayout
  * @see java.text.AttributedCharacterIterator
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class TextAttribute extends Attribute {
 
     // table of all instances in this class, used by readResolve
@@ -282,14 +283,6 @@ public final class TextAttribute extends Attribute {
             throw new InvalidObjectException("unknown attribute name");
         }
     }
-
-    /**
-     * Use serialVersionUID from JDK 1.2 for interoperability.
-     * 1.2 will throw an InvalidObjectException if ever asked to deserialize
-     * INPUT_METHOD_UNDERLINE. This shouldn't happen in real life.
-     */
-    @Serial
-    private static final long serialVersionUID = 7744112784117861702L;
 
     //
     // For use with Font.

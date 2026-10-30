@@ -51,6 +51,7 @@ package javax.naming;
  * @since 1.3
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class StringRefAddr extends RefAddr {
     /**
      * Contains the contents of this address.
@@ -79,8 +80,4 @@ public class StringRefAddr extends RefAddr {
         return contents;
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = -8913762495138505527L;
 }

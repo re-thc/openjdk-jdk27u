@@ -35,13 +35,8 @@ import java.io.Serial;
  * @author Kara Kytle
  * @since 1.3
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class LineUnavailableException extends Exception {
-
-    /**
-     * Use serialVersionUID from JDK 1.3 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -2046718279487432130L;
 
     /**
      * Constructs a {@code LineUnavailableException} that has {@code null} as
