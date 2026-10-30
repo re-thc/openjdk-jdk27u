@@ -45,14 +45,9 @@ import javax.print.attribute.PrintRequestAttribute;
  * @author David Mendenhall
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class PrintQuality extends EnumSyntax
     implements DocAttribute, PrintRequestAttribute, PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -3072341285225858365L;
 
     /**
      * Lowest quality available on the printer.

@@ -47,12 +47,10 @@ import java.util.Objects;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnixNumericGroupPrincipal implements
                                         Principal,
                                         java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 3941535899328403223L;
 
     /**
      * @serial

@@ -39,15 +39,10 @@ import java.util.List;
  * @since 9
  * @sealedGraph
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public sealed class FilesEvent extends AppEvent
     permits OpenFilesEvent,
             PrintFilesEvent {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 5271763715462312871L;
 
     /**
      * @serial The list of files.

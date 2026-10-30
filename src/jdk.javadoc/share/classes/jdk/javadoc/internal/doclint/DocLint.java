@@ -103,8 +103,8 @@ public class DocLint extends com.sun.tools.doclint.DocLint {
 
     // <editor-fold defaultstate="collapsed" desc="Simple API">
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public class BadArgs extends Exception {
-        private static final long serialVersionUID = 0;
         BadArgs(String code, Object... args) {
             super(localize(code, args));
             this.code = code;

@@ -34,13 +34,8 @@ import java.io.Serial;
  * {@code AffineTransform} is in a non-invertible state.
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NoninvertibleTransformException extends java.lang.Exception {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 6137225240503990466L;
 
     /**
      * Constructs an instance of

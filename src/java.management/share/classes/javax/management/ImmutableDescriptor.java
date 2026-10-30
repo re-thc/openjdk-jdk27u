@@ -37,9 +37,8 @@ import java.util.TreeMap;
  * An immutable descriptor.
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ImmutableDescriptor implements Descriptor {
-    private static final long serialVersionUID = 8853308591080540165L;
-
     /**
      * @serial The names of the fields in this ImmutableDescriptor with their
      * original case.  The names must be in alphabetical order as determined

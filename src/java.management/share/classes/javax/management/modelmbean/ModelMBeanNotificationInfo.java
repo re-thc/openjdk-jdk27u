@@ -90,15 +90,14 @@ import javax.management.RuntimeOperationsException;
  * specified by the <code>name</code> parameter of the
  * ModelMBeanNotificationInfo constructor).</p>
  *
- * <p>The <b>serialVersionUID</b> of this class is <code>-7445681389570207141L</code>.
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ModelMBeanNotificationInfo
     extends MBeanNotificationInfo
     implements DescriptorAccess {
 
-    private static final long serialVersionUID = -7445681389570207141L;
     /**
      * @serialField notificationDescriptor Descriptor The descriptor
      *   containing the appropriate metadata for this instance

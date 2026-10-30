@@ -56,10 +56,8 @@ import java.util.Objects;
  *
  * @since 26
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class StreamLimitException extends IOException {
-
-    @java.io.Serial
-    private static final long serialVersionUID = 2614981180406031159L;
 
     /**
      * The version of the HTTP protocol on which the stream limit exception occurred.

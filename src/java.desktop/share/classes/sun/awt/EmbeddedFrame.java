@@ -64,6 +64,7 @@ import java.util.Set;
  *
  * @author      Thomas Ball
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class EmbeddedFrame extends Frame
                           implements KeyEventDispatcher, PropertyChangeListener {
 
@@ -71,12 +72,6 @@ public abstract class EmbeddedFrame extends Frame
     private boolean supportsXEmbed = false;
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private KeyboardFocusManager appKFM;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 2967042741780317130L;
 
     /*
      * The constants define focus traversal directions.

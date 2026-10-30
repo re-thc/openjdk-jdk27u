@@ -39,11 +39,9 @@ import sun.rmi.transport.LiveRef;
  * @author Ann Wollrath
  * @author Roger Riggs
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnicastServerRef2 extends UnicastServerRef
 {
-    // use serialVersionUID from JDK 1.2.2 for interoperability
-    private static final long serialVersionUID = -2289703812660767614L;
-
     /**
      * Create a new (empty) Unicast server remote reference.
      */

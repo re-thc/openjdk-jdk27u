@@ -54,9 +54,8 @@ import com.sun.jdi.connect.spi.TransportService;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class TransportTimeoutException extends java.io.IOException {
-
-    private static final long serialVersionUID = 4107035242623365074L;
 
     /**
      * Constructs a {@code TransportTimeoutException} with no detail

@@ -49,6 +49,7 @@ package javax.naming;
   * @since 1.3
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InterruptedNamingException extends NamingException {
     /**
       * Constructs an instance of InterruptedNamingException using an
@@ -69,8 +70,4 @@ public class InterruptedNamingException extends NamingException {
         super();
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = 6404516648893194728L;
 }

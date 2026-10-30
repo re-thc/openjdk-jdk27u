@@ -151,6 +151,7 @@ import sun.awt.AWTAccessor;
  *
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public non-sealed class KeyEvent extends InputEvent {
 
     /**
@@ -1181,12 +1182,6 @@ public non-sealed class KeyEvent extends InputEvent {
     private transient long primaryLevelUnicode = 0;
     private transient long scancode = 0; // for MS Windows only
     private transient long extendedKeyCode = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -2352130953028126954L;
 
     static {
         /* ensure that the necessary native libraries are loaded */

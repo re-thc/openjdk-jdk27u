@@ -80,6 +80,7 @@ import java.util.Enumeration;
 */
 
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Reference implements Cloneable, java.io.Serializable {
     /**
      * Contains the fully-qualified name of the class of the object to which
@@ -387,8 +388,4 @@ public class Reference implements Cloneable, java.io.Serializable {
             r.addrs.addElement(a.nextElement());
         return r;
     }
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = -1673475790065791735L;
 };

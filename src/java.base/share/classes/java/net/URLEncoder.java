@@ -145,22 +145,6 @@ public final class URLEncoder {
     private URLEncoder() { }
 
     /**
-     * Translates a string into {@code x-www-form-urlencoded}
-     * format. This method uses the default charset
-     * as the encoding scheme to obtain the bytes for unsafe characters.
-     *
-     * @param   s   {@code String} to be translated.
-     * @deprecated The resulting string may vary depending on the
-     *             default charset. Instead, use the encode(String,String)
-     *             method to specify the encoding.
-     * @return  the translated {@code String}.
-     */
-    @Deprecated
-    public static String encode(String s) {
-        return encode(s, Charset.defaultCharset());
-    }
-
-    /**
      * Translates a string into {@code application/x-www-form-urlencoded}
      * format using a specific encoding scheme.
      * <p>

@@ -34,10 +34,8 @@ package javax.management.relation;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidRelationTypeException extends RelationException {
-
-    /* Serial version */
-    private static final long serialVersionUID = 3007446608299169961L;
 
     /**
      * Default constructor, no message put in exception.

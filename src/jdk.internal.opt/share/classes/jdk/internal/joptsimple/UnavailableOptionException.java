@@ -61,9 +61,8 @@ import java.util.List;
  * Thrown when options marked as allowed are specified on the command line, but the options they depend upon are
  * present/not present.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class UnavailableOptionException extends OptionException {
-    private static final long serialVersionUID = -1L;
-
     UnavailableOptionException( List<? extends OptionSpec<?>> forbiddenOptions ) {
         super( forbiddenOptions );
     }

@@ -54,7 +54,7 @@ public class InvalidProperty {
             System.err.println("first attempt:");
             Object ret;
             try {
-                ret = RMIClassLoader.loadClass(classname);
+                ret = RMIClassLoader.loadClass((String) null, classname);
             } catch (Exception e) {
                 throw new RuntimeException(
                     "RMIClassLoader.loadClass threw exception", e);
@@ -70,7 +70,7 @@ public class InvalidProperty {
             System.err.println("second attempt:");
             Object ret;
             try {
-                ret = RMIClassLoader.loadClass(classname);
+                ret = RMIClassLoader.loadClass((String) null, classname);
             } catch (Exception e) {
                 throw new RuntimeException(
                     "RMIClassLoader.loadClass threw exception", e);

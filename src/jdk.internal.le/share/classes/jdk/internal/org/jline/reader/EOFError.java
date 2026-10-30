@@ -8,9 +8,8 @@
  */
 package jdk.internal.org.jline.reader;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class EOFError extends SyntaxError {
-
-    private static final long serialVersionUID = 1L;
 
     private final String missing;
     private final int openBrackets;

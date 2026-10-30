@@ -46,8 +46,8 @@ import jdk.jpackage.internal.util.StringBundle;
  *         .create();
  * }
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ConfigException extends JPackageException {
-    private static final long serialVersionUID = 1L;
     private final String advice;
 
     public ConfigException(String msg, String advice) {

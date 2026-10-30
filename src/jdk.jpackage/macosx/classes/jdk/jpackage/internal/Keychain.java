@@ -86,6 +86,7 @@ record Keychain(String name) {
         }).map(Keychain::new).toList();
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static final class KeychainException extends RuntimeException {
 
         KeychainException(String msg) {
@@ -96,7 +97,6 @@ record Keychain(String name) {
             super(msg, cause);
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
     private static Stream<String> filenames(String name) {

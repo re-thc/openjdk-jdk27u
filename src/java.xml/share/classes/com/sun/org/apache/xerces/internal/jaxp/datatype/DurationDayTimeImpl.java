@@ -45,10 +45,9 @@ import javax.xml.datatype.DatatypeConstants;
  * @see XMLGregorianCalendar#add(Duration)
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class DurationDayTimeImpl
         extends DurationImpl {
-    private static final long serialVersionUID = 844792794952655204L;
-
     public DurationDayTimeImpl(
         boolean isPositive,
         BigInteger days,

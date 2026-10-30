@@ -42,9 +42,8 @@ package com.sun.security.auth;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NTSidGroupPrincipal extends NTSid {
-
-    private static final long serialVersionUID = -1373347438636198229L;
 
     /**
      * Create an {@code NTSidGroupPrincipal} with a Windows NT group name.

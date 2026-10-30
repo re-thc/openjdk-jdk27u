@@ -214,7 +214,7 @@ import sun.reflect.annotation.*;
  * Class<String>}.  Use {@code Class<?>} if the class being modeled is
  * unknown.
  *
- * @see     java.lang.ClassLoader#defineClass(byte[], int, int)
+ * @see     java.lang.ClassLoader#defineClass(String, byte[], int, int)
  * @since   1.0
  */
 @SuppressWarnings("serial") // Serial version compatibility is not maintained.

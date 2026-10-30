@@ -135,8 +135,6 @@ public abstract class AtomicContext extends ComponentContext {
                         public Object getContent() {
                             return obj;
                         }
-                        private static final long serialVersionUID =
-                            -3399518522645918499L;
                     };
                     Reference ref = new Reference("java.lang.Object", addr);
 
@@ -544,7 +542,6 @@ public abstract class AtomicContext extends ComponentContext {
             public Object getContent() {
                 return AtomicContext.this;
             }
-            private static final long serialVersionUID = 3449785852664978312L;
         };
         Reference ref = new Reference("java.lang.Object", addr);
 

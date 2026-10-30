@@ -25,9 +25,8 @@
 
 package com.sun.org.apache.xerces.internal.dom;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AbortException extends RuntimeException {
-
-        private static final long serialVersionUID = 2608302175475740417L;
 
         /**
          * Constructor AbortException

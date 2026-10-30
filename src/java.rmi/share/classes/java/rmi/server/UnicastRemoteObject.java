@@ -173,6 +173,7 @@ import sun.rmi.transport.LiveRef;
  * @author  Peter Jones
  * @since   1.1
  **/
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnicastRemoteObject extends RemoteServer {
 
     /**
@@ -192,10 +193,6 @@ public class UnicastRemoteObject extends RemoteServer {
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private RMIServerSocketFactory ssf = null;
-
-    /* indicate compatibility with JDK 1.1.x version of class */
-    @java.io.Serial
-    private static final long serialVersionUID = 4974527148936298033L;
 
     /**
      * Creates and exports a new UnicastRemoteObject object using an

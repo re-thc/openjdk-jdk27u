@@ -69,11 +69,9 @@ import sun.security.util.HexDumpEncoder;
  * @author Mayank Upadhyay
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class KerberosTicket implements Destroyable, Refreshable,
          java.io.Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 7395334370157380539L;
 
     // XXX Make these flag indices public
     private static final int FORWARDABLE_TICKET_FLAG = 1;

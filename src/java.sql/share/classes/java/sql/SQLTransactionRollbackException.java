@@ -35,6 +35,7 @@ package java.sql;
  * conditions for which this {@code Exception} may be thrown.
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SQLTransactionRollbackException extends SQLTransientException {
         /**
          * Constructs a {@code SQLTransactionRollbackException} object.
@@ -169,5 +170,4 @@ public class SQLTransactionRollbackException extends SQLTransientException {
         super(reason, SQLState, vendorCode, cause);
     }
 
-    private static final long serialVersionUID = 5246680841170837229L;
 }

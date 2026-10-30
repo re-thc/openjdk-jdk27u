@@ -42,6 +42,7 @@ import javax.naming.NamingException;
   * @since 1.3
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NamingExceptionEvent extends java.util.EventObject {
     /**
      * Contains the exception that was thrown
@@ -90,5 +91,4 @@ public class NamingExceptionEvent extends java.util.EventObject {
         listener.namingExceptionThrown(this);
     }
 
-    private static final long serialVersionUID = -4877678086134736336L;
 }

@@ -211,10 +211,8 @@ public class SnippetTaglet extends BaseTaglet {
 
     private final HashMap<HtmlDocletWriter, Set<String>> ids = new HashMap<>();
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static final class BadSnippetException extends Exception {
-
-        @java.io.Serial
-        private static final long serialVersionUID = 1;
 
         private final transient DocTree tag;
         private final String key;

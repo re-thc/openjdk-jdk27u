@@ -39,6 +39,7 @@ import javax.naming.NamingException;
   * @since 1.3
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NoSuchAttributeException extends NamingException {
     /**
      * Constructs a new instance of NoSuchAttributeException using
@@ -59,8 +60,4 @@ public class NoSuchAttributeException extends NamingException {
         super();
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = 4836415647935888137L;
 }

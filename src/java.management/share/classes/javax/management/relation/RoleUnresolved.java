@@ -45,13 +45,12 @@ import javax.management.ObjectName;
  * set the role) and an integer defining the problem (constants defined in
  * RoleStatus).
  *
- * <p>The <b>serialVersionUID</b> of this class is <code>-48350262537070138L</code>.
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RoleUnresolved implements Serializable {
 
-    private static final long serialVersionUID = -48350262537070138L;
     /** @serialField roleName String Role name
      *  @serialField roleValue List Role value ({@link List} of {@link ObjectName} objects)
      *  @serialField problemType int Problem type

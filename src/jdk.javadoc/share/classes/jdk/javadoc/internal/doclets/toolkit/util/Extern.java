@@ -394,9 +394,8 @@ public class Extern {
         }
     }
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class Fault extends Exception {
-        private static final long serialVersionUID = 0;
-
         Fault(String msg, Exception cause) {
             super(msg + (cause == null ? "" : " (" + cause + ")"), cause);
         }

@@ -46,6 +46,7 @@ package javax.naming;
   * @since 1.3
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NotContextException extends NamingException {
     /**
      * Constructs a new instance of NotContextException using an
@@ -66,8 +67,4 @@ public class NotContextException extends NamingException {
         super();
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = 849752551644540417L;
 }

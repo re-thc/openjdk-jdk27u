@@ -33,10 +33,8 @@ import java.io.Serial;
  * @see Instrumentation#redefineModule
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnmodifiableModuleException extends RuntimeException {
-
-    @Serial
-    private static final long serialVersionUID = 6912511912351080644L;
 
     /**
      * Constructs an {@code UnmodifiableModuleException} with no

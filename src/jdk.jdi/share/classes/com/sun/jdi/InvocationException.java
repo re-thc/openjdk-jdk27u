@@ -32,9 +32,8 @@ package com.sun.jdi;
  * @author Gordon Hirsch
  * @since  1.3
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvocationException extends Exception {
-
-    private static final long serialVersionUID = 6066780907971918568L;
 
     /** @serial */
     @SuppressWarnings("serial") // Not statically typed as Serializable

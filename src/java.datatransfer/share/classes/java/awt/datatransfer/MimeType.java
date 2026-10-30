@@ -41,13 +41,8 @@ import java.util.Locale;
  * INTERFACE, AND THIS IS PROVIDED AS A ***PRIVATE*** (THAT IS AS IN *NOT*
  * PUBLIC) HELPER CLASS!
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class MimeType implements Externalizable, Cloneable {
-
-    /**
-     * Use serialVersionUID from JDK 1.2 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -6568722458793895906L;
 
     /**
      * Constructor for externalization; this constructor should not be called

@@ -37,6 +37,7 @@ import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.Size2DSyntax;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class CustomMediaSizeName extends MediaSizeName {
     private static ArrayList<String> customStringTable = new ArrayList<>();
     private static ArrayList<MediaSizeName> customEnumTable = new ArrayList<>();
@@ -90,12 +91,6 @@ class CustomMediaSizeName extends MediaSizeName {
             }
         }
     }
-
-    /**
-     * Use serialVersionUID from JDK 1.5 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 7412807582228043717L;
 
     /**
      * Returns the command string for this media.

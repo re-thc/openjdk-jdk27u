@@ -57,6 +57,7 @@ import java.lang.annotation.Native;
  * @author Carl Quinn
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ActionEvent extends AWTEvent {
 
     /**
@@ -130,12 +131,6 @@ public class ActionEvent extends AWTEvent {
      * @see #getModifiers
      */
     int modifiers;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -7671078796273832149L;
 
     /**
      * Constructs an {@code ActionEvent} object.

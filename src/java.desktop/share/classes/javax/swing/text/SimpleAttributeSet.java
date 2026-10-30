@@ -48,14 +48,9 @@ import java.util.LinkedHashMap;
  *
  * @author Tim Prinzing
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cloneable
 {
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -6631553454711782652L;
-
     /**
      * An empty attribute set.
      */
@@ -352,13 +347,8 @@ public class SimpleAttributeSet implements MutableAttributeSet, Serializable, Cl
     /**
      * An AttributeSet that is always empty.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class EmptyAttributeSet implements AttributeSet, Serializable {
-
-        /**
-         * Use serialVersionUID from JDK 1.7 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -8714803568785904228L;
 
         public int getAttributeCount() {
             return 0;

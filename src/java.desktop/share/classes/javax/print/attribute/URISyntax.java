@@ -36,13 +36,8 @@ import java.net.URI;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class URISyntax implements Serializable, Cloneable {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -7842661210486401678L;
 
     /**
      * {@code URI} value of this {@code URI} attribute.

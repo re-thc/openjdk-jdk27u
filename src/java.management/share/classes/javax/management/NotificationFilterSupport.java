@@ -55,10 +55,8 @@ import java.util.Vector;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NotificationFilterSupport implements NotificationFilter {
-
-    /* Serial version */
-    private static final long serialVersionUID = 6579080007561786969L;
 
     /**
      * @serial {@link Vector} that contains the enabled notification types.

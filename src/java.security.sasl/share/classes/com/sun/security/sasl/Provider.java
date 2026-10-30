@@ -44,10 +44,8 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
  * - NTLM
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class Provider extends java.security.Provider {
-
-    @Serial
-    private static final long serialVersionUID = 8622598936488630849L;
 
     private static final String info = "Sun SASL provider" +
         "(implements client mechanisms for: " +

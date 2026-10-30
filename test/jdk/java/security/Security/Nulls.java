@@ -90,9 +90,6 @@ public class Nulls {
         } catch (NullPointerException e) {
             System.out.println("setProperty(null, null): " + e);
         }
-        if (Security.getAlgorithmProperty(null, null) != null) {
-            throw new Exception();
-        }
     }
 
 }

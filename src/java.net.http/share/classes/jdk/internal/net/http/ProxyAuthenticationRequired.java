@@ -31,8 +31,8 @@ import java.io.IOException;
  * Signals that a proxy has refused a CONNECT request with a
  * 407 error code.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class ProxyAuthenticationRequired extends IOException {
-    private static final long serialVersionUID = 0;
     final transient Response proxyResponse;
 
     /**

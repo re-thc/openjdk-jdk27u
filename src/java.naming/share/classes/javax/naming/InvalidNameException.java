@@ -45,6 +45,7 @@ package javax.naming;
   * @since 1.3
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidNameException extends NamingException {
     /**
       * Constructs an instance of InvalidNameException using an
@@ -65,8 +66,4 @@ public class InvalidNameException extends NamingException {
         super();
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = -8370672380823801105L;
 }

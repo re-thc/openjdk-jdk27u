@@ -40,9 +40,8 @@ import java.util.Objects;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class TransformerException extends Exception {
-
-    private static final long serialVersionUID = 975798773772956428L;
 
     /** @serial Field locator specifies where the error occurred */
     @SuppressWarnings("serial") // Type of field is not Serializable

@@ -39,9 +39,8 @@ import java.util.Vector;
  * @xerces.internal
  * @LastModified: May 2018
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class Token implements java.io.Serializable {
-
-    private static final long serialVersionUID = 8484976002585487481L;
 
     static final boolean COUNTTOKENS = true;
     static int tokens = 0;
@@ -1087,9 +1086,8 @@ class Token implements java.io.Serializable {
     /**
      * This class represents a node in parse tree.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class StringToken extends Token implements java.io.Serializable {
-
-        private static final long serialVersionUID = -4614366944218504172L;
 
         String string;
         final int refNumber;
@@ -1118,9 +1116,8 @@ class Token implements java.io.Serializable {
     /**
      * This class represents a node in parse tree.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class ConcatToken extends Token implements java.io.Serializable {
-
-        private static final long serialVersionUID = 8717321425541346381L;
 
         final Token child;
         final Token child2;
@@ -1153,9 +1150,8 @@ class Token implements java.io.Serializable {
     /**
      * This class represents a node in parse tree.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class CharToken extends Token implements java.io.Serializable {
-
-        private static final long serialVersionUID = -4394272816279496989L;
 
         final int chardata;
 
@@ -1217,9 +1213,8 @@ class Token implements java.io.Serializable {
     /**
      * This class represents a node in parse tree.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class ClosureToken extends Token implements java.io.Serializable {
-
-        private static final long serialVersionUID = 1308971930673997452L;
 
         int min;
         int max;
@@ -1286,9 +1281,8 @@ class Token implements java.io.Serializable {
     /**
      * This class represents a node in parse tree.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class ParenToken extends Token implements java.io.Serializable {
-
-        private static final long serialVersionUID = -5938014719827987704L;
 
         final Token child;
         final int parennumber;
@@ -1344,9 +1338,8 @@ class Token implements java.io.Serializable {
     /**
      * (?(condition)yes-pattern|no-pattern)
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class ConditionToken extends Token implements java.io.Serializable {
-
-        private static final long serialVersionUID = 4353765277910594411L;
 
         final int refNumber;
         final Token condition;
@@ -1390,9 +1383,8 @@ class Token implements java.io.Serializable {
     /**
      * (ims-ims: .... )
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class ModifierToken extends Token implements java.io.Serializable {
-
-        private static final long serialVersionUID = -9114536559696480356L;
 
         final Token child;
         final int add;
@@ -1433,9 +1425,8 @@ class Token implements java.io.Serializable {
      * This class represents a node in parse tree.
      * for UNION or CONCAT.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class UnionToken extends Token implements java.io.Serializable {
-
-        private static final long serialVersionUID = -2568843945989489861L;
 
         List<Token> children;
 

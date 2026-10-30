@@ -99,6 +99,7 @@ import javax.accessibility.AccessibleStateSet;
  * @see         java.awt.TextField#addActionListener
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public non-sealed class TextField extends TextComponent {
 
     /**
@@ -130,12 +131,6 @@ public non-sealed class TextField extends TextComponent {
 
     private static final String base = "textfield";
     private static int nameCounter = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -2966288784432217853L;
 
     /**
      * Constructs a new text field.
@@ -781,14 +776,9 @@ public non-sealed class TextField extends TextComponent {
      * Java Accessibility API appropriate to text field user-interface elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTTextField extends AccessibleAWTTextComponent
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 6219164359235943158L;
-
         /**
          * Constructs an {@code AccessibleAWTTextField}.
          */
