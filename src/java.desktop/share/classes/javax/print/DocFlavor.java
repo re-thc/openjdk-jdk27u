@@ -389,13 +389,8 @@ import java.io.Serializable;
  *      RFC 2046: Multipurpose Internet Mail Extensions (MIME) Part Two: Media Types
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class DocFlavor implements Serializable, Cloneable {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4512080796965449721L;
 
     /**
      * A string representing the host operating system encoding. This will
@@ -598,13 +593,8 @@ public class DocFlavor implements Serializable, Cloneable {
      *
      * @author Alan Kaminsky
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class BYTE_ARRAY extends DocFlavor {
-
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -9065578006593857475L;
 
         /**
          * Constructs a new doc flavor with the given MIME type and a print data
@@ -767,13 +757,8 @@ public class DocFlavor implements Serializable, Cloneable {
      *
      * @author Alan Kaminsky
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class INPUT_STREAM extends DocFlavor {
-
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -7045842700749194127L;
 
         /**
          * Constructs a new doc flavor with the given MIME type and a print data
@@ -949,13 +934,8 @@ public class DocFlavor implements Serializable, Cloneable {
      *
      * @author Alan Kaminsky
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class URL extends DocFlavor {
-
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 2936725788144902062L;
 
         /**
          * Constructs a new doc flavor with the given MIME type and a print data
@@ -1121,13 +1101,8 @@ public class DocFlavor implements Serializable, Cloneable {
      *
      * @author Alan Kaminsky
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class CHAR_ARRAY extends DocFlavor {
-
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = -8720590903724405128L;
 
         /**
          * Constructs a new doc flavor with the given MIME type and a print data
@@ -1169,13 +1144,8 @@ public class DocFlavor implements Serializable, Cloneable {
      *
      * @author Alan Kaminsky
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class STRING extends DocFlavor {
-
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 4414407504887034035L;
 
         /**
          * Constructs a new doc flavor with the given MIME type and a print data
@@ -1215,13 +1185,8 @@ public class DocFlavor implements Serializable, Cloneable {
      *
      * @author Alan Kaminsky
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class READER extends DocFlavor {
-
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 7100295812579351567L;
 
         /**
          * Constructs a new doc flavor with the given MIME type and a print data
@@ -1264,13 +1229,8 @@ public class DocFlavor implements Serializable, Cloneable {
      *
      * @author Alan Kaminsky
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class SERVICE_FORMATTED extends DocFlavor {
-
-        /**
-         * Use serialVersionUID from JDK 1.4 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 6181337766266637256L;
 
         /**
          * Constructs a new doc flavor with a MIME type of

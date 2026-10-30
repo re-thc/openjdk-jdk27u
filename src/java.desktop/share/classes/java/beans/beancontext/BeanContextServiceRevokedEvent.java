@@ -35,15 +35,9 @@ import java.io.Serial;
  * </p>
  */
 
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "serial"})
 @Deprecated(since = "23", forRemoval = true)
 public class BeanContextServiceRevokedEvent extends BeanContextEvent {
-
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -1295543154724961754L;
 
     /**
      * Construct a {@code BeanContextServiceEvent}.

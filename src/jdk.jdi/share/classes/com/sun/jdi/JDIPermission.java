@@ -49,10 +49,9 @@ package com.sun.jdi;
  * which is no longer supported. There is no replacement for this class.
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since="25", forRemoval=true)
 public final class JDIPermission extends java.security.BasicPermission {
-
-    private static final long serialVersionUID = -6988461416938786271L;
 
     /**
      * The {@code JDIPermission} class represents access rights to the

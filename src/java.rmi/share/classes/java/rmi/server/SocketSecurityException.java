@@ -32,11 +32,9 @@ package java.rmi.server;
  * @since   1.1
  * @deprecated This class is obsolete. Use {@link ExportException} instead.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated
 public class SocketSecurityException extends ExportException {
-
-    /* indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = -7622072999407781979L;
 
     /**
      * Constructs an <code>SocketSecurityException</code> with the specified

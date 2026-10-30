@@ -91,6 +91,7 @@ import sun.util.logging.PlatformLogger;
  * @see       LayoutManager
  * @since     1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Container extends Component {
 
     private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.Container");
@@ -177,12 +178,6 @@ public class Container extends Component {
 
     /* Non-opaque window support -- see Window.setLayersOpaque */
     transient Color preserveBackgroundColor = null;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 4613797578919906343L;
 
     /**
      * A constant which toggles one of the controllable behaviors
@@ -3787,13 +3782,8 @@ public class Container extends Component {
      * AccessibleContainer interface.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTContainer extends AccessibleAWTComponent {
-
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 5081320404842566097L;
 
         /**
          * Constructs an {@code AccessibleAWTContainer}.
@@ -3854,14 +3844,9 @@ public class Container extends Component {
          * when children are added or removed.
          * @since 1.3
          */
+        @SuppressWarnings("serial") // Serial version compatibility is not maintained.
         protected class AccessibleContainerHandler
             implements ContainerListener, Serializable {
-
-            /**
-             * Use serialVersionUID from JDK 1.3 for interoperability.
-             */
-            @Serial
-            private static final long serialVersionUID = -480855353991814677L;
 
             /**
              * Constructs an {@code AccessibleContainerHandler}.
@@ -4412,13 +4397,9 @@ public class Container extends Component {
  *
  * @author Timothy Prinzing
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
 
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 5184291520170872969L;
     /*
      * Our own mouse event for when we're dragged over from another hw
      * container

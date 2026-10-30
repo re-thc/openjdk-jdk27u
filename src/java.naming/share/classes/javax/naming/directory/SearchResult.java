@@ -42,6 +42,7 @@ import javax.naming.Binding;
   * @since 1.3
   */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SearchResult extends Binding {
     /**
      * Contains the attributes returned with the object.
@@ -182,8 +183,4 @@ public class SearchResult extends Binding {
         return super.toString() + ":" + getAttributes();
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = -9158063327699723172L;
 }

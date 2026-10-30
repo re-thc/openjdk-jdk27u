@@ -35,13 +35,12 @@ import java.io.Serializable;
  * Represents the result of a multiple access to several roles of a relation
  * (either for reading or writing).
  *
- * <p>The <b>serialVersionUID</b> of this class is <code>-6304063118040985512L</code>.
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RoleResult implements Serializable {
 
-    private static final long serialVersionUID = -6304063118040985512L;
     /**
      * @serialField roleList RoleList List of roles successfully accessed
      * @serialField unresolvedRoleList RoleUnresolvedList List of roles unsuccessfully accessed

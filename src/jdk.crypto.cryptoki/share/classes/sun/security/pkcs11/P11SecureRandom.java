@@ -45,10 +45,8 @@ import sun.security.pkcs11.wrapper.*;
  * @author  Andreas Sterbenz
  * @since   1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 final class P11SecureRandom extends SecureRandomSpi {
-
-    @Serial
-    private static final long serialVersionUID = -8939510236124553291L;
 
     // token instance
     private final Token token;

@@ -102,13 +102,8 @@ import sun.java2d.DisposerRecord;
  * @see java.awt.GraphicsConfiguration#getNormalizingTransform
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class FontDesignMetrics extends FontMetrics {
-
-    /**
-     * Use serialVersionUID from JDK 1.3 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 4480069578560887773L;
 
     private static final float UNKNOWN_WIDTH = -1;
     private static final int CURRENT_VERSION = 1;

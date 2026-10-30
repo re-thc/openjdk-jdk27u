@@ -65,6 +65,7 @@ import java.util.Arrays;
  * @since 1.2
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class BatchUpdateException extends SQLException {
 
   /**
@@ -499,8 +500,6 @@ public class BatchUpdateException extends SQLException {
    * @since 1.8
    */
   private  long[] longUpdateCounts;
-
-  private static final long serialVersionUID = 5977529877145521757L;
 
   /*
    * Utility method to copy int[] updateCount to long[] updateCount

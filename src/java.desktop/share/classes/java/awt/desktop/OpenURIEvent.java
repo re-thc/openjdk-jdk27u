@@ -37,13 +37,8 @@ import java.net.URI;
  * @see OpenURIHandler#openURI(OpenURIEvent)
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class OpenURIEvent extends AppEvent {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 221209100935933476L;
 
     /**
      * @serial The {@code URI} the app was asked to open.

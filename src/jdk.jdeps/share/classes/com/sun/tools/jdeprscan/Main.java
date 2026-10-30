@@ -464,8 +464,8 @@ public class Main implements DiagnosticListener<JavaFileObject> {
      * A checked exception that's thrown if a command-line syntax error
      * is detected.
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     static class UsageException extends Exception {
-        private static final long serialVersionUID = 3611828659572908743L;
     }
 
     /**

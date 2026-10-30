@@ -41,6 +41,7 @@ import javax.naming.NamingException;
   * @author Scott Seligman
   * @since 1.3
   */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class InvalidSearchControlsException extends NamingException {
     /**
      * Constructs a new instance of InvalidSearchControlsException.
@@ -60,8 +61,4 @@ public class InvalidSearchControlsException extends NamingException {
         super(msg);
     }
 
-    /**
-     * Use serialVersionUID from JNDI 1.1.1 for interoperability
-     */
-    private static final long serialVersionUID = -5124108943352665777L;
 }

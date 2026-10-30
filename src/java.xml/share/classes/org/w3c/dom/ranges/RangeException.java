@@ -47,9 +47,8 @@ package org.w3c.dom.ranges;
  * <p>See also the <a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Traversal-Range-20001113'>Document Object Model (DOM) Level 2 Traversal and Range Specification</a>.
  * @since 9, DOM Level 2
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RangeException extends RuntimeException {
-    private static final long serialVersionUID = 2427563372446661889L;
-
     public RangeException(short code, String message) {
        super(message);
        this.code = code;

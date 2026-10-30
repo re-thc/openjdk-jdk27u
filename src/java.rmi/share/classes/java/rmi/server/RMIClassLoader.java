@@ -118,33 +118,6 @@ public class RMIClassLoader {
     private RMIClassLoader() {}
 
     /**
-     * Loads the class with the specified <code>name</code>.
-     *
-     * <p>This method delegates to {@link #loadClass(String,String)},
-     * passing <code>null</code> as the first argument and
-     * <code>name</code> as the second argument.
-     *
-     * @param   name the name of the class to load
-     *
-     * @return  the <code>Class</code> object representing the loaded class
-     *
-     * @throws MalformedURLException if a provider-specific URL used
-     * to load classes is invalid
-     *
-     * @throws  ClassNotFoundException if a definition for the class
-     * could not be found at the codebase location
-     *
-     * @deprecated replaced by <code>loadClass(String,String)</code> method
-     * @see #loadClass(String,String)
-     */
-    @Deprecated
-    public static Class<?> loadClass(String name)
-        throws MalformedURLException, ClassNotFoundException
-    {
-        return loadClass((String) null, name);
-    }
-
-    /**
      * Loads a class from a codebase URL.
      *
      * If <code>codebase</code> is <code>null</code>, then this method
@@ -532,22 +505,6 @@ public class RMIClassLoader {
      */
     public static RMIClassLoaderSpi getDefaultProviderInstance() {
         return defaultProvider;
-    }
-
-    /**
-     * Always returns null.
-     *
-     * @param   loader a class loader from which to get the security context
-     *
-     * @return  null
-     *
-     * @deprecated no replacement. This method has no purpose in the absence
-     * of a Security Manager.
-     */
-    @Deprecated
-    public static Object getSecurityContext(ClassLoader loader)
-    {
-        return null;
     }
 
     /**

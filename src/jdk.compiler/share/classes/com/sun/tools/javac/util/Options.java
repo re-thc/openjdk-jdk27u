@@ -55,8 +55,6 @@ import static com.sun.tools.javac.main.Option.*;
  *  deletion without notice.</b>
  */
 public class Options {
-    private static final long serialVersionUID = 0;
-
     /** The context key for the options. */
     public static final Context.Key<Options> optionsKey = new Context.Key<>();
 

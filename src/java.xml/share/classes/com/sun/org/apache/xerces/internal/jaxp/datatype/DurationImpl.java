@@ -100,6 +100,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
  * @see XMLGregorianCalendar#add(Duration)
  * @LastModified: May 2020
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class DurationImpl
         extends Duration
         implements Serializable {
@@ -1843,13 +1844,6 @@ class DurationImpl
     }
 
     /**
-     * <p>Stream Unique Identifier.</p>
-     *
-     * <p>Serialization uses the lexical form returned by toString().</p>
-     */
-    private static final long serialVersionUID = 1L;
-
-    /**
      * Writes {@link Duration} as a lexical representation
      * for maximum future compatibility.
      *
@@ -1866,6 +1860,7 @@ class DurationImpl
      *
      * @author Kohsuke Kawaguchi
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class DurationStream implements Serializable {
         private final String lexical;
 
@@ -1877,7 +1872,6 @@ class DurationImpl
             return new DurationImpl(lexical);
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
 }

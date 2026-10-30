@@ -38,13 +38,8 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.Serial;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class FontEditor extends Panel implements java.beans.PropertyEditor {
-
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 6732704486002715933L;
 
     @SuppressWarnings("deprecation")
     public FontEditor() {

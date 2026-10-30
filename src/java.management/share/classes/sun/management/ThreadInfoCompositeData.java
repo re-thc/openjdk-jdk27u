@@ -44,6 +44,7 @@ import javax.management.openmbean.OpenType;
  * This class avoids the performance penalty paid to the
  * construction of a CompositeData use in the local case.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ThreadInfoCompositeData extends LazyCompositeData {
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private final ThreadInfo threadInfo;
@@ -430,5 +431,4 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
             }
         }
     }
-    private static final long serialVersionUID = 2464378539119753175L;
 }

@@ -32,13 +32,8 @@ import java.io.Serial;
  *
  * @author      Arthur van Hoff
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AWTError extends Error {
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-     @Serial
-     private static final long serialVersionUID = -1819846354050686206L;
 
     /**
      * Constructs an instance of {@code AWTError} with the specified

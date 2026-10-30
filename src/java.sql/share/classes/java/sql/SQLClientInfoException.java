@@ -45,6 +45,7 @@ import java.util.Map;
  * @see Connection#setClientInfo
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SQLClientInfoException extends SQLException {
 
         /**
@@ -307,5 +308,4 @@ public class SQLClientInfoException extends SQLException {
                 return this.failedProperties;
         }
 
-    private static final long serialVersionUID = -4319604256824655880L;
 }

@@ -525,8 +525,8 @@ public class JNIWriter {
     }
 
     private static class TypeSignature {
+        @SuppressWarnings("serial") // Serial version compatibility is not maintained.
         static class SignatureException extends Exception {
-            private static final long serialVersionUID = 1L;
             SignatureException(String reason) {
                 super(reason);
             }

@@ -31,10 +31,8 @@ package javax.management.relation;
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RelationNotFoundException extends RelationException {
-
-    /* Serial version */
-    private static final long serialVersionUID = -3793951411158559116L;
 
     /**
      * Default constructor, no message put in exception.

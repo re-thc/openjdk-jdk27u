@@ -36,13 +36,8 @@ import java.io.Serial;
  * @see QuitHandler#handleQuitRequestWith(QuitEvent, QuitResponse)
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class QuitEvent extends AppEvent {
-
-    /**
-     * Use serialVersionUID from JDK 9 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -256100795532403146L;
 
     /**
      * Constructs a {@code QuitEvent}.

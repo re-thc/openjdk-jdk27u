@@ -32,6 +32,7 @@ package java.sql;
  *
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SQLNonTransientException extends java.sql.SQLException {
 
         /**
@@ -168,5 +169,4 @@ public class SQLNonTransientException extends java.sql.SQLException {
         super(reason,SQLState,vendorCode,cause);
     }
 
-   private static final long serialVersionUID = -9104382843534716547L;
 }

@@ -337,6 +337,7 @@ final class AppImageFile {
     }
 
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     private static class InvalidAppImageFileException extends RuntimeException {
 
         InvalidAppImageFileException() {
@@ -346,7 +347,6 @@ final class AppImageFile {
             super(t);
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
 

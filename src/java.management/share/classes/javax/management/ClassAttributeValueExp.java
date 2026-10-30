@@ -31,18 +31,15 @@ package javax.management;
  * the MBean.
  * @serial include
  *
- * <p>The <b>serialVersionUID</b> of this class is <code>-1081892073854801359L</code>.
  *
  * @since 1.5
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class ClassAttributeValueExp extends AttributeValueExp {
-
-    private static final long serialVersionUID = -1081892073854801359L;
 
     /**
      * @serial The name of the attribute
      *
-     * <p>The <b>serialVersionUID</b> of this class is <code>-1081892073854801359L</code>.
      */
     private String attr;
 

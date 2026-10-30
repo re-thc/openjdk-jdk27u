@@ -41,10 +41,9 @@ import java.security.BasicPermission;
  * @since 1.8
  */
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @Deprecated(since = "25", forRemoval = true)
 public final class NetworkPermission extends BasicPermission {
-
-    private static final long serialVersionUID = -2012939586906722291L;
 
     /**
      * Creates a NetworkPermission with the given target name.

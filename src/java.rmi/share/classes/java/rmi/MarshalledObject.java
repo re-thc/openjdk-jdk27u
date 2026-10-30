@@ -70,6 +70,7 @@ import sun.rmi.server.MarshalOutputStream;
  * @author  Peter Jones
  * @since   1.2
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class MarshalledObject<T> implements Serializable {
     /**
      * @serial Bytes of serialized representation.  If <code>objBytes</code> is
@@ -94,9 +95,6 @@ public final class MarshalledObject<T> implements Serializable {
 
     /** Filter used when creating the instance from a stream; may be null. */
     private transient ObjectInputFilter objectInputFilter = null;
-
-    /** Indicate compatibility with 1.2 version of class. */
-    private static final long serialVersionUID = 8988374069173025854L;
 
     /**
      * Creates a new <code>MarshalledObject</code> that contains the

@@ -1,4 +1,5 @@
 dnl Copyright (c) 2019, 2020, Red Hat Inc. All rights reserved.
+dnl Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 dnl DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 dnl
 dnl This code is free software; you can redistribute it and/or modify it
@@ -220,6 +221,57 @@ BFM_INSN(I, 31, RShift, sbfmw)
 BFM_INSN(L, 63, URShift, ubfm)
 BFM_INSN(I, 31, URShift, ubfmw)
 dnl
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct andLConvL2I(iRegINoSp dst, iRegL src1, iRegL src2)
+%{
+  match(Set dst (ConvL2I (AndL src1 src2)));
+  predicate(!n->in(1)->in(1)->is_Con() && !n->in(1)->in(2)->is_Con());
+
+  ins_cost(INSN_COST);
+  format %{ "andw $dst, $src1, $src2\t# truncated long" %}
+  ins_encode %{
+    __ andw(as_Register($dst$$reg), as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct orLConvL2I(iRegINoSp dst, iRegL src1, iRegL src2)
+%{
+  match(Set dst (ConvL2I (OrL src1 src2)));
+  predicate(!n->in(1)->in(1)->is_Con() && !n->in(1)->in(2)->is_Con());
+
+  ins_cost(INSN_COST);
+  format %{ "orrw $dst, $src1, $src2\t# truncated long" %}
+  ins_encode %{
+    __ orrw(as_Register($dst$$reg), as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct xorLConvL2I(iRegINoSp dst, iRegL src1, iRegL src2)
+%{
+  match(Set dst (ConvL2I (XorL src1 src2)));
+  predicate(!n->in(1)->in(1)->is_Con() && !n->in(1)->in(2)->is_Con());
+
+  ins_cost(INSN_COST);
+  format %{ "eorw $dst, $src1, $src2\t# truncated long" %}
+  ins_encode %{
+    __ eorw(as_Register($dst$$reg), as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+
 // Bitfield extract with shift & mask
 define(`BFX_INSN',
 `// This pattern is automatically generated from aarch64_ad.m4
@@ -244,6 +296,26 @@ instruct $3$1(iReg$1NoSp dst, iReg$1`'ORL2I($1) src, immI rshift, imm$1_bitmask 
 ')
 BFX_INSN(I, URShift, ubfxw, 31, int)
 BFX_INSN(L, URShift, ubfx,  63, long, _long)
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct ubfxLConvL2I(iRegINoSp dst, iRegL src, immI rshift, immI_bitmask mask)
+%{
+  match(Set dst (AndI (ConvL2I (URShiftL src rshift)) mask));
+  predicate((exact_log2((juint)n->in(2)->get_int() + 1) +
+             (n->in(1)->in(1)->in(2)->get_int() & 63)) <= 64);
+
+  ins_cost(INSN_COST);
+  format %{ "ubfx $dst, $src, $rshift, $mask" %}
+  ins_encode %{
+    int shift = $rshift$$constant & 63;
+    int width = exact_log2((juint)$mask$$constant + 1);
+    __ ubfx(as_Register($dst$$reg), as_Register($src$$reg), shift, width);
+  %}
+  ins_pipe(ialu_reg_shift);
+%}
+
+
 
 // This pattern is automatically generated from aarch64_ad.m4
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
@@ -333,6 +405,24 @@ instruct ubfizIConvI2LAndI(iRegLNoSp dst, iRegI src, immI_bitmask msk)
   format %{ "ubfiz $dst, $src, 0, exact_log2($msk + 1) " %}
   ins_encode %{
     __ ubfiz(as_Register($dst$$reg), as_Register($src$$reg), 0, exact_log2($msk$$constant + 1));
+  %}
+  ins_pipe(ialu_reg_shift);
+%}
+
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+// A logical shift of at least 32 already clears the upper half of the result.
+instruct urShiftLConvL2I(iRegINoSp dst, iRegL src, immI rshift)
+%{
+  match(Set dst (ConvL2I (URShiftL src rshift)));
+  predicate((n->in(1)->in(2)->get_int() & 63) >= 32);
+
+  ins_cost(INSN_COST);
+  format %{ "lsr $dst, $src, $rshift\t# truncated long" %}
+  ins_encode %{
+    __ lsr(as_Register($dst$$reg), as_Register($src$$reg),
+           $rshift$$constant & 63);
   %}
   ins_pipe(ialu_reg_shift);
 %}

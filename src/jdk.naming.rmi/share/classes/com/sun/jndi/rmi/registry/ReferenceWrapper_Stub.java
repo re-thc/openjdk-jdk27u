@@ -30,12 +30,10 @@ package com.sun.jndi.rmi.registry;
 /**
  * ReferenceWrapper_Stub.
  */
-@SuppressWarnings({"deprecation", "rawtypes"})
+@SuppressWarnings({"deprecation", "rawtypes", "serial"})
 public final class ReferenceWrapper_Stub
         extends java.rmi.server.RemoteStub
         implements com.sun.jndi.rmi.registry.RemoteReference, java.rmi.Remote {
-    private static final long serialVersionUID = 2;
-
     private static java.lang.reflect.Method $method_getReference_0;
 
     static {

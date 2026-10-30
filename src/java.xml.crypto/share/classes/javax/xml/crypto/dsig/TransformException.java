@@ -42,9 +42,8 @@ import java.io.PrintWriter;
  * @author JSR 105 Expert Group
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class TransformException extends Exception {
-
-    private static final long serialVersionUID = 5082634801360427800L;
 
     /**
      * The throwable that caused this exception to get thrown, or null if this

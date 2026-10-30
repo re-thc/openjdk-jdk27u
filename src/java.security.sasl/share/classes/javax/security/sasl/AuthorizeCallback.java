@@ -40,6 +40,7 @@ import javax.security.auth.callback.Callback;
  * @author Rosanna Lee
  * @author Rob Weltman
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AuthorizeCallback implements Callback, java.io.Serializable {
     /**
      * The (authenticated) authentication id to check.
@@ -143,6 +144,4 @@ public class AuthorizeCallback implements Callback, java.io.Serializable {
         authorizedID = id;
     }
 
-    @Serial
-    private static final long serialVersionUID = -2353344186490470805L;
 }

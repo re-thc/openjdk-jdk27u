@@ -63,6 +63,7 @@ import java.io.Serial;
  *
  * @since 1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class ItemEvent extends AWTEvent {
 
     /**
@@ -107,12 +108,6 @@ public class ItemEvent extends AWTEvent {
      * @see #getStateChange()
      */
     int stateChange;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -608708132447206933L;
 
     /**
      * Constructs an {@code ItemEvent} object.

@@ -49,12 +49,8 @@ import java.util.Arrays;
  * the conditions under which an exception is thrown or the bounds for
  * index parameters.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class BaseRow implements Serializable, Cloneable {
-
-/**
- * Specify the serialVersionUID
- */
-private static final long serialVersionUID = 4152013523511412238L;
 
 /**
  * The array containing the original values for this <code>BaseRow</code>

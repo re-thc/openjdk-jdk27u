@@ -36,9 +36,8 @@ import java.util.Collections;
  * @author Gordon Hirsch
  * @since  1.3
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IllegalConnectorArgumentsException extends Exception {
-
-    private static final long serialVersionUID = -3042212603611350941L;
 
     /** @serial */
     @SuppressWarnings("serial") // Conditionally serializable

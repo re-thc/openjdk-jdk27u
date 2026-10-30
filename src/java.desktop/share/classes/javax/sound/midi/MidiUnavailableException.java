@@ -39,13 +39,8 @@ import java.io.Serial;
  *
  * @author Kara Kytle
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MidiUnavailableException extends Exception {
-
-    /**
-     * Use serialVersionUID from JDK 1.3 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 6093809578628944323L;
 
     /**
      * Constructs a {@code MidiUnavailableException} that has {@code null} as

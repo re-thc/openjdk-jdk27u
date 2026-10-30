@@ -82,6 +82,7 @@ import javax.accessibility.AccessibleValue;
  * @see         java.awt.CheckboxGroup
  * @since       1.0
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Checkbox extends Component implements ItemSelectable, Accessible {
 
     static {
@@ -123,12 +124,6 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
 
     private static final String base = "checkbox";
     private static int nameCounter = 0;
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 7270714317450821763L;
 
     /**
      * Helper function for setState and CheckboxGroup.setSelectedCheckbox
@@ -719,15 +714,10 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * Java Accessibility API appropriate to checkbox user-interface elements.
      * @since 1.3
      */
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     protected class AccessibleAWTCheckbox extends AccessibleAWTComponent
         implements ItemListener, AccessibleAction, AccessibleValue
     {
-        /**
-         * Use serialVersionUID from JDK 1.3 for interoperability.
-         */
-        @Serial
-        private static final long serialVersionUID = 7881579233144754107L;
-
         /**
          * Constructor for {@code AccessibleAWTCheckbox}
          */

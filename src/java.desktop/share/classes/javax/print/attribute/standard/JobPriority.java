@@ -59,14 +59,9 @@ import javax.print.attribute.PrintRequestAttribute;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class JobPriority extends IntegerSyntax
     implements PrintRequestAttribute, PrintJobAttribute {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4599900369040602769L;
 
     /**
      * Construct a new job priority attribute with the given integer value.

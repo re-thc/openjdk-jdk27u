@@ -48,8 +48,8 @@ import static com.sun.tools.javac.jvm.ClassFile.*;
  * notice.</b>
  */
 public class ModuleNameReader {
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static class BadClassFile extends Exception {
-        private static final long serialVersionUID = 0;
         BadClassFile(String msg) {
             super(msg);
         }

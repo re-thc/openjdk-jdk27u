@@ -46,10 +46,8 @@ package java.rmi;
  * @author  Ann Wollrath
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnmarshalException extends RemoteException {
-
-    /* indicate compatibility with JDK 1.1.x version of class */
-    private static final long serialVersionUID = 594380845140740218L;
 
     /**
      * Constructs an <code>UnmarshalException</code> with the specified

@@ -34,6 +34,7 @@ package java.sql;
  * conditions for which this {@code Exception} may be thrown.
  * @since 1.6
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class SQLSyntaxErrorException extends SQLNonTransientException {
 
         /**
@@ -169,5 +170,4 @@ public class SQLSyntaxErrorException extends SQLNonTransientException {
         super(reason, SQLState, vendorCode, cause);
     }
 
-    private static final long serialVersionUID = -1843832610477496053L;
 }

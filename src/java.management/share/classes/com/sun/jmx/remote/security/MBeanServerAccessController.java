@@ -25,7 +25,6 @@
 
 package com.sun.jmx.remote.security;
 
-import java.io.ObjectInputStream;
 import java.util.Set;
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -236,44 +235,6 @@ public abstract class MBeanServerAccessController
                                                      signature);
         checkClassLoader(object);
         return getMBeanServer().registerMBean(object, name);
-    }
-
-    /**
-     * Call <code>checkRead()</code>, then forward this method to the
-     * wrapped object.
-     */
-    @Deprecated
-    public ObjectInputStream deserialize(ObjectName name, byte[] data)
-        throws InstanceNotFoundException, OperationsException {
-        checkRead();
-        return getMBeanServer().deserialize(name, data);
-    }
-
-    /**
-     * Call <code>checkRead()</code>, then forward this method to the
-     * wrapped object.
-     */
-    @Deprecated
-    public ObjectInputStream deserialize(String className, byte[] data)
-        throws OperationsException, ReflectionException {
-        checkRead();
-        return getMBeanServer().deserialize(className, data);
-    }
-
-    /**
-     * Call <code>checkRead()</code>, then forward this method to the
-     * wrapped object.
-     */
-    @Deprecated
-    public ObjectInputStream deserialize(String className,
-                                         ObjectName loaderName,
-                                         byte[] data)
-        throws
-        InstanceNotFoundException,
-        OperationsException,
-        ReflectionException {
-        checkRead();
-        return getMBeanServer().deserialize(className, loaderName, data);
     }
 
     /**

@@ -100,6 +100,7 @@ import jdk.internal.vm.vector.Float16Math;
 // Currently Float16 is a value-based class and in the future it is
 // expected to be aligned with Value Classes and Object as described in
 // JEP-401 (https://openjdk.org/jeps/401).
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 @jdk.internal.ValueBased
 public final class Float16
     extends Number
@@ -111,7 +112,7 @@ public final class Float16
      */
     private final short value;
 
-    private static final long serialVersionUID = 16; // May not be needed when a value class?
+ // May not be needed when a value class?
 
     // Functionality for future consideration:
     // IEEEremainder and separate % operator remainder (which are

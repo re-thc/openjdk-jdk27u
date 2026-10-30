@@ -50,10 +50,8 @@ import java.security.Principal;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class NTDomainPrincipal implements Principal, java.io.Serializable {
-
-    @java.io.Serial
-    private static final long serialVersionUID = -4408637351440771220L;
 
     /**
      * @serial

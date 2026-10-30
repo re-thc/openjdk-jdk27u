@@ -104,6 +104,7 @@ import jdk.dynalink.StandardOperation;
  * {@link BeansLinker#getConstructorMethod(Class, String)}.
  * @since 9
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class StaticClass implements Serializable {
     private static final ClassValue<StaticClass> staticClasses = new ClassValue<>() {
         @Override
@@ -111,8 +112,6 @@ public final class StaticClass implements Serializable {
             return new StaticClass(type);
         }
     };
-
-    private static final long serialVersionUID = 1L;
 
     /**
      * @serial The runtime {@code Class} object whose static members this

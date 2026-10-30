@@ -43,9 +43,9 @@ import org.w3c.dom.Attr;
  * </UL>
  *
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class AttrCompare implements Comparator<Attr>, Serializable {
 
-    private static final long serialVersionUID = -7113259629930576230L;
     private static final int ATTR0_BEFORE_ATTR1 = -1;
     private static final int ATTR1_BEFORE_ATTR0 = 1;
     private static final String XMLNS = Constants.NamespaceSpecNS;

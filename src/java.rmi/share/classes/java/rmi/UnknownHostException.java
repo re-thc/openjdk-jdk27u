@@ -32,10 +32,8 @@ package java.rmi;
  *
  * @since   1.1
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnknownHostException extends RemoteException {
-
-    /* indicate compatibility with JDK 1.1.x version of class */
-     private static final long serialVersionUID = -8152710247442114228L;
 
     /**
      * Constructs an <code>UnknownHostException</code> with the specified

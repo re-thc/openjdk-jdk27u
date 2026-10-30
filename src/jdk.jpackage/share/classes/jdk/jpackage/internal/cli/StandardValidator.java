@@ -148,13 +148,13 @@ public final class StandardValidator {
     public static final Predicate<String> IS_VALID_MAC_BUNDLE_IDENTIFIER = Pattern.compile("[\\p{Alnum}-\\.]+").asMatchPredicate();
 
 
+    @SuppressWarnings("serial") // Serial version compatibility is not maintained.
     public static final class DirectoryListingIOException extends RuntimeException {
 
         DirectoryListingIOException(IOException cause) {
             super(Objects.requireNonNull(cause));
         }
 
-        private static final long serialVersionUID = 1L;
     }
 
 

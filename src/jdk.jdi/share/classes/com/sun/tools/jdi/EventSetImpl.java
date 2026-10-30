@@ -84,8 +84,8 @@ enum EventDestination {UNKNOWN_EVENT, INTERNAL_EVENT, CLIENT_EVENT};
  * their own EventSet.  This means that the EventImpls that are in the EventSet
  * that is on the queues are all for client requests.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class EventSetImpl extends ArrayList<Event> implements EventSet {
-    private static final long serialVersionUID = -4857338819787924570L;
     @SuppressWarnings("serial") // Type of field is not Serializable
     private VirtualMachineImpl vm; // we implement Mirror
     @SuppressWarnings("serial") // Type of field is not Serializable

@@ -55,7 +55,7 @@ public class TestBadPackageWithInterface {
                 byte[] bytes = in.readAllBytes();
 
                 MyLoader myLoader = new MyLoader();
-                myLoader.defineClass(bytes, 0, bytes.length);
+                myLoader.defineClass(null, bytes, 0, bytes.length);
             }
             catch (SecurityException expected) {
                 System.out.println("Expected ==================================================");

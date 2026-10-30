@@ -43,13 +43,8 @@ import java.io.Serial;
  * @since 1.5
  * @author Mark Davidson
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class IndexedPropertyChangeEvent extends PropertyChangeEvent {
-
-    /**
-     * Use serialVersionUID from JDK 1.7 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -320227448495806870L;
 
     /**
      * @serial The index of the property element that was changed.

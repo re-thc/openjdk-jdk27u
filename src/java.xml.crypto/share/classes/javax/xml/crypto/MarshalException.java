@@ -48,9 +48,8 @@ import javax.xml.crypto.dsig.keyinfo.KeyInfoFactory;
  * @see XMLSignature#sign(XMLSignContext)
  * @see XMLSignatureFactory#unmarshalXMLSignature(XMLValidateContext)
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class MarshalException extends Exception {
-
-    private static final long serialVersionUID = -863185580332643547L;
 
     /**
      * The throwable that caused this exception to get thrown, or null if this

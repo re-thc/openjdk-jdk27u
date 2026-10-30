@@ -81,16 +81,11 @@ import javax.print.attribute.PrintServiceAttribute;
  *
  * @author Alan Kaminsky
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public final class PrinterStateReasons
     extends HashMap<PrinterStateReason,Severity>
     implements PrintServiceAttribute
 {
-
-    /**
-     * Use serialVersionUID from JDK 1.4 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -3731791085163619457L;
 
     /**
      * Construct a new, empty printer state reasons attribute; the underlying

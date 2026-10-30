@@ -62,9 +62,8 @@ import static java.util.Collections.*;
  *
  * @author <a href="mailto:pholser@alumni.rice.edu">Paul Holser</a>
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 class OptionArgumentConversionException extends OptionException {
-    private static final long serialVersionUID = -1L;
-
     private final String argument;
 
     OptionArgumentConversionException( OptionSpec<?> options, String argument, Throwable cause ) {

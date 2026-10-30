@@ -38,6 +38,7 @@ import javax.security.auth.callback.TextInputCallback;
  * @author Rosanna Lee
  * @author Rob Weltman
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class RealmCallback extends TextInputCallback {
 
     /**
@@ -65,6 +66,4 @@ public class RealmCallback extends TextInputCallback {
         super(prompt, defaultRealmInfo);
     }
 
-    @Serial
-    private static final long serialVersionUID = -4342673378785456908L;
 }

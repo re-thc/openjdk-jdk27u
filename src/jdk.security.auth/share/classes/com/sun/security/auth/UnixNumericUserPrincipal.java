@@ -46,12 +46,10 @@ import java.security.Principal;
  *
  * @since 1.4
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class UnixNumericUserPrincipal implements
                                         Principal,
                                         java.io.Serializable {
-    @java.io.Serial
-    private static final long serialVersionUID = -4329764253802397821L;
-
     /**
      * @serial
      */

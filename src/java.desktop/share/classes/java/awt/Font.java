@@ -254,6 +254,7 @@ import static sun.font.EAttribute.EWIDTH;
  * especially important are called out as having 'baseline-relative
  * coordinates.'
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class Font implements java.io.Serializable
 {
     private static class FontAccessImpl extends FontAccess {
@@ -465,12 +466,6 @@ public class Font implements java.io.Serializable
      * is mutable.
      */
     private static final AffineTransform identityTx = new AffineTransform();
-
-    /**
-     * Use serialVersionUID from JDK 1.1 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = -4206021311591459213L;
 
     /**
      * Gets the peer of this {@code Font}.

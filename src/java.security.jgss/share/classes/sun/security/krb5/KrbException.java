@@ -37,10 +37,8 @@ import java.util.Objects;
 import sun.security.krb5.internal.Krb5;
 import sun.security.krb5.internal.KRBError;
 
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public class KrbException extends Exception {
-
-    @Serial
-    private static final long serialVersionUID = -4993302876451928596L;
 
     private int returnCode;
     private KRBError error;

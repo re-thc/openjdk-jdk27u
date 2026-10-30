@@ -64,9 +64,7 @@ import java.util.Arrays;
 
 public class StreamTokenizer {
 
-    /* Only one of these will be non-null */
-    private Reader reader = null;
-    private InputStream input = null;
+    private Reader reader;
 
     private char[] buf = new char[20];
 
@@ -194,47 +192,6 @@ public class StreamTokenizer {
         quoteChar('"');
         quoteChar('\'');
         parseNumbers();
-    }
-
-    /**
-     * Creates a stream tokenizer that parses the specified input
-     * stream. The stream tokenizer is initialized to the following
-     * default state:
-     * <ul>
-     * <li>All byte values {@code 'A'} through {@code 'Z'},
-     *     {@code 'a'} through {@code 'z'}, and
-     *     {@code '\u005Cu00A0'} through {@code '\u005Cu00FF'} are
-     *     considered to be alphabetic.
-     * <li>All byte values {@code '\u005Cu0000'} through
-     *     {@code '\u005Cu0020'} are considered to be white space.
-     * <li>{@code '/'} is a comment character.
-     * <li>Single quote {@code '\u005C''} and double quote {@code '"'}
-     *     are string quote characters.
-     * <li>Numbers are parsed.
-     * <li>Ends of lines are treated as white space, not as separate tokens.
-     * <li>C-style and C++-style comments are not recognized.
-     * </ul>
-     *
-     * @deprecated As of JDK version 1.1, the preferred way to tokenize an
-     * input stream is to convert it into a character stream, for example:
-     * {@snippet lang=java :
-     *     Reader r = new BufferedReader(new InputStreamReader(is));
-     *     StreamTokenizer st = new StreamTokenizer(r);
-     * }
-     *
-     * @param      is        an input stream.
-     * @see        java.io.BufferedReader
-     * @see        java.io.InputStreamReader
-     * @see        java.io.StreamTokenizer#StreamTokenizer(java.io.Reader)
-     */
-    @Deprecated
-    @SuppressWarnings("this-escape")
-    public StreamTokenizer(InputStream is) {
-        this();
-        if (is == null) {
-            throw new NullPointerException();
-        }
-        input = is;
     }
 
     /**
@@ -500,8 +457,6 @@ public class StreamTokenizer {
     private int read() throws IOException {
         if (reader != null)
             return reader.read();
-        else if (input != null)
-            return input.read();
         else
             throw new IllegalStateException();
     }

@@ -43,6 +43,7 @@ import javax.management.openmbean.TabularType;
  * getCompositeData() is an instance of CompositeData such that
  * the instance serializes itself as the type CompositeDataSupport.
  */
+@SuppressWarnings("serial") // Serial version compatibility is not maintained.
 public abstract class LazyCompositeData
         implements CompositeData, Serializable {
 
@@ -228,5 +229,4 @@ public abstract class LazyCompositeData
         return true;
     }
 
-    private static final long serialVersionUID = -2190411934472666714L;
 }
