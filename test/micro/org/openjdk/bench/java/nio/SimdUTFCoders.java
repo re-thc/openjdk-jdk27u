@@ -1,0 +1,271 @@
+/*
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+package org.openjdk.bench.java.nio;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
+import org.openjdk.jmh.annotations.*;
+
+/**
+ * UTF-8, UTF-16, UTF-32, ISO-8859-1 and US-ASCII Charset coders over array-backed and direct buffers, and the stream
+ * classes built on them. The coder loops convert ranges of 64 elements or more in bulk.
+ */
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@State(Scope.Thread)
+@Warmup(iterations = 3, time = 1)
+@Measurement(iterations = 5, time = 1)
+@Fork(3)
+public class SimdUTFCoders {
+    @Param({"32", "64", "256", "8192", "65536"})
+    public int size;
+
+    @Param({"ascii", "latin1", "bmp", "mixed"})
+    public String content;
+
+    private static final Charset UTF_32LE = Charset.forName("UTF-32LE");
+    private static final Charset UTF_32BE = Charset.forName("UTF-32BE");
+
+    private static final Charset UTF_16LE = StandardCharsets.UTF_16LE;
+    private static final Charset UTF_16BE = StandardCharsets.UTF_16BE;
+
+    private byte[] utf8Bytes, utf32Bytes, utf16leBytes, utf16beBytes;
+    private ByteBuffer utf32beHeap, utf32beDirect;
+    private CharsetDecoder utf32beDecoder;
+    private CharsetEncoder utf32beEncoder;
+    private ByteBuffer utf16leHeap, utf16leDirect, utf16beHeap;
+    private CharsetDecoder utf16leDecoder, utf16beDecoder;
+    private CharsetEncoder utf16leEncoder, utf16beEncoder;
+    private char[] chars;
+    private ByteBuffer utf8Heap, utf8Direct, utf32Heap, utf32Direct;
+    private ByteBuffer bytesHeap, bytesDirect;
+    private CharBuffer charsHeap, charsDirect, textHeap, textDirect;
+    private CharsetDecoder utf8Decoder, utf32Decoder;
+    private CharsetEncoder utf8Encoder, utf32Encoder;
+    private char[] readBuffer;
+    private String string;
+
+    // The distance between the malformed bytes or unmappable chars of the dense benchmarks
+    @Param({"24"})
+    public int gap;
+    // Text with a malformed byte or a char the charset cannot map every few elements, which
+    // the coders replace: the bulk steps stop at each one
+    private ByteBuffer denseUtf8Heap, denseUtf8Direct, denseAsciiDirect;
+    private CharBuffer denseTextHeap;
+    private CharsetDecoder replacingUtf8Decoder, replacingAsciiDecoder;
+    private CharsetEncoder replacingAsciiEncoder;
+    // The single-byte charsets, over text that they map: the text is converted to the
+    // charset and back
+    private ByteBuffer latin1Heap, latin1Direct, asciiHeap, asciiDirect;
+    private CharBuffer latin1TextHeap, latin1TextDirect, asciiTextHeap, asciiTextDirect;
+    private CharsetDecoder latin1Decoder, asciiDecoder;
+    private CharsetEncoder latin1Encoder, asciiEncoder;
+
+    @Setup
+    public void setup() {
+        StringBuilder text = new StringBuilder();
+        for (int i = 0; text.length() < size; i++) {
+            switch (content) {
+                case "ascii" -> text.append((char) ('a' + i % 26));
+                case "latin1" -> text.append(i % 8 == 0 ? (char) ('à' + i % 32) : (char) ('a' + i % 26));
+                case "bmp" -> text.append((char) ('一' + i % 2000));
+                default -> {
+                    if (i % 16 == 0 && text.length() + 1 < size) {
+                        text.appendCodePoint(0x1f600 + i % 64);
+                    } else {
+                        text.append(i % 4 == 0 ? (char) ('à' + i % 32) : (char) ('a' + i % 26));
+                    }
+                }
+            }
+        }
+        text.setLength(size);
+        if (Character.isHighSurrogate(text.charAt(size - 1))) {
+            text.setCharAt(size - 1, 'z');
+        }
+        String s = text.toString();
+        chars = s.toCharArray();
+        string = s;
+        utf8Bytes = s.getBytes(StandardCharsets.UTF_8);
+        utf32Bytes = s.getBytes(UTF_32LE);
+        utf16leBytes = s.getBytes(UTF_16LE);
+        utf16beBytes = s.getBytes(UTF_16BE);
+        utf16leHeap = ByteBuffer.wrap(utf16leBytes);
+        utf16leDirect = ByteBuffer.allocateDirect(utf16leBytes.length).put(utf16leBytes).flip();
+        utf16beHeap = ByteBuffer.wrap(utf16beBytes);
+        utf16leDecoder = UTF_16LE.newDecoder();
+        utf16beDecoder = UTF_16BE.newDecoder();
+        utf16leEncoder = UTF_16LE.newEncoder();
+        utf16beEncoder = UTF_16BE.newEncoder();
+        utf8Heap = ByteBuffer.wrap(utf8Bytes);
+        utf8Direct = ByteBuffer.allocateDirect(utf8Bytes.length).put(utf8Bytes).flip();
+        utf32Heap = ByteBuffer.wrap(utf32Bytes);
+        utf32Direct = ByteBuffer.allocateDirect(utf32Bytes.length).put(utf32Bytes).flip();
+        byte[] utf32be = s.getBytes(UTF_32BE);
+        utf32beHeap = ByteBuffer.wrap(utf32be);
+        utf32beDirect = ByteBuffer.allocateDirect(utf32be.length).put(utf32be).flip();
+        utf32beDecoder = UTF_32BE.newDecoder();
+        utf32beEncoder = UTF_32BE.newEncoder();
+        bytesHeap = ByteBuffer.allocate(4 * size + 16);
+        bytesDirect = ByteBuffer.allocateDirect(4 * size + 16);
+        charsHeap = CharBuffer.allocate(size + 16);
+        charsDirect = ByteBuffer.allocateDirect(2 * size + 32).order(ByteOrder.nativeOrder()).asCharBuffer();
+        textHeap = CharBuffer.wrap(chars);
+        textDirect = ByteBuffer.allocateDirect(2 * size).order(ByteOrder.nativeOrder()).asCharBuffer();
+        textDirect.put(chars).flip();
+        utf8Decoder = StandardCharsets.UTF_8.newDecoder();
+        utf8Encoder = StandardCharsets.UTF_8.newEncoder();
+        utf32Decoder = UTF_32LE.newDecoder();
+        utf32Encoder = UTF_32LE.newEncoder();
+        readBuffer = new char[size + 16];
+        byte[] latin1 = s.getBytes(StandardCharsets.ISO_8859_1);
+        byte[] ascii = s.getBytes(StandardCharsets.US_ASCII);
+        latin1Heap = ByteBuffer.wrap(latin1);
+        latin1Direct = ByteBuffer.allocateDirect(latin1.length).put(latin1).flip();
+        asciiHeap = ByteBuffer.wrap(ascii);
+        asciiDirect = ByteBuffer.allocateDirect(ascii.length).put(ascii).flip();
+        char[] latin1Chars = new String(latin1, StandardCharsets.ISO_8859_1).toCharArray();
+        char[] asciiChars = new String(ascii, StandardCharsets.US_ASCII).toCharArray();
+        latin1TextHeap = CharBuffer.wrap(latin1Chars);
+        latin1TextDirect = ByteBuffer.allocateDirect(2 * size).order(ByteOrder.nativeOrder()).asCharBuffer();
+        latin1TextDirect.put(latin1Chars).flip();
+        asciiTextHeap = CharBuffer.wrap(asciiChars);
+        asciiTextDirect = ByteBuffer.allocateDirect(2 * size).order(ByteOrder.nativeOrder()).asCharBuffer();
+        asciiTextDirect.put(asciiChars).flip();
+        byte[] dense = utf8Bytes.clone();
+        for (int i = gap - 4; i < dense.length; i += gap) dense[i] = (byte) 0xff;
+        denseUtf8Heap = ByteBuffer.wrap(dense);
+        denseUtf8Direct = ByteBuffer.allocateDirect(dense.length).put(dense).flip();
+        byte[] denseAscii = ascii.clone();
+        for (int i = gap - 4; i < denseAscii.length; i += gap) denseAscii[i] = (byte) 0xe9;
+        denseAsciiDirect = ByteBuffer.allocateDirect(denseAscii.length).put(denseAscii).flip();
+        char[] denseChars = asciiChars.clone();
+        for (int i = gap - 4; i < denseChars.length; i += gap) denseChars[i] = '\u00e9';
+        denseTextHeap = CharBuffer.wrap(denseChars);
+        replacingUtf8Decoder = StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE);
+        replacingAsciiDecoder = StandardCharsets.US_ASCII.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE);
+        replacingAsciiEncoder = StandardCharsets.US_ASCII.newEncoder()
+                .onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE);
+        latin1Decoder = StandardCharsets.ISO_8859_1.newDecoder();
+        latin1Encoder = StandardCharsets.ISO_8859_1.newEncoder();
+        asciiDecoder = StandardCharsets.US_ASCII.newDecoder();
+        asciiEncoder = StandardCharsets.US_ASCII.newEncoder();
+    }
+
+    private static int decode(CharsetDecoder decoder, ByteBuffer in, CharBuffer out) {
+        in.rewind();
+        out.clear();
+        decoder.reset();
+        decoder.decode(in, out, true);
+        return out.position();
+    }
+
+    private static int encode(CharsetEncoder encoder, CharBuffer in, ByteBuffer out) {
+        in.rewind();
+        out.clear();
+        encoder.reset();
+        encoder.encode(in, out, true);
+        return out.position();
+    }
+
+    @Benchmark public int utf8DecodeHeap() { return decode(utf8Decoder, utf8Heap, charsHeap); }
+    @Benchmark public int utf8DecodeDirect() { return decode(utf8Decoder, utf8Direct, charsHeap); }
+    @Benchmark public int utf8DecodeDirectToDirect() { return decode(utf8Decoder, utf8Direct, charsDirect); }
+    @Benchmark public int utf8EncodeHeap() { return encode(utf8Encoder, textHeap, bytesHeap); }
+    @Benchmark public int utf8EncodeDirect() { return encode(utf8Encoder, textHeap, bytesDirect); }
+    @Benchmark public int utf8EncodeDirectToDirect() { return encode(utf8Encoder, textDirect, bytesDirect); }
+    @Benchmark public int utf16LEDecodeHeap() { return decode(utf16leDecoder, utf16leHeap, charsHeap); }
+    @Benchmark public int utf16LEDecodeDirect() { return decode(utf16leDecoder, utf16leDirect, charsHeap); }
+    @Benchmark public int utf16BEDecodeHeap() { return decode(utf16beDecoder, utf16beHeap, charsHeap); }
+    @Benchmark public int utf16LEEncodeHeap() { return encode(utf16leEncoder, textHeap, bytesHeap); }
+    @Benchmark public int utf16LEEncodeDirect() { return encode(utf16leEncoder, textHeap, bytesDirect); }
+    @Benchmark public int utf16BEEncodeHeap() { return encode(utf16beEncoder, textHeap, bytesHeap); }
+    @Benchmark public int utf32DecodeHeap() { return decode(utf32Decoder, utf32Heap, charsHeap); }
+    @Benchmark public int utf32DecodeDirect() { return decode(utf32Decoder, utf32Direct, charsHeap); }
+    @Benchmark public int utf32EncodeHeap() { return encode(utf32Encoder, textHeap, bytesHeap); }
+    @Benchmark public int utf32EncodeDirect() { return encode(utf32Encoder, textHeap, bytesDirect); }
+
+    @Benchmark public int utf32BEDecodeHeap() { return decode(utf32beDecoder, utf32beHeap, charsHeap); }
+    @Benchmark public int utf32BEDecodeDirect() { return decode(utf32beDecoder, utf32beDirect, charsHeap); }
+    @Benchmark public int utf32BEEncodeHeap() { return encode(utf32beEncoder, textHeap, bytesHeap); }
+    @Benchmark public int utf32BEEncodeDirect() { return encode(utf32beEncoder, textHeap, bytesDirect); }
+
+    // ISO-8859-1 and US-ASCII: the array-backed routes are unchanged and are the reference
+    @Benchmark public int latin1DecodeHeap() { return decode(latin1Decoder, latin1Heap, charsHeap); }
+    @Benchmark public int latin1DecodeDirect() { return decode(latin1Decoder, latin1Direct, charsHeap); }
+    @Benchmark public int latin1DecodeDirectToDirect() { return decode(latin1Decoder, latin1Direct, charsDirect); }
+    @Benchmark public int latin1EncodeHeap() { return encode(latin1Encoder, latin1TextHeap, bytesHeap); }
+    @Benchmark public int latin1EncodeDirect() { return encode(latin1Encoder, latin1TextHeap, bytesDirect); }
+    @Benchmark public int latin1EncodeDirectToDirect() { return encode(latin1Encoder, latin1TextDirect, bytesDirect); }
+    @Benchmark public int asciiDecodeHeap() { return decode(asciiDecoder, asciiHeap, charsHeap); }
+    @Benchmark public int asciiDecodeDirect() { return decode(asciiDecoder, asciiDirect, charsHeap); }
+    @Benchmark public int asciiDecodeDirectToDirect() { return decode(asciiDecoder, asciiDirect, charsDirect); }
+    @Benchmark public int asciiEncodeHeap() { return encode(asciiEncoder, asciiTextHeap, bytesHeap); }
+    @Benchmark public int asciiEncodeDirect() { return encode(asciiEncoder, asciiTextHeap, bytesDirect); }
+    @Benchmark public int asciiEncodeDirectToDirect() { return encode(asciiEncoder, asciiTextDirect, bytesDirect); }
+
+    // Dense replacements: the same text through array-backed and direct buffers
+    @Benchmark public int utf8DecodeDenseHeap() { return decode(replacingUtf8Decoder, denseUtf8Heap, charsHeap); }
+    @Benchmark public int utf8DecodeDenseDirect() { return decode(replacingUtf8Decoder, denseUtf8Direct, charsHeap); }
+    @Benchmark public int asciiDecodeDenseDirect() { return decode(replacingAsciiDecoder, denseAsciiDirect, charsHeap); }
+    @Benchmark public int asciiEncodeDenseDirect() { return encode(replacingAsciiEncoder, denseTextHeap, bytesDirect); }
+
+    // Convenience and stream callers, which allocate their buffers as they would in an application.
+    @Benchmark public CharBuffer charsetDecode() { return StandardCharsets.UTF_8.decode(utf8Heap.rewind()); }
+    @Benchmark public ByteBuffer charsetEncode() { return StandardCharsets.UTF_8.encode(textHeap.rewind()); }
+    // A string is read through a char buffer without an array
+    @Benchmark public ByteBuffer charsetEncodeString() { return StandardCharsets.UTF_8.encode(string); }
+    @Benchmark public int utf8EncodeString() { return encode(utf8Encoder, CharBuffer.wrap(string), bytesHeap); }
+
+    @Benchmark
+    public int readerRead() throws IOException {
+        try (Reader reader = new InputStreamReader(new ByteArrayInputStream(utf8Bytes), StandardCharsets.UTF_8)) {
+            int total = 0;
+            for (int n; (n = reader.read(readBuffer)) > 0; ) total += n;
+            return total;
+        }
+    }
+
+    @Benchmark
+    public int writerWrite() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream(utf8Bytes.length + 16);
+        try (OutputStreamWriter writer = new OutputStreamWriter(out, StandardCharsets.UTF_8)) {
+            writer.write(chars, 0, chars.length);
+        }
+        return out.size();
+    }
+}

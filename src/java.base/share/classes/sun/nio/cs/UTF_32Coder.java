@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +27,25 @@
 package sun.nio.cs;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 class UTF_32Coder {
+    // The bulk conversions read and write UTF-32 in the byte order of the host.
+    // The library converts UTF-32 only in the byte order of the host, so the leaf of a coder of
+    // the other order swaps the units in small blocks. Both orders convert only on little-endian
+    // hosts. Ranges shorter than BULK_MIN stay in the loops, and the intrinsics convert at most
+    // BULK_MAX units per call.
+    private static final boolean NATIVE_LITTLE = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
+    private static final int BULK_MIN = BufferStorage.BULK_MIN;
+    private static final int BULK_MAX = BufferStorage.BULK_MAX;
+    private static final int BULK_TAIL = BufferStorage.BULK_TAIL;
+
     protected static final int BOM_BIG = 0xFEFF;
     protected static final int BOM_LITTLE = 0xFFFE0000;
     protected static final int NONE = 0;
@@ -47,6 +60,86 @@ class UTF_32Coder {
             super(cs, 0.25f, 1.0f);
             this.expectedBO = bo;
             this.currentBO = NONE;
+        }
+
+        // Converts the longest prefix of valid code points that fits, reading and
+        // writing the given storage as (object, address) pairs, and returns the
+        // consumed code points in the high word and the produced chars in the low
+        // word. Surrogate code points and code points above U+10FFFF end the prefix,
+        // so the loop below keeps deciding what they mean. The Java body declines
+        // by consuming nothing.
+        @IntrinsicCandidate
+        private static long decodeBulk(Object src, long srcAddress, int srcLength,
+                                       Object dst, long dstAddress, int dstCapacity) {
+            return 0L;
+        }
+
+        // The same for code points in big-endian byte order.
+        @IntrinsicCandidate
+        private static long decodeBulkBE(Object src, long srcAddress, int srcLength,
+                                         Object dst, long dstAddress, int dstCapacity) {
+            return 0L;
+        }
+
+        // Converts prefixes of the n code points at srcAddress until one makes no progress,
+        // and returns the consumed code points in the high word and the produced chars in
+        // the low word.
+        private static long decodeRun(boolean big, Object src, long srcAddress, int n,
+                                      Object dst, long dstAddress, int room) {
+            int sp = 0;
+            int dp = 0;
+            while (n - sp >= BULK_MIN && room - dp >= BULK_MIN) {
+                int chunk = Math.min(n - sp, BULK_MAX);
+                long r = big ? decodeBulkBE(src, srcAddress + ((long) sp << 2), chunk,
+                                            dst, dstAddress + ((long) dp << 1), room - dp)
+                             : decodeBulk(src, srcAddress + ((long) sp << 2), chunk,
+                                          dst, dstAddress + ((long) dp << 1), room - dp);
+                int consumed = (int) (r >>> 32);
+                sp += consumed;
+                dp += (int) r;
+                if (chunk - consumed >= BULK_TAIL) {
+                    break;
+                }
+            }
+            return ((long) sp << 32) | dp;
+        }
+
+        // Advances both buffers over a converted prefix of code points of the given byte
+        // order, unless the first code point is one that the loop below must decide on.
+        private static void decodeBuffers(boolean big, ByteBuffer src, CharBuffer dst) {
+            int n = src.remaining() >> 2;
+            int room = dst.remaining();
+            if (!NATIVE_LITTLE || n < BULK_MIN || room < BULK_MIN || !isScalarValue(big, src)
+                    || !BufferStorage.accessible(src, false) || !BufferStorage.accessible(dst, true)) {
+                return;
+            }
+            Object srcBase = BufferStorage.base(src);
+            Object dstBase = BufferStorage.base(dst);
+            long srcAddress = BufferStorage.address(src, 0);
+            long dstAddress = BufferStorage.address(dst, 1);
+            if (BufferStorage.overlaps(srcBase, srcAddress, (long) n << 2, dstBase, dstAddress, (long) room << 1)) {
+                return;
+            }
+            BufferStorage.acquire(src, dst);
+            try {
+                long r = decodeRun(big, srcBase, srcAddress, n, dstBase, dstAddress, room);
+                src.position(src.position() + ((int) (r >>> 32) << 2));
+                dst.position(dst.position() + (int) r);
+            } finally {
+                BufferStorage.release(src, dst);
+            }
+        }
+
+        // Whether the code point at the position is a Unicode scalar value, so that converting
+        // in bulk makes progress. Surrogate code points and values above U+10FFFF are left to
+        // the loop.
+        private static boolean isScalarValue(boolean big, ByteBuffer src) {
+            int p = src.position();
+            int cp = big ? (src.get(p + 3) & 0xff) | ((src.get(p + 2) & 0xff) << 8)
+                           | ((src.get(p + 1) & 0xff) << 16) | ((src.get(p) & 0xff) << 24)
+                         : (src.get(p) & 0xff) | ((src.get(p + 1) & 0xff) << 8)
+                           | ((src.get(p + 2) & 0xff) << 16) | ((src.get(p + 3) & 0xff) << 24);
+            return cp >= 0 && cp <= 0x10ffff && (cp < 0xd800 || cp > 0xdfff);
         }
 
         private int getCP(ByteBuffer src) {
@@ -86,6 +179,8 @@ class UTF_32Coder {
                         src.position(mark);
                     }
                 }
+                decodeBuffers(currentBO == BIG, src, dst);
+                mark = src.position();
                 while (src.remaining() >= 4) {
                     cp = getCP(src);
                     if (Character.isBmpCodePoint(cp)) {
@@ -93,6 +188,11 @@ class UTF_32Coder {
                             return CoderResult.OVERFLOW;
                         mark += 4;
                         dst.put((char) cp);
+                        if (Character.isSurrogate((char) cp)) {
+                            // A surrogate code point is passed through, so convert the rest in bulk
+                            decodeBuffers(currentBO == BIG, src, dst);
+                            mark = src.position();
+                        }
                     } else if (Character.isValidCodePoint(cp)) {
                         if (dst.remaining() < 2)
                             return CoderResult.OVERFLOW;
@@ -132,6 +232,79 @@ class UTF_32Coder {
             }
         }
 
+        // Converts the longest prefix of chars that fits, reading and writing the
+        // given storage as (object, address) pairs, and returns the consumed chars in
+        // the high word and the produced code points in the low word. An unpaired
+        // surrogate ends the prefix, so the loop below keeps deciding what it means.
+        // The Java body declines by consuming nothing.
+        @IntrinsicCandidate
+        private static long encodeBulk(Object src, long srcAddress, int srcLength,
+                                       Object dst, long dstAddress, int dstCapacity) {
+            return 0L;
+        }
+
+        // The same for code points written in big-endian byte order.
+        @IntrinsicCandidate
+        private static long encodeBulkBE(Object src, long srcAddress, int srcLength,
+                                         Object dst, long dstAddress, int dstCapacity) {
+            return 0L;
+        }
+
+        // Converts prefixes of the n chars at srcAddress until one makes no progress, and
+        // returns the consumed chars in the high word and the produced code points in
+        // the low word.
+        private static long encodeRun(boolean big, Object src, long srcAddress, int n,
+                                      Object dst, long dstAddress, int room) {
+            int sp = 0;
+            int dp = 0;
+            while (n - sp >= BULK_MIN && room - dp >= BULK_MIN) {
+                int chunk = Math.min(n - sp, BULK_MAX);
+                long r = big ? encodeBulkBE(src, srcAddress + ((long) sp << 1), chunk,
+                                            dst, dstAddress + ((long) dp << 2), room - dp)
+                             : encodeBulk(src, srcAddress + ((long) sp << 1), chunk,
+                                          dst, dstAddress + ((long) dp << 2), room - dp);
+                int consumed = (int) (r >>> 32);
+                sp += consumed;
+                dp += (int) r;
+                if (chunk - consumed >= BULK_TAIL) {
+                    break;
+                }
+            }
+            return ((long) sp << 32) | dp;
+        }
+
+        // Advances both buffers over a converted prefix, written as code points of the given
+        // byte order, unless the first char is a surrogate that does not begin a pair.
+        private static void encodeBuffers(boolean big, CharBuffer src, ByteBuffer dst) {
+            int n = src.remaining();
+            int room = dst.remaining() >> 2;
+            if (!NATIVE_LITTLE || n < BULK_MIN || room < BULK_MIN
+                    || !startsScalarValue(src.get(src.position()), src.get(src.position() + 1))
+                    || !BufferStorage.accessible(src, false) || !BufferStorage.accessible(dst, true)) {
+                return;
+            }
+            Object srcBase = BufferStorage.base(src);
+            Object dstBase = BufferStorage.base(dst);
+            long srcAddress = BufferStorage.address(src, 1);
+            long dstAddress = BufferStorage.address(dst, 0);
+            if (BufferStorage.overlaps(srcBase, srcAddress, (long) n << 1, dstBase, dstAddress, (long) room << 2)) {
+                return;
+            }
+            BufferStorage.acquire(src, dst);
+            try {
+                long r = encodeRun(big, srcBase, srcAddress, n, dstBase, dstAddress, room);
+                src.position(src.position() + (int) (r >>> 32));
+                dst.position(dst.position() + ((int) r << 2));
+            } finally {
+                BufferStorage.release(src, dst);
+            }
+        }
+
+        private static boolean startsScalarValue(char c, char next) {
+            return !Character.isSurrogate(c)
+                    || (Character.isHighSurrogate(c) && Character.isLowSurrogate(next));
+        }
+
         protected Encoder(Charset cs, int byteOrder, boolean doBOM) {
             super(cs, 4.0f,
                   doBOM?8.0f:4.0f,
@@ -151,6 +324,8 @@ class UTF_32Coder {
                 doneBOM = true;
             }
             try {
+                encodeBuffers(byteOrder == BIG, src, dst);
+                mark = src.position();
                 while (src.hasRemaining()) {
                     char c = src.get();
                     if (!Character.isSurrogate(c)) {

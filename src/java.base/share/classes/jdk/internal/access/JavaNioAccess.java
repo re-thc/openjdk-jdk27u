@@ -34,6 +34,7 @@ import jdk.internal.misc.VM.BufferPool;
 import java.lang.foreign.MemorySegment;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 
 public interface JavaNioAccess {
 
@@ -135,6 +136,18 @@ public interface JavaNioAccess {
     int pageSize();
 
     int scaleShifts(Buffer buffer);
+
+    /**
+     * Returns the string that a char buffer made by {@code CharBuffer.wrap(CharSequence)}
+     * reads, or null if the buffer reads another kind of sequence or is another kind of
+     * buffer. Element 0 of the buffer is the char at {@link #stringOffset} of the string.
+     */
+    String stringOf(CharBuffer buffer);
+
+    /**
+     * Returns the index in the string that {@link #stringOf} returns of the buffer's element 0.
+     */
+    int stringOffset(CharBuffer buffer);
 
     AbstractMemorySegmentImpl heapSegment(Buffer buffer,
                                           Object base,

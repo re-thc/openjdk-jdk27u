@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +65,10 @@ public class ISO_8859_1
         return new Encoder(this);
     }
 
+    private static final int BULK_MIN = BufferStorage.BULK_MIN;
+    private static final int BULK_MAX = BufferStorage.BULK_MAX;
+    private static final int BULK_TAIL = BufferStorage.BULK_TAIL;
+
     private static class Decoder extends CharsetDecoder {
 
         private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
@@ -97,9 +102,55 @@ public class ISO_8859_1
             return CoderResult.UNDERFLOW;
         }
 
+
+        // Converts the leading bytes that fit, reading and writing the given storage as
+        // (object, address) pairs, and returns the consumed bytes in the high word and the
+        // produced chars in the low word. Every byte converts. The Java body declines by consuming nothing.
+        @IntrinsicCandidate
+        private static long decodeBulk(Object src, long srcAddress, int srcLength,
+                                       Object dst, long dstAddress, int dstCapacity) {
+            return 0L;
+        }
+
+        // The buffer loop's bulk step: buffers whose storage the intrinsic reads and writes
+        // directly are advanced before the remainder is decoded element by element.
+        private static void decodeBuffers(ByteBuffer src, CharBuffer dst) {
+            int n = Math.min(src.remaining(), dst.remaining());
+            if (n < BULK_MIN
+                    || !BufferStorage.accessible(src, false) || !BufferStorage.accessible(dst, true)) {
+                return;
+            }
+            Object srcBase = BufferStorage.base(src);
+            Object dstBase = BufferStorage.base(dst);
+            long srcAddress = BufferStorage.address(src, 0);
+            long dstAddress = BufferStorage.address(dst, 1);
+            if (BufferStorage.overlaps(srcBase, srcAddress, n, dstBase, dstAddress, (long) n << 1)) {
+                return;
+            }
+            BufferStorage.acquire(src, dst);
+            try {
+                int done = 0;
+                while (n - done >= BULK_MIN) {
+                    int chunk = Math.min(n - done, BULK_MAX);
+                    long r = decodeBulk(srcBase, srcAddress + done, chunk,
+                                        dstBase, dstAddress + ((long) done << 1), chunk);
+                    int consumed = (int) (r >>> 32);
+                    done += consumed;
+                    if (chunk - consumed >= BULK_TAIL) {
+                        break;
+                    }
+                }
+                src.position(src.position() + done);
+                dst.position(dst.position() + done);
+            } finally {
+                BufferStorage.release(src, dst);
+            }
+        }
+
         private CoderResult decodeBufferLoop(ByteBuffer src,
                                              CharBuffer dst)
         {
+            decodeBuffers(src, dst);
             int mark = src.position();
             try {
                 while (src.hasRemaining()) {
@@ -225,9 +276,56 @@ public class ISO_8859_1
             }
         }
 
+
+        // Converts the leading chars that fit, reading and writing the given storage as
+        // (object, address) pairs, and returns the consumed chars in the high word and the
+        // produced bytes in the low word. The first char above U+00FF ends the prefix. The Java body declines by consuming nothing.
+        @IntrinsicCandidate
+        private static long encodeBulk(Object src, long srcAddress, int srcLength,
+                                       Object dst, long dstAddress, int dstCapacity) {
+            return 0L;
+        }
+
+        // The buffer loop's bulk step: buffers whose storage the intrinsic reads and writes
+        // directly are advanced before the remainder is encoded element by element.
+        private static void encodeBuffers(CharBuffer src, ByteBuffer dst) {
+            int n = Math.min(src.remaining(), dst.remaining());
+            if (n < BULK_MIN
+                    || src.get(src.position()) > '\u00FF'
+                    || !BufferStorage.accessible(src, false) || !BufferStorage.accessible(dst, true)) {
+                return;
+            }
+            Object srcBase = BufferStorage.base(src);
+            Object dstBase = BufferStorage.base(dst);
+            long srcAddress = BufferStorage.address(src, 1);
+            long dstAddress = BufferStorage.address(dst, 0);
+            if (BufferStorage.overlaps(srcBase, srcAddress, (long) n << 1, dstBase, dstAddress, n)) {
+                return;
+            }
+            BufferStorage.acquire(src, dst);
+            try {
+                int done = 0;
+                while (n - done >= BULK_MIN) {
+                    int chunk = Math.min(n - done, BULK_MAX);
+                    long r = encodeBulk(srcBase, srcAddress + ((long) done << 1), chunk,
+                                        dstBase, dstAddress + done, chunk);
+                    int consumed = (int) (r >>> 32);
+                    done += consumed;
+                    if (chunk - consumed >= BULK_TAIL) {
+                        break;
+                    }
+                }
+                src.position(src.position() + done);
+                dst.position(dst.position() + done);
+            } finally {
+                BufferStorage.release(src, dst);
+            }
+        }
+
         private CoderResult encodeBufferLoop(CharBuffer src,
                                              ByteBuffer dst)
         {
+            encodeBuffers(src, dst);
             int mark = src.position();
             try {
                 while (src.hasRemaining()) {

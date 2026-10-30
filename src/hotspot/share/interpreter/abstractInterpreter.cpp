@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +132,40 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_updateDirectByteBufferCRC32C: return java_util_zip_CRC32C_updateDirectByteBuffer;
       case vmIntrinsics::_float16ToFloat:    return java_lang_Float_float16ToFloat;
       case vmIntrinsics::_floatToFloat16:    return java_lang_Float_floatToFloat16;
+      case vmIntrinsics::_indexOfL_char: return java_lang_StringLatin1_indexOfChar;
+      case vmIntrinsics::_indexOfU_char: return java_lang_StringUTF16_indexOfChar;
+      case vmIntrinsics::_base64_encodeBlock: return java_util_Base64_encodeBlock;
+      case vmIntrinsics::_base64_decode0: return java_util_Base64_decode0;
+      case vmIntrinsics::_base64_decodeBlock: return java_util_Base64_decodeBlock;
+      case vmIntrinsics::_encodeUTF8Latin1: return java_lang_String_encodeUTF8Latin1;
+      case vmIntrinsics::_encodeUTF8UTF16: return java_lang_String_encodeUTF8UTF16;
+      case vmIntrinsics::_decodeUTF8UTF16: return java_lang_String_decodeUTF8UTF16;
+      case vmIntrinsics::_decodeUTF8Bulk: return sun_nio_cs_UTF_8_decodeBulk;
+      case vmIntrinsics::_encodeUTF8Bulk: return sun_nio_cs_UTF_8_encodeBulk;
+      case vmIntrinsics::_decodeUTF32Bulk: return sun_nio_cs_UTF_32Coder_decodeBulk;
+      case vmIntrinsics::_encodeUTF32Bulk: return sun_nio_cs_UTF_32Coder_encodeBulk;
+      case vmIntrinsics::_decodeUTF32BEBulk: return sun_nio_cs_UTF_32Coder_decodeBulkBE;
+      case vmIntrinsics::_encodeUTF32BEBulk: return sun_nio_cs_UTF_32Coder_encodeBulkBE;
+      case vmIntrinsics::_utf8ToLatin1Bulk: return java_lang_String_utf8ToLatin1Bulk;
+      case vmIntrinsics::_decodeUTF16LEBulk: return sun_nio_cs_UnicodeDecoder_decodeBulkLE;
+      case vmIntrinsics::_decodeUTF16BEBulk: return sun_nio_cs_UnicodeDecoder_decodeBulkBE;
+      case vmIntrinsics::_encodeUTF16LEBulk: return sun_nio_cs_UnicodeEncoder_encodeBulkLE;
+      case vmIntrinsics::_encodeUTF16BEBulk: return sun_nio_cs_UnicodeEncoder_encodeBulkBE;
+      case vmIntrinsics::_decodeLatin1Bulk: return sun_nio_cs_ISO_8859_1_Decoder_decodeBulk;
+      case vmIntrinsics::_encodeLatin1Bulk: return sun_nio_cs_ISO_8859_1_Encoder_encodeBulk;
+      case vmIntrinsics::_decodeAsciiBulk: return sun_nio_cs_US_ASCII_Decoder_decodeBulk;
+      case vmIntrinsics::_encodeAsciiBulk: return sun_nio_cs_US_ASCII_Encoder_encodeBulk;
+      case vmIntrinsics::_encodeLatin1UTF8Bulk: return sun_nio_cs_UTF_8_Encoder_encodeLatin1Bulk;
+      case vmIntrinsics::_countPositives: return java_lang_StringCoding_countPositives;
+      case vmIntrinsics::_countCodePoints: return java_lang_StringUTF16_countCodePoints;
+      case vmIntrinsics::_inflateStringC: return java_lang_StringLatin1_inflateChars;
+      case vmIntrinsics::_inflateStringB: return java_lang_StringLatin1_inflateBytes;
+      case vmIntrinsics::_compressStringC: return java_lang_StringUTF16_compressChars;
+      case vmIntrinsics::_compressStringB: return java_lang_StringUTF16_compressBytes;
+      case vmIntrinsics::_encodeISOArray: return sun_nio_cs_ISO_8859_1_Encoder_encodeISOArray;
+      case vmIntrinsics::_encodeByteISOArray: return java_lang_StringCoding_encodeISOArray;
+      case vmIntrinsics::_encodeAsciiArray: return java_lang_StringCoding_encodeAsciiArray;
+      case vmIntrinsics::_decodeUTF8UTF16OrThrow: return java_lang_String_decodeUTF8UTF16OrThrow;
       case vmIntrinsics::_currentThread:     return java_lang_Thread_currentThread;
 #endif // ZERO
       case vmIntrinsics::_dsin:              return java_lang_math_sin;
@@ -221,6 +256,40 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
                                   : return vmIntrinsics::_updateBytesCRC32C;
   case java_util_zip_CRC32C_updateDirectByteBuffer
                                   : return vmIntrinsics::_updateDirectByteBufferCRC32C;
+  case java_lang_StringLatin1_indexOfChar: return vmIntrinsics::_indexOfL_char;
+  case java_lang_StringUTF16_indexOfChar: return vmIntrinsics::_indexOfU_char;
+  case java_util_Base64_encodeBlock: return vmIntrinsics::_base64_encodeBlock;
+  case java_util_Base64_decode0: return vmIntrinsics::_base64_decode0;
+  case java_util_Base64_decodeBlock: return vmIntrinsics::_base64_decodeBlock;
+  case java_lang_String_encodeUTF8Latin1: return vmIntrinsics::_encodeUTF8Latin1;
+  case java_lang_String_encodeUTF8UTF16: return vmIntrinsics::_encodeUTF8UTF16;
+  case java_lang_String_decodeUTF8UTF16: return vmIntrinsics::_decodeUTF8UTF16;
+  case sun_nio_cs_UTF_8_decodeBulk: return vmIntrinsics::_decodeUTF8Bulk;
+  case sun_nio_cs_UTF_8_encodeBulk: return vmIntrinsics::_encodeUTF8Bulk;
+  case sun_nio_cs_UTF_32Coder_decodeBulk: return vmIntrinsics::_decodeUTF32Bulk;
+  case sun_nio_cs_UTF_32Coder_encodeBulk: return vmIntrinsics::_encodeUTF32Bulk;
+  case sun_nio_cs_UTF_32Coder_decodeBulkBE: return vmIntrinsics::_decodeUTF32BEBulk;
+  case sun_nio_cs_UTF_32Coder_encodeBulkBE: return vmIntrinsics::_encodeUTF32BEBulk;
+  case java_lang_String_utf8ToLatin1Bulk: return vmIntrinsics::_utf8ToLatin1Bulk;
+  case sun_nio_cs_UnicodeDecoder_decodeBulkLE: return vmIntrinsics::_decodeUTF16LEBulk;
+  case sun_nio_cs_UnicodeDecoder_decodeBulkBE: return vmIntrinsics::_decodeUTF16BEBulk;
+  case sun_nio_cs_UnicodeEncoder_encodeBulkLE: return vmIntrinsics::_encodeUTF16LEBulk;
+  case sun_nio_cs_UnicodeEncoder_encodeBulkBE: return vmIntrinsics::_encodeUTF16BEBulk;
+  case sun_nio_cs_ISO_8859_1_Decoder_decodeBulk: return vmIntrinsics::_decodeLatin1Bulk;
+  case sun_nio_cs_ISO_8859_1_Encoder_encodeBulk: return vmIntrinsics::_encodeLatin1Bulk;
+  case sun_nio_cs_US_ASCII_Decoder_decodeBulk: return vmIntrinsics::_decodeAsciiBulk;
+  case sun_nio_cs_US_ASCII_Encoder_encodeBulk: return vmIntrinsics::_encodeAsciiBulk;
+  case sun_nio_cs_UTF_8_Encoder_encodeLatin1Bulk: return vmIntrinsics::_encodeLatin1UTF8Bulk;
+  case java_lang_StringCoding_countPositives: return vmIntrinsics::_countPositives;
+  case java_lang_StringUTF16_countCodePoints: return vmIntrinsics::_countCodePoints;
+  case java_lang_StringLatin1_inflateChars: return vmIntrinsics::_inflateStringC;
+  case java_lang_StringLatin1_inflateBytes: return vmIntrinsics::_inflateStringB;
+  case java_lang_StringUTF16_compressChars: return vmIntrinsics::_compressStringC;
+  case java_lang_StringUTF16_compressBytes: return vmIntrinsics::_compressStringB;
+  case sun_nio_cs_ISO_8859_1_Encoder_encodeISOArray: return vmIntrinsics::_encodeISOArray;
+  case java_lang_StringCoding_encodeISOArray: return vmIntrinsics::_encodeByteISOArray;
+  case java_lang_StringCoding_encodeAsciiArray: return vmIntrinsics::_encodeAsciiArray;
+  case java_lang_String_decodeUTF8UTF16OrThrow: return vmIntrinsics::_decodeUTF8UTF16OrThrow;
   case java_lang_Thread_currentThread
                                   : return vmIntrinsics::_currentThread;
   case java_lang_Float_float16ToFloat

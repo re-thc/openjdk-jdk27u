@@ -235,6 +235,15 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseGHASHIntrinsics, false, DIAGNOSTIC,                      \
           "Use intrinsics for GHASH versions of crypto")                    \
                                                                             \
+  product(bool, UseSIMDUTFIntrinsics, true,                                 \
+          "Use simdutf for text conversion, Base64 and character search")   \
+                                                                            \
+  product(intx, SIMDUTFMinLength, 256,                                      \
+          "Minimum input length for the simdutf String conversion, Base64 " \
+          "and character search intrinsics; the Charset coders and the "    \
+          "String coding leaves use fixed lengths")                         \
+          range(1, max_jint)                                                \
+                                                                            \
   product(bool, UseBASE64Intrinsics, false,                                 \
           "Use intrinsics for java.util.Base64")                            \
                                                                             \

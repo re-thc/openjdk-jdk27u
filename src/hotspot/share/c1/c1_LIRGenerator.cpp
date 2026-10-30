@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +41,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -2830,8 +2832,252 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
 
 
 
+// Admission and malformed-result branches are HIR edges. This LIR sequence is
+// an unconditional leaf, so linear scan can preserve all fallback values.
+void LIRGenerator::do_stringUTF8(Intrinsic* x) {
+  bool utf16 = x->id() == vmIntrinsics::_encodeUTF8UTF16;
+  bool decode = x->id() == vmIntrinsics::_decodeUTF8UTF16 ||
+                x->id() == vmIntrinsics::_decodeUTF8UTF16OrThrow;
+  LIRItem src(x->argument_at(0), this);
+  LIRItem start(x->argument_at(1), this);
+  LIRItem dst(x->argument_at(2), this);
+  LIRItem dp(x->argument_at(3), this);
+  LIRItem length(x->argument_at(4), this);
+  src.load_item();
+  start.load_item();
+  dst.load_item();
+  dp.load_item();
+  length.load_item();
+  LIR_Opr result = rlock_result(x);
+  LIR_Opr src_offset = new_register(T_LONG);
+  LIR_Opr dst_offset = new_register(T_LONG);
+  __ convert(Bytecodes::_i2l, start.result(), src_offset);
+  __ convert(Bytecodes::_i2l, dp.result(), dst_offset);
+  if (utf16) {
+    __ shift_left(src_offset, 1, src_offset);
+  }
+  if (decode) {
+    __ shift_left(dst_offset, 1, dst_offset);
+  }
+  LIR_Opr src_address = new_register(T_ADDRESS);
+  LIR_Opr dst_address = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(generate_address(src.result(), src_offset, 0,
+      arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), src_address);
+  __ leal(LIR_OprFact::address(generate_address(dst.result(), dst_offset, 0,
+      arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), dst_address);
+  BasicTypeList signature(3);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  signature.append(T_ADDRESS);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(src_address, cc->at(0));
+  __ move(length.result(), cc->at(1));
+  __ move(dst_address, cc->at(2));
+  LIR_Opr result_reg = result_register_for(x->type());
+  address entry = decode ? CAST_FROM_FN_PTR(address, SimdUTF::decode_utf8_utf16)
+                : utf16 ? CAST_FROM_FN_PTR(address, SimdUTF::encode_utf16_utf8)
+                       : CAST_FROM_FN_PTR(address, SimdUTF::encode_latin1_utf8);
+  __ call_runtime_leaf(entry, getThreadTemp(), result_reg, cc->args());
+  __ move(result_reg, result);
+}
+
+void LIRGenerator::do_bulk(Intrinsic* x) {
+  const bool search = x->id() == vmIntrinsics::_indexOfL_char || x->id() == vmIntrinsics::_indexOfU_char;
+  const bool wide = x->id() == vmIntrinsics::_indexOfU_char;
+  const bool mime = x->id() == vmIntrinsics::_base64_decode0;
+  const bool decode = mime || x->id() == vmIntrinsics::_base64_decodeBlock;
+  LIRItem src(x->argument_at(0), this), start(x->argument_at(1), this), length(x->argument_at(2), this);
+  src.load_item(); start.load_item(); length.load_item();
+  LIR_Opr offset = new_register(T_LONG);
+  __ convert(Bytecodes::_i2l, start.result(), offset);
+  if (wide) { __ shift_left(offset, 1, offset); }
+  LIR_Opr source = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(generate_address(src.result(), offset, 0,
+      arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), source);
+  BasicTypeList signature(search ? 3 : decode ? 5 : 4);
+  signature.append(T_ADDRESS); signature.append(T_INT);
+  signature.append(search ? T_INT : T_ADDRESS);
+  if (!search) signature.append(T_INT);
+  if (decode && !mime) signature.append(T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  LIR_Opr third, url = LIR_OprFact::illegalOpr, capacity = LIR_OprFact::illegalOpr;
+  if (search) {
+    LIRItem ch(x->argument_at(3), this); ch.load_item(); third = ch.result();
+  } else {
+    LIRItem dst(x->argument_at(3), this), dp(x->argument_at(4), this), option(x->argument_at(5), this);
+    dst.load_item(); dp.load_item(); option.load_item(); url = option.result();
+    LIR_Opr dst_offset = new_register(T_LONG);
+    __ convert(Bytecodes::_i2l, dp.result(), dst_offset);
+    third = new_register(T_ADDRESS);
+    __ leal(LIR_OprFact::address(generate_address(dst.result(), dst_offset, 0,
+      arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), third);
+    if (decode) { LIRItem cap(x->argument_at(6), this); cap.load_item(); capacity = cap.result(); }
+  }
+  __ move(source, cc->at(0)); __ move(length.result(), cc->at(1)); __ move(third, cc->at(2));
+  if (!search) { __ move(decode ? capacity : url, cc->at(3)); }
+  if (decode && !mime) { __ move(url, cc->at(4)); }
+  address entry = search ? (wide ? CAST_FROM_FN_PTR(address, SimdUTF::index_of_utf16)
+                                : CAST_FROM_FN_PTR(address, SimdUTF::index_of_latin1))
+                         : mime ? CAST_FROM_FN_PTR(address, SimdUTF::decode_base64_mime)
+                         : decode ? CAST_FROM_FN_PTR(address, SimdUTF::decode_base64)
+                                  : CAST_FROM_FN_PTR(address, SimdUTF::encode_base64);
+  LIR_Opr result_reg = x->type() == voidType ? LIR_OprFact::illegalOpr : result_register_for(x->type());
+  __ call_runtime_leaf(entry, getThreadTemp(), result_reg, cc->args());
+  if (search) {
+    LIR_Opr relative = new_register(T_INT);
+    LIR_Opr absolute = new_register(T_INT);
+    __ move(result_reg, relative);
+    __ move(start.result(), absolute);
+    __ add(absolute, relative, absolute);
+    __ cmp(lir_cond_less, relative, LIR_OprFact::intConst(0));
+    __ cmove(lir_cond_less, LIR_OprFact::intConst(-1), absolute, rlock_result(x), T_INT);
+  } else if (x->type() != voidType) {
+    __ move(result_reg, rlock_result(x));
+  }
+}
+
+// The callers bound the length and pass storage as (object, address) pairs.
+// Every decline is inside the leaf, so the call needs no HIR edges.
+void LIRGenerator::do_convertPrefix(Intrinsic* x) {
+  LIRItem src(x->argument_at(0), this);
+  LIRItem src_address(x->argument_at(1), this);
+  LIRItem src_length(x->argument_at(2), this);
+  LIRItem dst(x->argument_at(3), this);
+  LIRItem dst_address(x->argument_at(4), this);
+  LIRItem dst_capacity(x->argument_at(5), this);
+  src.load_item();
+  src_address.load_item();
+  src_length.load_item();
+  dst.load_item();
+  dst_address.load_item();
+  dst_capacity.load_item();
+  LIR_Opr result = rlock_result(x);
+  LIR_Opr src_pointer = new_register(T_ADDRESS);
+  LIR_Opr dst_pointer = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(new LIR_Address(src.result(), src_address.result(), T_BYTE)), src_pointer);
+  __ leal(LIR_OprFact::address(new LIR_Address(dst.result(), dst_address.result(), T_BYTE)), dst_pointer);
+  BasicTypeList signature(4);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(src_pointer, cc->at(0));
+  __ move(src_length.result(), cc->at(1));
+  __ move(dst_pointer, cc->at(2));
+  __ move(dst_capacity.result(), cc->at(3));
+  address entry = SimdUTF::leaf_for(x->id());
+  assert(entry != nullptr, "every prefix intrinsic has a leaf");
+  LIR_Opr result_reg = result_register_for(x->type());
+  __ call_runtime_leaf(entry, getThreadTemp(), result_reg, cc->args());
+  __ move(result_reg, result);
+}
+
+// The Java wrappers have checked the ranges, and the leaves are exact for every length,
+// so the call needs no HIR edges. An offset counts UTF-16 elements on the char side.
+void LIRGenerator::do_stringCoding(Intrinsic* x) {
+  // countCodePoints has the arguments of countPositives, with the offset and the length in chars
+  const bool chars = x->id() == vmIntrinsics::_countCodePoints;
+  const bool count = x->id() == vmIntrinsics::_countPositives || chars;
+  const bool inflate = x->id() == vmIntrinsics::_inflateStringC ||
+                       x->id() == vmIntrinsics::_inflateStringB;
+  // (array, offset[, array, offset], length)
+  LIRItem src(x->argument_at(0), this);
+  LIRItem src_start(x->argument_at(1), this);
+  src.load_item();
+  src_start.load_item();
+  LIR_Opr src_offset = new_register(T_LONG);
+  __ convert(Bytecodes::_i2l, src_start.result(), src_offset);
+  if ((!count && !inflate) || chars) {
+    __ shift_left(src_offset, 1, src_offset);
+  }
+  LIR_Opr src_address = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(generate_address(src.result(), src_offset, 0,
+      arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), src_address);
+  LIR_Opr dst_address = LIR_OprFact::illegalOpr;
+  if (!count) {
+    LIRItem dst(x->argument_at(2), this);
+    LIRItem dst_start(x->argument_at(3), this);
+    dst.load_item();
+    dst_start.load_item();
+    LIR_Opr dst_offset = new_register(T_LONG);
+    __ convert(Bytecodes::_i2l, dst_start.result(), dst_offset);
+    if (inflate) {
+      __ shift_left(dst_offset, 1, dst_offset);
+    }
+    dst_address = new_register(T_ADDRESS);
+    __ leal(LIR_OprFact::address(generate_address(dst.result(), dst_offset, 0,
+      arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), dst_address);
+  }
+  LIRItem length(x->argument_at(count ? 2 : 4), this);
+  length.load_item();
+  BasicTypeList signature(count ? 2 : 3);
+  signature.append(T_ADDRESS);
+  if (!count) {
+    signature.append(T_ADDRESS);
+  }
+  signature.append(T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(src_address, cc->at(0));
+  if (count) {
+    __ move(length.result(), cc->at(1));
+  } else {
+    __ move(dst_address, cc->at(1));
+    __ move(length.result(), cc->at(2));
+  }
+  address entry = SimdUTF::leaf_for(x->id());
+  assert(entry != nullptr, "every string coding intrinsic has a leaf");
+  LIR_Opr result_reg = x->type() == voidType ? LIR_OprFact::illegalOpr : result_register_for(x->type());
+  __ call_runtime_leaf(entry, getThreadTemp(), result_reg, cc->args());
+  if (x->type() != voidType) {
+    __ move(result_reg, rlock_result(x));
+  }
+}
+
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   switch (x->id()) {
+  case vmIntrinsics::_countPositives:
+  case vmIntrinsics::_countCodePoints:
+  case vmIntrinsics::_inflateStringC:
+  case vmIntrinsics::_inflateStringB:
+  case vmIntrinsics::_compressStringC:
+  case vmIntrinsics::_compressStringB:
+  case vmIntrinsics::_encodeISOArray:
+  case vmIntrinsics::_encodeByteISOArray:
+  case vmIntrinsics::_encodeAsciiArray:
+    do_stringCoding(x);
+    break;
+  case vmIntrinsics::_decodeUTF8Bulk:
+  case vmIntrinsics::_encodeUTF8Bulk:
+  case vmIntrinsics::_decodeUTF32Bulk:
+  case vmIntrinsics::_encodeUTF32Bulk:
+  case vmIntrinsics::_decodeUTF32BEBulk:
+  case vmIntrinsics::_encodeUTF32BEBulk:
+  case vmIntrinsics::_utf8ToLatin1Bulk:
+  case vmIntrinsics::_decodeUTF16LEBulk:
+  case vmIntrinsics::_decodeUTF16BEBulk:
+  case vmIntrinsics::_encodeUTF16LEBulk:
+  case vmIntrinsics::_encodeUTF16BEBulk:
+  case vmIntrinsics::_decodeLatin1Bulk:
+  case vmIntrinsics::_encodeLatin1Bulk:
+  case vmIntrinsics::_decodeAsciiBulk:
+  case vmIntrinsics::_encodeAsciiBulk:
+  case vmIntrinsics::_encodeLatin1UTF8Bulk:
+    do_convertPrefix(x);
+    break;
+  case vmIntrinsics::_indexOfL_char:
+  case vmIntrinsics::_indexOfU_char:
+  case vmIntrinsics::_base64_encodeBlock:
+  case vmIntrinsics::_base64_decode0:
+  case vmIntrinsics::_base64_decodeBlock:
+    do_bulk(x);
+    break;
+  case vmIntrinsics::_encodeUTF8Latin1:
+  case vmIntrinsics::_encodeUTF8UTF16:
+  case vmIntrinsics::_decodeUTF8UTF16OrThrow:
+  case vmIntrinsics::_decodeUTF8UTF16:
+    do_stringUTF8(x);
+    break;
   case vmIntrinsics::_intBitsToFloat      :
   case vmIntrinsics::_doubleToRawLongBits :
   case vmIntrinsics::_longBitsToDouble    :

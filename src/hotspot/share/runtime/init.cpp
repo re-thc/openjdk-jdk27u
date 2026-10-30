@@ -45,6 +45,7 @@
 #include "runtime/init.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "sanitizers/leak.hpp"
 #include "utilities/macros.hpp"
 
@@ -131,6 +132,7 @@ jint init_globals() {
   compilationPolicy_init();
   codeCache_init();
   VM_Version_init();              // depends on codeCache_init for emitting code
+  SimdUTF::initialize();          // CPU capabilities and VM ISA restrictions are established
   icache_init2();                 // depends on VM_Version for choosing the mechanism
   // ensure we know about all blobs, stubs and entries
   initialize_stub_info();

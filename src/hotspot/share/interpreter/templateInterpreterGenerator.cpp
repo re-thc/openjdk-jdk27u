@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,6 +211,41 @@ void TemplateInterpreterGenerator::generate_all() {
 
   method_entry(java_util_zip_CRC32C_updateBytes)
   method_entry(java_util_zip_CRC32C_updateDirectByteBuffer)
+
+  method_entry(java_lang_StringLatin1_indexOfChar)
+  method_entry(java_lang_StringUTF16_indexOfChar)
+  method_entry(java_util_Base64_encodeBlock)
+  method_entry(java_util_Base64_decode0)
+  method_entry(java_util_Base64_decodeBlock)
+  method_entry(java_lang_String_encodeUTF8Latin1)
+  method_entry(java_lang_String_encodeUTF8UTF16)
+  method_entry(java_lang_String_decodeUTF8UTF16)
+  method_entry(sun_nio_cs_UTF_8_decodeBulk)
+  method_entry(sun_nio_cs_UTF_8_encodeBulk)
+  method_entry(sun_nio_cs_UTF_32Coder_decodeBulk)
+  method_entry(sun_nio_cs_UTF_32Coder_encodeBulk)
+  method_entry(sun_nio_cs_UTF_32Coder_decodeBulkBE)
+  method_entry(sun_nio_cs_UTF_32Coder_encodeBulkBE)
+  method_entry(java_lang_String_utf8ToLatin1Bulk)
+  method_entry(sun_nio_cs_UnicodeDecoder_decodeBulkLE)
+  method_entry(sun_nio_cs_UnicodeDecoder_decodeBulkBE)
+  method_entry(sun_nio_cs_UnicodeEncoder_encodeBulkLE)
+  method_entry(sun_nio_cs_UnicodeEncoder_encodeBulkBE)
+  method_entry(sun_nio_cs_ISO_8859_1_Decoder_decodeBulk)
+  method_entry(sun_nio_cs_ISO_8859_1_Encoder_encodeBulk)
+  method_entry(sun_nio_cs_US_ASCII_Decoder_decodeBulk)
+  method_entry(sun_nio_cs_US_ASCII_Encoder_encodeBulk)
+  method_entry(sun_nio_cs_UTF_8_Encoder_encodeLatin1Bulk)
+  method_entry(java_lang_StringCoding_countPositives)
+  method_entry(java_lang_StringUTF16_countCodePoints)
+  method_entry(java_lang_StringLatin1_inflateChars)
+  method_entry(java_lang_StringLatin1_inflateBytes)
+  method_entry(java_lang_StringUTF16_compressChars)
+  method_entry(java_lang_StringUTF16_compressBytes)
+  method_entry(sun_nio_cs_ISO_8859_1_Encoder_encodeISOArray)
+  method_entry(java_lang_StringCoding_encodeISOArray)
+  method_entry(java_lang_StringCoding_encodeAsciiArray)
+  method_entry(java_lang_String_decodeUTF8UTF16OrThrow)
 
   method_entry(java_lang_Float_float16ToFloat);
   method_entry(java_lang_Float_floatToFloat16);
@@ -480,6 +516,56 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
                                            : // fall thru
   case Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer
                                            : entry_point = generate_CRC32C_updateBytes_entry(kind); break;
+  case Interpreter::java_lang_StringLatin1_indexOfChar:
+  case Interpreter::java_lang_StringUTF16_indexOfChar:
+  case Interpreter::java_util_Base64_encodeBlock:
+  case Interpreter::java_util_Base64_decode0:
+  case Interpreter::java_util_Base64_decodeBlock:
+#if defined(AMD64) || defined(AARCH64)
+    entry_point = generate_bulk_entry(kind);
+#endif
+    break;
+  case Interpreter::java_lang_String_encodeUTF8Latin1:
+  case Interpreter::java_lang_String_encodeUTF8UTF16:
+  case Interpreter::java_lang_String_decodeUTF8UTF16:
+  case Interpreter::java_lang_String_decodeUTF8UTF16OrThrow:
+#if defined(AMD64) || defined(AARCH64)
+    entry_point = generate_String_utf8_entry(kind);
+#endif
+    break;
+  case Interpreter::sun_nio_cs_UTF_8_decodeBulk:
+  case Interpreter::sun_nio_cs_UTF_8_encodeBulk:
+  case Interpreter::sun_nio_cs_UTF_32Coder_decodeBulk:
+  case Interpreter::sun_nio_cs_UTF_32Coder_encodeBulk:
+  case Interpreter::sun_nio_cs_UTF_32Coder_decodeBulkBE:
+  case Interpreter::sun_nio_cs_UTF_32Coder_encodeBulkBE:
+  case Interpreter::java_lang_String_utf8ToLatin1Bulk:
+  case Interpreter::sun_nio_cs_UnicodeDecoder_decodeBulkLE:
+  case Interpreter::sun_nio_cs_UnicodeDecoder_decodeBulkBE:
+  case Interpreter::sun_nio_cs_UnicodeEncoder_encodeBulkLE:
+  case Interpreter::sun_nio_cs_UnicodeEncoder_encodeBulkBE:
+  case Interpreter::sun_nio_cs_ISO_8859_1_Decoder_decodeBulk:
+  case Interpreter::sun_nio_cs_ISO_8859_1_Encoder_encodeBulk:
+  case Interpreter::sun_nio_cs_US_ASCII_Decoder_decodeBulk:
+  case Interpreter::sun_nio_cs_US_ASCII_Encoder_encodeBulk:
+  case Interpreter::sun_nio_cs_UTF_8_Encoder_encodeLatin1Bulk:
+#if defined(AMD64) || defined(AARCH64)
+    entry_point = generate_convert_prefix_entry(kind);
+#endif
+    break;
+  case Interpreter::java_lang_StringCoding_countPositives:
+  case Interpreter::java_lang_StringUTF16_countCodePoints:
+  case Interpreter::java_lang_StringLatin1_inflateChars:
+  case Interpreter::java_lang_StringLatin1_inflateBytes:
+  case Interpreter::java_lang_StringUTF16_compressChars:
+  case Interpreter::java_lang_StringUTF16_compressBytes:
+  case Interpreter::sun_nio_cs_ISO_8859_1_Encoder_encodeISOArray:
+  case Interpreter::java_lang_StringCoding_encodeISOArray:
+  case Interpreter::java_lang_StringCoding_encodeAsciiArray:
+#if defined(AMD64) || defined(AARCH64)
+    entry_point = generate_string_coding_entry(kind);
+#endif
+    break;
   case Interpreter::java_lang_Thread_currentThread
                                            : entry_point = generate_currentThread(); break;
   case Interpreter::java_lang_Float_float16ToFloat
