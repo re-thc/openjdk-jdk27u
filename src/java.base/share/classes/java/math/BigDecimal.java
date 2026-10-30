@@ -25,6 +25,7 @@
 
 /*
  * Portions Copyright IBM Corporation, 2001. All Rights Reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  */
 
 package java.math;
@@ -42,6 +43,7 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.math.FormattedFPDecimal;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -3201,8 +3203,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                       (xs == INFLATED ||
                       (xs = longMultiplyPowerTen(xs, (int)-sdiff)) == INFLATED) &&
                      ys == INFLATED) {
-                    BigInteger rb = bigMultiplyPowerTen((int)-sdiff);
-                    return rb.compareMagnitude(val.intVal);
+                    return compareMagnitudeScaled(val, (int)-sdiff);
                 }
             } else { // sdiff > 0
                 // The cases sdiff > Integer.MAX_VALUE intentionally fall through.
@@ -3210,8 +3211,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                       (ys == INFLATED ||
                       (ys = longMultiplyPowerTen(ys, (int)sdiff)) == INFLATED) &&
                      xs == INFLATED) {
-                    BigInteger rb = val.bigMultiplyPowerTen((int)sdiff);
-                    return this.intVal.compareMagnitude(rb);
+                    return -val.compareMagnitudeScaled(this, (int)sdiff);
                 }
             }
         }
@@ -3221,6 +3221,54 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             return 1;
         else
             return this.intVal.compareMagnitude(val.intVal);
+    }
+
+    /**
+     * Compares abs(this.unscaledValue()) * 10^n with abs(val.unscaledValue()),
+     * using two unsigned longs for bounded magnitudes. The caller has already
+     * matched adjusted exponents, n is positive, and val is inflated.
+     */
+    @DontInline // Keep scale-alignment work out of compact comparison callers.
+    private int compareMagnitudeScaled(BigDecimal val, int n) {
+        // At most 39 decimal digits per magnitude imply n <= 38 when
+        // adjusted exponents match. Keep the bound explicit before scaling.
+        if (n > 38 || val.intVal.mag.length > 4 ||
+            (intCompact == INFLATED && intVal.mag.length > 4)) {
+            return bigMultiplyPowerTen(n).compareMagnitude(val.intVal);
+        }
+        int[] ym = val.intVal.mag;
+        int[] xm = intCompact == INFLATED ? intVal.mag : null;
+        long xlo = xm == null ? Math.abs(intCompact) : comparisonMagnitudeLong(xm, xm.length);
+        long xhi = xm == null ? 0 : comparisonMagnitudeLong(xm, xm.length - 2);
+
+        do {
+            int step = Math.min(n, 18);
+            long power = LONG_TEN_POWERS_TABLE[step];
+            long carry = Math.unsignedMultiplyHigh(xlo, power);
+            long hi = xhi * power;
+            long sum = hi + carry;
+            // A carry beyond 128 bits makes the scaled magnitude larger
+            // than any admitted target, even if more scaling remains.
+            if (Math.unsignedMultiplyHigh(xhi, power) != 0 ||
+                Long.compareUnsigned(sum, hi) < 0)
+                return 1;
+            xhi = sum;
+            xlo *= power;
+            n -= step;
+        } while (n > 0);
+
+        long ylo = comparisonMagnitudeLong(ym, ym.length);
+        long yhi = comparisonMagnitudeLong(ym, ym.length - 2);
+        int cmp = Long.compareUnsigned(xhi, yhi);
+        return cmp != 0 ? cmp : Long.compareUnsigned(xlo, ylo);
+    }
+
+    // Pack at most two magnitude words ending at end (exclusive).
+    private static long comparisonMagnitudeLong(int[] mag, int end) {
+        if (end <= 0)
+            return 0;
+        long lo = mag[end - 1] & LONG_MASK;
+        return end > 1 ? lo | (long)mag[end - 2] << 32 : lo;
     }
 
     /**
@@ -5659,27 +5707,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         dividend0 = Math.abs(dividend0);
         dividend1 = Math.abs(dividend1);
         divisor = Math.abs(divisor);
-        // multiply dividend0 * dividend1
-        long d0_hi = dividend0 >>> 32;
-        long d0_lo = dividend0 & LONG_MASK;
-        long d1_hi = dividend1 >>> 32;
-        long d1_lo = dividend1 & LONG_MASK;
-        long product = d0_lo * d1_lo;
-        long d0 = product & LONG_MASK;
-        long d1 = product >>> 32;
-        product = d0_hi * d1_lo + d1;
-        d1 = product & LONG_MASK;
-        long d2 = product >>> 32;
-        product = d0_lo * d1_hi + d1;
-        d1 = product & LONG_MASK;
-        d2 += product >>> 32;
-        long d3 = d2>>>32;
-        d2 &= LONG_MASK;
-        product = d0_hi*d1_hi + d2;
-        d2 = product & LONG_MASK;
-        d3 = ((product>>>32) + d3) & LONG_MASK;
-        final long dividendHi = make64(d3,d2);
-        final long dividendLo = make64(d1,d0);
+        // Compact operands exclude INFLATED, so their magnitudes are nonnegative.
+        final long dividendHi = Math.multiplyHigh(dividend0, dividend1);
+        final long dividendLo = dividend0 * dividend1;
         // divide
         return divideAndRound128(dividendHi, dividendLo, divisor, qsign, scale, roundingMode, preferredScale);
     }
@@ -5908,27 +5938,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             y = -y;
             rsign *= -1;
         }
-        // multiply dividend0 * dividend1
-        long m0_hi = x >>> 32;
-        long m0_lo = x & LONG_MASK;
-        long m1_hi = y >>> 32;
-        long m1_lo = y & LONG_MASK;
-        product = m0_lo * m1_lo;
-        long m0 = product & LONG_MASK;
-        long m1 = product >>> 32;
-        product = m0_hi * m1_lo + m1;
-        m1 = product & LONG_MASK;
-        long m2 = product >>> 32;
-        product = m0_lo * m1_hi + m1;
-        m1 = product & LONG_MASK;
-        m2 += product >>> 32;
-        long m3 = m2>>>32;
-        m2 &= LONG_MASK;
-        product = m0_hi*m1_hi + m2;
-        m2 = product & LONG_MASK;
-        m3 = ((product>>>32) + m3) & LONG_MASK;
-        final long mHi = make64(m3,m2);
-        final long mLo = make64(m1,m0);
+        // Compact operands exclude INFLATED, so their magnitudes are nonnegative.
+        final long mHi = Math.multiplyHigh(x, y);
+        final long mLo = x * y;
         BigDecimal res = doRound128(mHi, mLo, rsign, scale, mc);
         if(res!=null) {
             return res;
