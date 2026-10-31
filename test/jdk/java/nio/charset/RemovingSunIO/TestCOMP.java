@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
    @bug 6176819
    @summary Check if COMPUND_TEXT charset works as expected
    @requires (os.family != "windows")

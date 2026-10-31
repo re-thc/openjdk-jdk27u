@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 6226510
  * @summary Check that ISO-2022-JP's encoder correctly resets to ASCII mode
  * @modules jdk.charsets

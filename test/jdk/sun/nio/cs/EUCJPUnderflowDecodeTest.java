@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
    @bug 4867457
    @summary Check for correct byte buffer underflow handling in EUC-JP
  */

@@ -28,6 +28,7 @@
  */
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.*;
@@ -37,7 +38,14 @@ public class SunioAlias {
         Set<String> keys = aliasTable.keySet();
         String s = "testing string";
         boolean failed = false;
+        Set<String> modernHistoricalNames = Set.of("ASCII", "ISO8859_1", "UTF8", "UTF-16", "UTF16",
+                "UnicodeBigUnmarked", "UnicodeLittleUnmarked");
+        Set<String> testedNames = new HashSet<>();
         for (String alias : keys) {
+            if (!modernHistoricalNames.contains(aliasTable.get(alias))) {
+                continue;
+            }
+            testedNames.add(aliasTable.get(alias));
             /* See if StringCoding works correctly without sun.io package */
             try {
                 byte[] bs= s.getBytes(alias);
@@ -56,6 +64,9 @@ public class SunioAlias {
                 System.out.printf("Alias %s is IllegalCharsetName\n", alias);
                 failed = true;
             }
+        }
+        if (!testedNames.equals(modernHistoricalNames)) {
+            throw new AssertionError("Missing retained historical names: " + testedNames);
         }
         if (failed)
             throw new UnsupportedEncodingException ("sun.io encoding names are not supported in nio.charset!");

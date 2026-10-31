@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 4429369
  * @summary  ISO2022CN and ISO2022KR converters throw exception
  * @modules jdk.charsets

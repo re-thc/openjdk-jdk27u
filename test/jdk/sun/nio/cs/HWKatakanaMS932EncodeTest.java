@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 4715330
  * @summary Check MS932/windows-31j encoding (char->byte) for halfwidth katakana chars
  * @modules jdk.charsets

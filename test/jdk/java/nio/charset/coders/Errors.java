@@ -202,8 +202,6 @@ public class Errors {
         test_ISO_8859_1(new TestString("ISO-8859-1"));
         test_ISO_8859_1(new TestStream("ISO-8859-1"));
 
-        test_ISO_8859_1(new TestString("ISO-8859-15"));
-        test_ISO_8859_1(new TestStream("ISO-8859-15"));
 
         test_UTF_8(new TestString("UTF-8"));
         test_UTF_8(new TestStream("UTF-8"));

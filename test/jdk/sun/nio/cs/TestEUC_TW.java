@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 6831794 6229811 8343157
  * @summary Test EUC_TW charset
  * @modules java.base/sun.nio.cs

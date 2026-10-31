@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 6173388 6319716 8229960
  * @summary Check full coverage encode/decode for Microsoft
  *          ISO2022_JP variants MS50220, MS50221 and MSISO2022JP

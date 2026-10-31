@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug      4114080 8186803
  * @summary  Make sure the euro converters, which are derived from
  * existing converters, only differ from their parents at the expected

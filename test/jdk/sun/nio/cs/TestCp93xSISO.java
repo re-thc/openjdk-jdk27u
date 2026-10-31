@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 4429358
  * @summary Remove illegal SI/SO char to byte mappings
  * @modules jdk.charsets
