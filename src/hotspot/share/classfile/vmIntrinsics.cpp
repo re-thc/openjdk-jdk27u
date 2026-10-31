@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,6 +196,12 @@ bool vmIntrinsics::does_virtual_dispatch(vmIntrinsics::ID id) {
 int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch (id) {
+  case vmIntrinsics::_parseDecimalInt:
+  case vmIntrinsics::_parseDecimalLong:
+  case vmIntrinsics::_parseUnsignedDecimalInt:
+  case vmIntrinsics::_parseUnsignedDecimalLong:
+  case vmIntrinsics::_formatDecimalLongLatin1:
+  case vmIntrinsics::_formatDecimalLongUTF16:
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
   case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
@@ -530,6 +537,34 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
     if (!UseCRC32CIntrinsics) return true;
+    break;
+  case vmIntrinsics::_putFloatDecimalLatin1:
+  case vmIntrinsics::_putFloatDecimalUTF16:
+  case vmIntrinsics::_putDoubleDecimalLatin1:
+  case vmIntrinsics::_putDoubleDecimalUTF16:
+  case vmIntrinsics::_floatToDecimalLatin1:
+  case vmIntrinsics::_decimalZmij:
+#if defined(VM_LITTLE_ENDIAN) && (defined(AMD64) || defined(AARCH64))
+    if (!UseZmijIntrinsics) return true;
+#else
+    return true;
+#endif
+    break;
+  case vmIntrinsics::_parseFastFloatDigits:
+  case vmIntrinsics::_parseFastFloat:
+    if (!UseFastFloatIntrinsics) return true;
+    break;
+  case vmIntrinsics::_parseDecimalInt:
+  case vmIntrinsics::_parseDecimalLong:
+  case vmIntrinsics::_parseUnsignedDecimalInt:
+  case vmIntrinsics::_parseUnsignedDecimalLong:
+    if (!UseFastIntegerIntrinsics) return true;
+    break;
+  case vmIntrinsics::_formatDecimalIntLatin1:
+  case vmIntrinsics::_formatDecimalIntUTF16:
+  case vmIntrinsics::_formatDecimalLongLatin1:
+  case vmIntrinsics::_formatDecimalLongUTF16:
+    if (!UseZmijIntegerIntrinsics) return true;
     break;
   case vmIntrinsics::_vectorizedMismatch:
     if (!UseVectorizedMismatchIntrinsic) return true;

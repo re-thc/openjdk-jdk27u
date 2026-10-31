@@ -458,6 +458,7 @@ public final class Integer extends Number
      * @throws     NumberFormatException if the {@code String}
      *             does not contain a parsable {@code int}.
      */
+    @IntrinsicCandidate
     public static int parseInt(String s, int radix)
                 throws NumberFormatException {
         /*
@@ -648,6 +649,7 @@ public final class Integer extends Number
      *             does not contain a parsable {@code int}.
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static int parseUnsignedInt(String s, int radix)
                 throws NumberFormatException {
         if (s == null)  {

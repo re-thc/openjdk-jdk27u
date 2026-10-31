@@ -1,0 +1,9 @@
+Use a clean upstream checkout at the tag and revision recorded in
+make/data/fast_float/version.txt. From the JDK repository root, run:
+
+    python3 make/scripts/update-fast-float.py /path/to/fast_float
+
+The updater applies make/data/fast_float/reuse-mantissa-spans.patch to the
+upstream headers in temporary staging before installing them. Keep local
+changes in that patch; do not edit the generated headers or legal notice.
+The upstream MIT license and release pin are preserved.

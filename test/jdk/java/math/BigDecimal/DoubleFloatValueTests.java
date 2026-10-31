@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +30,8 @@
  * @library /test/lib
  * @key randomness
  * @build jdk.test.lib.RandomFactory
- * @run main DoubleFloatValueTests
+ * @run main/othervm -XX:+UseFastFloatIntrinsics DoubleFloatValueTests
+ * @run main/othervm -XX:-UseFastFloatIntrinsics DoubleFloatValueTests
  */
 
 import jdk.test.lib.RandomFactory;
@@ -91,20 +93,60 @@ public class DoubleFloatValueTests {
     }
 
     private static void checkDouble(BigDecimal bd, double exp) {
-        double res = bd.doubleValue();
-        if (exp != res ) {
-            String message = "Bad conversion: got " + toDecHexString(res) +
-                    ", expected " + toDecHexString(exp);
-            throw new RuntimeException(message);
+        checkDoubleRepresentation(bd, exp);
+        if (bd.scale() <= 0) {
+            checkDoubleRepresentation(bd.setScale(1), exp);
         }
     }
 
-    private static void checkFloat(BigDecimal bv, float exp) {
-        float res = bv.floatValue();
-        if (exp != res ) {
-            String message = "Bad conversion: got " + toDecHexString(res) +
-                    ", expected " + toDecHexString(exp);
-            throw new RuntimeException(message);
+    private static void checkDoubleRepresentation(BigDecimal bd, double exp) {
+        for (boolean cached : new boolean[] {false, true}) {
+            BigDecimal value = new BigDecimal(bd.unscaledValue(), bd.scale());
+            if (cached) value.toString();
+            double res = value.doubleValue();
+            if (Double.doubleToRawLongBits(exp) != Double.doubleToRawLongBits(res)) {
+                throw new RuntimeException("Bad conversion: got " + toDecHexString(res)
+                        + ", expected " + toDecHexString(exp) + ", cached=" + cached);
+            }
+        }
+    }
+
+    private static void checkFloat(BigDecimal bd, float exp) {
+        checkFloatRepresentation(bd, exp);
+        if (bd.scale() <= 0) {
+            checkFloatRepresentation(bd.setScale(1), exp);
+        }
+    }
+
+    private static void checkFloatRepresentation(BigDecimal bd, float exp) {
+        for (boolean cached : new boolean[] {false, true}) {
+            BigDecimal value = new BigDecimal(bd.unscaledValue(), bd.scale());
+            if (cached) value.toString();
+            float res = value.floatValue();
+            if (Float.floatToRawIntBits(exp) != Float.floatToRawIntBits(res)) {
+                throw new RuntimeException("Bad conversion: got " + toDecHexString(res)
+                        + ", expected " + toDecHexString(exp) + ", cached=" + cached);
+            }
+        }
+    }
+
+    private static BigDecimal epsilon(BigDecimal midpoint) {
+        // Stay below one decimal ulp without expanding the cached text past
+        // the native parser's 1024-character bound, even near binary underflow.
+        return BigDecimal.valueOf(1, Math.max(1, midpoint.scale() + 1));
+    }
+
+    private static void checkDoubleMidpoint(BigDecimal midpoint, double below, double above) {
+        for (BigDecimal delta : new BigDecimal[] {EPS, epsilon(midpoint)}) {
+            checkDouble(midpoint.subtract(delta), below);
+            checkDouble(midpoint.add(delta), above);
+        }
+    }
+
+    private static void checkFloatMidpoint(BigDecimal midpoint, float below, float above) {
+        for (BigDecimal delta : new BigDecimal[] {EPS, epsilon(midpoint)}) {
+            checkFloat(midpoint.subtract(delta), below);
+            checkFloat(midpoint.add(delta), above);
         }
     }
 
@@ -125,8 +167,9 @@ public class DoubleFloatValueTests {
         for (int n = 0; n < 100; ++n) {
             BigDecimal b = nextHalfUp(n * Double.MIN_VALUE);
             checkDouble(b, ((n + 1) / 2 * 2) * Double.MIN_VALUE);
-            checkDouble(b.subtract(EPS), n * Double.MIN_VALUE);
-            checkDouble(b.add(EPS), (n + 1) * Double.MIN_VALUE);
+            checkDoubleMidpoint(b, n * Double.MIN_VALUE, (n + 1) * Double.MIN_VALUE);
+            checkDouble(b.negate(), -(((n + 1) / 2 * 2) * Double.MIN_VALUE));
+            checkDoubleMidpoint(b.negate(), -((n + 1) * Double.MIN_VALUE), -(n * Double.MIN_VALUE));
         }
     }
 
@@ -134,8 +177,9 @@ public class DoubleFloatValueTests {
         for (int n = 0; n < 100; ++n) {
             BigDecimal b = nextHalfUp(n * Float.MIN_VALUE);
             checkFloat(b, ((n + 1) / 2 * 2) * Float.MIN_VALUE);
-            checkFloat(b.subtract(EPS), n * Float.MIN_VALUE);
-            checkFloat(b.add(EPS), (n + 1) * Float.MIN_VALUE);
+            checkFloatMidpoint(b, n * Float.MIN_VALUE, (n + 1) * Float.MIN_VALUE);
+            checkFloat(b.negate(), -(((n + 1) / 2 * 2) * Float.MIN_VALUE));
+            checkFloatMidpoint(b.negate(), -((n + 1) * Float.MIN_VALUE), -(n * Float.MIN_VALUE));
         }
     }
 
@@ -153,16 +197,14 @@ public class DoubleFloatValueTests {
         for (int n = 0; n < 100; ++n) {
             BigDecimal bv = nextHalfDown(v);
             checkDouble(bv, isOdd(n) ? Math.nextDown(v) : v);
-            checkDouble(bv.subtract(EPS), Math.nextDown(v));
-            checkDouble(bv.add(EPS), v);
+            checkDoubleMidpoint(bv, Math.nextDown(v), v);
             v = Math.nextDown(v);
         }
         v = Double.MIN_NORMAL;
         for (int n = 0; n < 100; ++n) {
             BigDecimal bv = nextHalfUp(v);
             checkDouble(bv, isOdd(n) ? Math.nextUp(v) : v);
-            checkDouble(bv.subtract(EPS), v);
-            checkDouble(bv.add(EPS), Math.nextUp(v));
+            checkDoubleMidpoint(bv, v, Math.nextUp(v));
             v = Math.nextUp(v);
         }
     }
@@ -172,16 +214,14 @@ public class DoubleFloatValueTests {
         for (int n = 0; n < 100; ++n) {
             BigDecimal bv = nextHalfDown(v);
             checkFloat(bv, isOdd(n) ? Math.nextDown(v) : v);
-            checkFloat(bv.subtract(EPS), Math.nextDown(v));
-            checkFloat(bv.add(EPS), v);
+            checkFloatMidpoint(bv, Math.nextDown(v), v);
             v = Math.nextDown(v);
         }
         v = Float.MIN_NORMAL;
         for (int n = 0; n < 100; ++n) {
             BigDecimal bv = nextHalfUp(v);
             checkFloat(bv, isOdd(n) ? Math.nextUp(v) : v);
-            checkFloat(bv.subtract(EPS), v);
-            checkFloat(bv.add(EPS), Math.nextUp(v));
+            checkFloatMidpoint(bv, v, Math.nextUp(v));
             v = Math.nextUp(v);
         }
     }
@@ -210,14 +250,12 @@ public class DoubleFloatValueTests {
         for (int n = 0; n < 100; ++n) {
             BigDecimal bv = nextHalfDown(v);
             checkDouble(bv, isOdd(n) ? v : Math.nextDown(v));
-            checkDouble(bv.subtract(EPS), Math.nextDown(v));
-            checkDouble(bv.add(EPS), v);
+            checkDoubleMidpoint(bv, Math.nextDown(v), v);
             v = Math.nextDown(v);
         }
         BigDecimal bv = nextHalfUp(Double.MAX_VALUE);
         checkDouble(bv, Double.POSITIVE_INFINITY);
-        checkDouble(bv.subtract(EPS), Double.MAX_VALUE);
-        checkDouble(bv.add(EPS), Double.POSITIVE_INFINITY);
+        checkDoubleMidpoint(bv, Double.MAX_VALUE, Double.POSITIVE_INFINITY);
     }
 
     private static void testFloatValueNearMaxValue() {
@@ -225,14 +263,12 @@ public class DoubleFloatValueTests {
         for (int n = 0; n < 100; ++n) {
             BigDecimal bv = nextHalfDown(v);
             checkFloat(bv, isOdd(n) ? v : Math.nextDown(v));
-            checkFloat(bv.subtract(EPS), Math.nextDown(v));
-            checkFloat(bv.add(EPS), v);
+            checkFloatMidpoint(bv, Math.nextDown(v), v);
             v = Math.nextDown(v);
         }
         BigDecimal bv = nextHalfUp(Float.MAX_VALUE);
         checkFloat(bv, Float.POSITIVE_INFINITY);
-        checkFloat(bv.subtract(EPS), Float.MAX_VALUE);
-        checkFloat(bv.add(EPS), Float.POSITIVE_INFINITY);
+        checkFloatMidpoint(bv, Float.MAX_VALUE, Float.POSITIVE_INFINITY);
     }
 
     private static void testFloat16ValueNearMaxValue() {
@@ -343,7 +379,32 @@ public class DoubleFloatValueTests {
         checkFloat16(BigDecimal.valueOf(-1, -1000), Float16.NEGATIVE_INFINITY);
     }
 
+    private static void testCompactConversions() {
+        for (long unscaled : new long[] {0, 1, -1, 16_777_217, -16_777_217,
+                9_007_199_254_740_993L, -9_007_199_254_740_993L,
+                Long.MIN_VALUE, Long.MIN_VALUE + 1, Long.MAX_VALUE}) {
+            for (int scale : new int[] {Integer.MIN_VALUE, -400, -22, -1, 0, 1, 2,
+                    22, 23, 46, 325, Integer.MAX_VALUE}) {
+                String text = BigDecimal.valueOf(unscaled, scale).toString();
+                double expectedDouble = Double.parseDouble(text);
+                float expectedFloat = Float.parseFloat(text);
+                for (boolean cached : new boolean[] {false, true}) {
+                    BigDecimal value = BigDecimal.valueOf(unscaled, scale);
+                    if (cached) value.toString();
+                    double actualDouble = value.doubleValue();
+                    float actualFloat = value.floatValue();
+                    if (Double.doubleToRawLongBits(actualDouble) != Double.doubleToRawLongBits(expectedDouble)
+                            || Float.floatToRawIntBits(actualFloat) != Float.floatToRawIntBits(expectedFloat)) {
+                        throw new RuntimeException("Bad compact conversion: unscaled=" + unscaled
+                                + ", scale=" + scale + ", cached=" + cached);
+                    }
+                }
+            }
+        }
+    }
+
     public static void main(String[] args) {
+        testCompactConversions();
         testDoubleValueNearMinValue();
         testDoubleValueNearMinNormal();
         testDoubleValueNearMaxValue();

@@ -60,8 +60,11 @@
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/fastFloat.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/zmij.hpp"
+#include "utilities/zmijInteger.hpp"
 
 //---------------------------make_vm_intrinsic----------------------------
 CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
@@ -626,6 +629,25 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_bigIntegerLeftShiftWorker:
     return inline_bigIntegerShift(false);
 
+  case vmIntrinsics::_decimalZmij:
+  case vmIntrinsics::_putDoubleDecimalLatin1:
+  case vmIntrinsics::_putDoubleDecimalUTF16:
+  case vmIntrinsics::_putFloatDecimalUTF16:
+  case vmIntrinsics::_floatToDecimalLatin1:
+    return inline_formatZmij();
+  case vmIntrinsics::_formatDecimalIntLatin1:
+  case vmIntrinsics::_formatDecimalIntUTF16:
+  case vmIntrinsics::_formatDecimalLongLatin1:
+  case vmIntrinsics::_formatDecimalLongUTF16:
+    return inline_formatZmijInteger();
+  case vmIntrinsics::_parseFastFloatDigits:
+  case vmIntrinsics::_parseFastFloat:
+    return inline_parseFastFloat();
+  case vmIntrinsics::_parseDecimalInt:
+  case vmIntrinsics::_parseDecimalLong:
+  case vmIntrinsics::_parseUnsignedDecimalInt:
+  case vmIntrinsics::_parseUnsignedDecimalLong:
+    return inline_parseFastFloatInteger();
   case vmIntrinsics::_vectorizedMismatch:
     return inline_vectorizedMismatch();
 
@@ -819,6 +841,47 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
   assert(merged_memory(), "");
 
   switch (intrinsic_id()) {
+  case vmIntrinsics::_parseDecimalInt:
+  case vmIntrinsics::_parseDecimalLong:
+  case vmIntrinsics::_parseUnsignedDecimalInt:
+  case vmIntrinsics::_parseUnsignedDecimalLong: {
+    Node* fast_control;
+    Node* slow_control;
+    {
+      PreserveJVMState state(this);
+      RegionNode* slow = new RegionNode(1);
+      Node* null_ctl;
+      Node* str = null_check_oop(argument(0), &null_ctl);
+      slow->add_req(null_ctl);
+      if (!stopped()) {
+        Node* compare = _gvn.transform(new CmpINode(argument(1), intcon(10)));
+        Node* nondecimal = _gvn.transform(new BoolNode(compare, BoolTest::ne));
+        generate_slow_guard(nondecimal, slow);
+      }
+      if (!stopped()) {
+        // Short decimal text is cheaper in the inlined Java parser.
+        Node* compare = _gvn.transform(new CmpINode(load_String_length(str, true), intcon(5)));
+        Node* small = _gvn.transform(new BoolNode(compare, BoolTest::lt));
+        generate_slow_guard(small, slow);
+      }
+      fast_control = control();
+      slow_control = _gvn.transform(slow);
+    }
+    set_control(fast_control);
+    return slow_control;
+  }
+  case vmIntrinsics::_formatDecimalLongLatin1:
+  case vmIntrinsics::_formatDecimalLongUTF16: {
+    // Keep short values in the Java writer; the native call pays off for long text.
+    const jlong limit = 1000000000000LL;
+    Node* shifted = _gvn.transform(new AddLNode(argument(0), longcon(limit - 1)));
+    Node* compare = _gvn.transform(new CmpULNode(shifted, longcon(2 * limit - 1)));
+    Node* small = _gvn.transform(new BoolNode(compare, BoolTest::lt));
+    IfNode* branch = create_and_xform_if(control(), small, PROB_FAIR, COUNT_UNKNOWN);
+    Node* slow = _gvn.transform(new IfTrueNode(branch));
+    set_control(_gvn.transform(new IfFalseNode(branch)));
+    return slow;
+  }
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
     return inline_cipherBlockChaining_AESCrypt_predicate(false);
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
@@ -6738,6 +6801,213 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
                                    numIter);
   }
 
+  return true;
+}
+
+bool LibraryCallKit::inline_formatZmij() {
+  if (intrinsic_id() == vmIntrinsics::_decimalZmij) {
+    const Type** fields = TypeTuple::fields(2);
+    fields[TypeFunc::Parms] = TypeLong::LONG;
+    fields[TypeFunc::Parms + 1] = Type::HALF;
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 2, fields);
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 2, fields);
+    const TypeFunc* type = TypeFunc::make(domain, range);
+    Node* call = make_runtime_call(RC_LEAF | RC_PURE, type, CAST_FROM_FN_PTR(address, Zmij::decimal),
+                                  "decimalZmij", nullptr, argument(0), top());
+    set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+    return true;
+  }
+  bool is_double = intrinsic_id() == vmIntrinsics::_putDoubleDecimalLatin1 ||
+                   intrinsic_id() == vmIntrinsics::_putDoubleDecimalUTF16;
+  bool utf16 = intrinsic_id() == vmIntrinsics::_putFloatDecimalUTF16 ||
+               intrinsic_id() == vmIntrinsics::_putDoubleDecimalUTF16;
+  Node* output = null_check(argument(0));
+  if (stopped()) {
+    return true;
+  }
+  Node* index = argument(1);
+  Node* byte_index = utf16 ? _gvn.transform(new LShiftINode(index, intcon(1))) : index;
+  Node* data = array_element_address(output, byte_index, T_BYTE);
+  Node* bits = is_double ? _gvn.transform(new MoveD2LNode(argument(2)))
+                         : _gvn.transform(new ConvI2LNode(_gvn.transform(new MoveF2INode(argument(2)))));
+  const Type** fields = TypeTuple::fields(3);
+  fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 1] = TypeLong::LONG;
+  fields[TypeFunc::Parms + 2] = Type::HALF;
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 3, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInt::make(1, is_double ? 24 : 15, Type::WidenMin);
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  const TypeFunc* type = TypeFunc::make(domain, range);
+  address target = is_double
+      ? (utf16 ? CAST_FROM_FN_PTR(address, Zmij::format_double_utf16) : CAST_FROM_FN_PTR(address, Zmij::format_double_latin1))
+      : (utf16 ? CAST_FROM_FN_PTR(address, Zmij::format_float_utf16) : CAST_FROM_FN_PTR(address, Zmij::format_float_latin1));
+  // Order allocation and initialization; the leaf writes only byte-array bodies.
+  Node* call = make_runtime_call(RC_LEAF, type, target, "formatZmij", TypeAryPtr::BYTES, data, bits, top());
+  Node* length = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(intrinsic_id() == vmIntrinsics::_floatToDecimalLatin1 ? length
+             : _gvn.transform(new AddINode(index, length)));
+  return true;
+}
+
+bool LibraryCallKit::inline_formatZmijInteger() {
+  bool is_long = intrinsic_id() == vmIntrinsics::_formatDecimalLongLatin1 ||
+                 intrinsic_id() == vmIntrinsics::_formatDecimalLongUTF16;
+  bool utf16 = intrinsic_id() == vmIntrinsics::_formatDecimalIntUTF16 ||
+               intrinsic_id() == vmIntrinsics::_formatDecimalLongUTF16;
+  Node* output = null_check(argument(is_long ? 3 : 2));
+  if (stopped()) {
+    return true;
+  }
+  Node* index = argument(is_long ? 2 : 1);
+  Node* value = argument(0);
+  Node* data = array_element_address(output, intcon(0), T_BYTE);
+  int slots = is_long ? 4 : 3;
+  const Type** fields = TypeTuple::fields(slots);
+  fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 1] = TypeInt::INT;
+  if (is_long) {
+    fields[TypeFunc::Parms + 2] = TypeLong::LONG;
+    fields[TypeFunc::Parms + 3] = Type::HALF;
+  } else {
+    fields[TypeFunc::Parms + 2] = TypeInt::INT;
+  }
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + slots, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInt::INT;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  const TypeFunc* type = TypeFunc::make(domain, range);
+  address target = is_long
+      ? (utf16 ? CAST_FROM_FN_PTR(address, ZmijInteger::format_long_utf16) : CAST_FROM_FN_PTR(address, ZmijInteger::format_long_latin1))
+      : (utf16 ? CAST_FROM_FN_PTR(address, ZmijInteger::format_int_utf16) : CAST_FROM_FN_PTR(address, ZmijInteger::format_int_latin1));
+  Node* call = make_runtime_call(RC_LEAF, type, target, "formatZmijInteger", TypeAryPtr::BYTES,
+                                 data, index, value, is_long ? top() : nullptr);
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  return true;
+}
+
+bool LibraryCallKit::inline_parseFastFloatInteger() {
+  // The slow call must enter the original Java implementation, including its
+  // radix validation, Unicode digits and NumberFormatException construction.
+  if (callee() == C->method()) {
+    return false;
+  }
+  Node* str = argument(0);
+  Node* radix = argument(1);
+  Node* initial_io = i_o();
+  RegionNode* slow_region = new RegionNode(1);
+  PhiNode* slow_mem = new PhiNode(slow_region, Type::MEMORY, TypePtr::BOTTOM);
+  Node* nonnull_str = must_be_not_null(str, false);
+
+  bool is_long = intrinsic_id() == vmIntrinsics::_parseDecimalLong ||
+                 intrinsic_id() == vmIntrinsics::_parseUnsignedDecimalLong;
+  RegionNode* result_region = new RegionNode(3);
+  PhiNode* result_value = new PhiNode(result_region, Type::get_const_basic_type(is_long ? T_LONG : T_INT));
+  PhiNode* result_io = new PhiNode(result_region, Type::ABIO);
+  PhiNode* result_mem = new PhiNode(result_region, Type::MEMORY, TypePtr::BOTTOM);
+  for (uint path = 1; path < 3; ++path) {
+    result_region->init_req(path, top());
+    result_value->init_req(path, top());
+    result_io->init_req(path, top());
+    result_mem->init_req(path, top());
+  }
+
+  if (!stopped()) {
+    Node* value = load_String_value(nonnull_str, true);
+    Node* coder = load_String_coder(nonnull_str, true);
+    Node* length = load_array_length(value);
+    Node* data = array_element_address(value, intcon(0), T_BYTE);
+    const Type** fields = TypeTuple::fields(3);
+    fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+    fields[TypeFunc::Parms + 1] = TypeInt::INT;
+    fields[TypeFunc::Parms + 2] = TypeInt::INT;
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 3, fields);
+    fields = TypeTuple::fields(2);
+    fields[TypeFunc::Parms] = TypeLong::LONG;
+    fields[TypeFunc::Parms + 1] = Type::HALF;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 2, fields);
+    const TypeFunc* type = TypeFunc::make(domain, range);
+    address target;
+    switch (intrinsic_id()) {
+      case vmIntrinsics::_parseDecimalInt:
+        target = CAST_FROM_FN_PTR(address, FastFloat::parse_int); break;
+      case vmIntrinsics::_parseDecimalLong:
+        target = CAST_FROM_FN_PTR(address, FastFloat::parse_long); break;
+      case vmIntrinsics::_parseUnsignedDecimalInt:
+        target = CAST_FROM_FN_PTR(address, FastFloat::parse_unsigned_int); break;
+      case vmIntrinsics::_parseUnsignedDecimalLong:
+        target = CAST_FROM_FN_PTR(address, FastFloat::parse_unsigned_long); break;
+      default: ShouldNotReachHere(); target = nullptr;
+    }
+    // The non-safepointing leaf reads immutable String bytes directly.
+    Node* call = make_runtime_call(RC_LEAF, type, target, "parseFastFloatInteger",
+                                   TypePtr::BOTTOM, data, length, coder);
+    Node* parsed = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+    Node* native_mem = reset_memory();
+    set_all_memory(native_mem);
+    Node* cmp = _gvn.transform(new CmpLNode(parsed, longcon(min_jlong)));
+    Node* declined = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
+    if (generate_slow_guard(declined, slow_region) != nullptr) {
+      slow_mem->add_req(native_mem);
+    }
+    result_region->set_req(1, control());
+    result_value->set_req(1, is_long ? parsed : _gvn.transform(new ConvL2INode(parsed)));
+    result_io->set_req(1, i_o());
+    result_mem->set_req(1, native_mem);
+  }
+
+  set_control(_gvn.transform(slow_region));
+  if (!stopped()) {
+    set_i_o(initial_io);
+    set_all_memory(_gvn.transform(slow_mem));
+    set_argument(0, str);
+    set_argument(1, radix);
+    CallJavaNode* slow_call = generate_method_call(intrinsic_id(), false, true, false);
+    Node* slow_result = set_results_for_java_call(slow_call);
+    result_region->set_req(2, control());
+    result_value->set_req(2, slow_result);
+    result_io->set_req(2, i_o());
+    result_mem->set_req(2, reset_memory());
+  }
+
+  set_i_o(_gvn.transform(result_io));
+  set_all_memory(_gvn.transform(result_mem));
+  set_result(result_region, result_value);
+  return true;
+}
+
+bool LibraryCallKit::inline_parseFastFloat() {
+  Node* str = null_check(argument(0));
+  if (stopped()) {
+    return true;
+  }
+  bool digits = intrinsic_id() == vmIntrinsics::_parseFastFloatDigits;
+  Node* value = digits ? str : load_String_value(str, true);
+  Node* coder = digits ? argument(2) : load_String_coder(str, true);
+  Node* length = digits ? argument(1) : load_array_length(value);
+  Node* data = array_element_address(value, intcon(0), T_BYTE);
+  int argc = digits ? 3 : 4;
+  const Type** fields = TypeTuple::fields(argc);
+  fields[TypeFunc::Parms] = TypePtr::NOTNULL;
+  fields[TypeFunc::Parms + 1] = TypeInt::INT;
+  fields[TypeFunc::Parms + 2] = TypeInt::INT;
+  if (!digits) {
+    fields[TypeFunc::Parms + 3] = TypeInt::INT;
+  }
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argc, fields);
+  fields = TypeTuple::fields(2);
+  fields[TypeFunc::Parms] = Type::DOUBLE;
+  fields[TypeFunc::Parms + 1] = Type::HALF;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 2, fields);
+  const TypeFunc* type = TypeFunc::make(domain, range);
+  // A leaf call cannot safepoint while holding the interior array pointer.
+  // Its memory input keeps String storage alive and orders the byte reads.
+  address entry = digits ? CAST_FROM_FN_PTR(address, FastFloat::parse_digits)
+                         : CAST_FROM_FN_PTR(address, FastFloat::parse);
+  Node* call = make_runtime_call(RC_LEAF, type, entry,
+                                "parseFastFloat", TypePtr::BOTTOM,
+                                data, length, coder, digits ? nullptr : argument(1));
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
   return true;
 }
 

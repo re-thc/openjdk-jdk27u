@@ -25,6 +25,8 @@
 
 package jdk.internal.math;
 
+import jdk.internal.vm.annotation.ForceInline;
+
 /*
  * This class provides support for the 'e', 'f' and 'g' conversions on double
  * values with sign bit 0.
@@ -33,7 +35,7 @@ package jdk.internal.math;
  *
  * It delegates the conversion to decimal to class DoubleToDecimal to get
  * the decimal d selected by Double.toString(double) as a pair of integers
- * f and e meeting d = f 10^e.
+ * f and e meeting d = f 10^e, along with its precision metadata.
  * It then rounds d to the appropriate number of digits, as per specification,
  * and extracts the digits of both the significand and, where required, the
  * exponent of the rounded value.
@@ -82,11 +84,11 @@ public final class FormattedFPDecimal {
     }
 
     /**
-     * Returns a FormattedFPDecimal with the appropriate precision for
-     * {@link Double#toString(double)}.
+     * Returns a FormattedFPDecimal for {@link java.math.BigDecimal#valueOf(double)}.
      *
      * @see java.math.BigDecimal#valueOf(double)
      */
+    @ForceInline
     public static FormattedFPDecimal valueForDoubleToString(double v) {
         final FormattedFPDecimal fd = split(v);
         final int expR = fd.getExponentRounded();
@@ -151,6 +153,7 @@ public final class FormattedFPDecimal {
         return e;
     }
 
+    @ForceInline
     public void set(long f, int e, int n, boolean exact, boolean away) {
         /* Initially, n = 0 if f = 0, and 10^{n-1} <= f < 10^n if f != 0 */
         this.f = f;
