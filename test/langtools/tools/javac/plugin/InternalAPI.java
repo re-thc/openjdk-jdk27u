@@ -189,6 +189,7 @@ public class InternalAPI extends TestRunner {
 
         String suffix = tb.isWindows() ? ".exe" : "";
         List<String> stdout = new ExecTask(tb, tmpJDK.resolve("bin").resolve("javac" + suffix))
+                .jdkToolStreamOptions("-J")
                 .args("-d", Files.createDirectories(base.resolve("out")).toString(),
                         "-XDaccessInternalAPI",
                         Path.of("hw").resolve("HelloWorld.java").toString())

@@ -23,10 +23,13 @@
 
 /**
  * @test
+ * @library /test/lib
  * @bug 7147084
  * @run main/othervm InheritIOEHandle
  * @summary inherit IOE handles and MS CreateProcess limitations (kb315939)
  */
+
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -45,14 +48,12 @@ public class InheritIOEHandle {
             + File.separator + "java";
 
     private static String[] getCommandArray(String processName) {
-        String[] cmdArray = {
-                JAVA_EXE,
-                "-cp",
-                System.getProperty("java.class.path"),
-                InheritIOEHandle.class.getName(),
-                processName
-        };
-        return cmdArray;
+        java.util.List<String> cmd = new java.util.ArrayList<>();
+        cmd.add(JAVA_EXE);
+        cmd.addAll(ProcessTools.testStreamOptions(""));
+        cmd.addAll(java.util.List.of("-cp", System.getProperty("java.class.path"),
+                InheritIOEHandle.class.getName(), processName));
+        return cmd.toArray(String[]::new);
     }
 
     public static void main(String[] args) throws Exception {

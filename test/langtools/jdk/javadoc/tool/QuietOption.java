@@ -111,8 +111,17 @@ public class QuietOption {
         List<String> output = new ArrayList<>();
         // run javadoc in separate process to ensure doclet executed under
         // normal user conditions w.r.t. classloader
+        List<String> command = new ArrayList<>();
+        command.add(args[0]);
+        String encoding = System.getProperty("test.stream.encoding");
+        if (encoding != null) {
+            for (String stream : List.of("stdin", "stdout", "stderr")) {
+                command.add("-J-D" + stream + ".encoding=" + encoding);
+            }
+        }
+        command.addAll(List.of(args).subList(1, args.length));
         Process p = new ProcessBuilder()
-                .command(args)
+                .command(command)
                 .redirectErrorStream(true)
                 .start();
         try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {

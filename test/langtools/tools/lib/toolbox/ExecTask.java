@@ -35,6 +35,7 @@ import java.util.List;
 public class ExecTask extends AbstractTask<ExecTask> {
     private final String command;
     private List<String> args;
+    private String jdkToolOptionPrefix;
 
     /**
      * Create a task to execute a given command, to be run using {@code EXEC} mode.
@@ -66,6 +67,12 @@ public class ExecTask extends AbstractTask<ExecTask> {
         return this;
     }
 
+    /** Configure the test environment's stream encoding for a JDK tool. */
+    public ExecTask jdkToolStreamOptions(String prefix) {
+        jdkToolOptionPrefix = prefix;
+        return this;
+    }
+
     /**
      * {@inheritDoc}
      * @return the name "exec"
@@ -85,6 +92,9 @@ public class ExecTask extends AbstractTask<ExecTask> {
     public Task.Result run() {
         List<String> cmdArgs = new ArrayList<>();
         cmdArgs.add(command);
+        if (jdkToolOptionPrefix != null)
+            cmdArgs.addAll(toolBox.testStreamOptions(jdkToolOptionPrefix,
+                    args == null ? List.of() : args));
         if (args != null)
             cmdArgs.addAll(args);
         ProcessBuilder pb = getProcessBuilder();

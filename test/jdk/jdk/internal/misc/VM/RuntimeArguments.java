@@ -116,11 +116,18 @@ public class RuntimeArguments {
         // launch a test program with classpath set by ProcessTools::createLimitedTestJavaProcessBuilder
         // $ java <args> RuntimeArguments <vm_options> <expected>
         Stream<String> options = Stream.concat(args.stream(), Stream.of("RuntimeArguments"));
+        String streamEncoding = System.getProperty("test.stream.encoding");
+        Stream<String> streamOptions = streamEncoding == null ? Stream.empty()
+                : Stream.of("-Dstdin.encoding=" + streamEncoding,
+                            "-Dstdout.encoding=" + streamEncoding,
+                            "-Dstderr.encoding=" + streamEncoding,
+                            "-Dtest.stream.encoding=" + streamEncoding);
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             // The runtime image may be created with jlink --add-options
             // The initial VM options will be included in the result
             // returned by VM.getRuntimeArguments()
-            Stream.concat(options, Stream.concat(VM_OPTIONS.stream(), expected.stream()))
+            Stream.concat(options, Stream.concat(VM_OPTIONS.stream(),
+                    Stream.concat(streamOptions, expected.stream())))
                   .toArray(String[]::new)
         );
         ProcessTools.executeProcess(pb).shouldHaveExitValue(0);

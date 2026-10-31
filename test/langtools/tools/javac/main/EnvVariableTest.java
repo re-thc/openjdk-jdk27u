@@ -59,7 +59,7 @@ public class EnvVariableTest extends TestRunner {
         testClasses = System.getProperty("test.classes");
         tb = new ToolBox();
         javaExePath = tb.getJDKTool("java");
-        task = new ExecTask(tb, javaExePath);
+        task = new ExecTask(tb, javaExePath).jdkToolStreamOptions("");
     }
 
     public static void main(String... args) throws Exception {

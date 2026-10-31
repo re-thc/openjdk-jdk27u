@@ -187,6 +187,9 @@ jobs:
       - name: 'Set Extra Options'
         id: extra-options
         run: |
+          if [[ '${{ runner.os }}' == 'Windows' ]]; then
+            echo 'stream-options=-Dstdin.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -Dtest.stream.encoding=UTF-8' >> "$GITHUB_OUTPUT"
+          fi
           if [[ '${{ inputs.static-suffix }}' == '-static' ]]; then
             echo "test-jdk=JDK_UNDER_TEST=${{ steps.bundles.outputs.static-jdk-path }}" >> $GITHUB_OUTPUT
             echo "compile-jdk=JDK_FOR_COMPILE=${{ steps.bundles.outputs.jdk-path }}" >> $GITHUB_OUTPUT
@@ -205,7 +208,7 @@ jobs:
           TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
           ${{ steps.extra-options.outputs.test-jdk }}
           ${{ steps.extra-options.outputs.compile-jdk }}
-          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful;${{ steps.extra-options.outputs.extra-problem-lists }}'
+          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash ${{ steps.extra-options.outputs.stream-options }};VERBOSE=fail,error,time;KEYWORDS=!headful;${{ steps.extra-options.outputs.extra-problem-lists }}'
           && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
         env:
           PATH: ${{ steps.path.outputs.value }}

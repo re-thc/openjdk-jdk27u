@@ -21,6 +21,8 @@
  * questions.
  */
 
+import jdk.test.lib.process.ProcessTools;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -38,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
+ * @library /test/lib
  * @summary verify logging of ProcessBuilder.start()
  * @requires vm.flagless
  * @run junit/othervm ProcessStartLoggingTest
@@ -145,12 +148,15 @@ public class ProcessStartLoggingTest {
 
         List<String> cmd = pb.command();
         cmd.add(Path.of(TEST_JDK,"bin", "java").toString());
+        cmd.addAll(ProcessTools.testStreamOptions(""));
         cmd.addAll(logArgs);
         cmd.add(this.getClass().getName());
         cmd.addAll(childArgs);
         try {
             Process process = pb.start();
-            try (BufferedReader reader = process.inputReader()) {
+            String encoding = System.getProperty("test.stream.encoding");
+            try (BufferedReader reader = encoding == null ? process.inputReader()
+                    : process.inputReader(java.nio.charset.Charset.forName(encoding))) {
                 List<String> lines = reader.lines().toList();
                 boolean match = (expectMessage.isEmpty())
                         ? lines.size() == 0
