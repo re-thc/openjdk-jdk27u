@@ -562,17 +562,31 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     private static Charset stdoutCharset() {
         return Charset.forName(StaticProperty.stdoutEncoding());
     }
-    private static final Console cons = instantiateConsole();
+    private static volatile boolean consoleInitialized;
+    private static final Object CONSOLE_LOCK = new Object();
+    private static Console cons;
     static {
         // Set up JavaIOAccess in SharedSecrets
         SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
             public Console console() {
-                return cons;
+                return getConsole();
             }
             public boolean isStdinTty() {
                 return Console.isStdinTty();
             }
         });
+    }
+
+    private static Console getConsole() {
+        if (!consoleInitialized) {
+            synchronized (CONSOLE_LOCK) {
+                if (!consoleInitialized) {
+                    cons = instantiateConsole();
+                    consoleInitialized = true;
+                }
+            }
+        }
+        return cons;
     }
 
     private static Console instantiateConsole() {
@@ -595,7 +609,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
             if (!consModName.equals("java.base")) {
                 for (var jcp : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class)) {
                     if (consModName.equals(jcp.getClass().getModule().getName())) {
-                        var jc = jcp.console(isStdinTty() && isStdoutTty(), stdinCharset(), stdoutCharset());
+                        var jc = jcp.console(isStdinTty() && isStdoutTty(), Console::stdinCharset, Console::stdoutCharset);
                         if (jc != null) {
                             c = new ProxyingConsole(jc);
                         }

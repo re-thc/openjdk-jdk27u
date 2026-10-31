@@ -54,7 +54,40 @@ public class NativeCharsetBoundaries {
 
     public static void main(String[] args) throws Exception {
         if (args.length != 0) {
-            if (args[0].equals("default")) {
+            if (args[0].equals("locks")) {
+                var consoleHeld = new java.util.concurrent.CountDownLatch(1);
+                var systemHeld = new java.util.concurrent.CountDownLatch(1);
+                var failure = new java.util.concurrent.atomic.AtomicReference<Throwable>();
+                Thread first = new Thread(() -> {
+                    synchronized (java.io.Console.class) {
+                        consoleHeld.countDown();
+                        try { systemHeld.await(); } catch (InterruptedException e) { throw new AssertionError(e); }
+                        System.console();
+                    }
+                });
+                Thread second = new Thread(() -> {
+                    try { consoleHeld.await(); } catch (InterruptedException e) { throw new AssertionError(e); }
+                    synchronized (System.class) {
+                        systemHeld.countDown();
+                        System.console();
+                    }
+                });
+                first.setUncaughtExceptionHandler((thread, error) -> failure.compareAndSet(null, error));
+                second.setUncaughtExceptionHandler((thread, error) -> failure.compareAndSet(null, error));
+                first.setDaemon(true);
+                second.setDaemon(true);
+                first.start();
+                second.start();
+                first.join(5000);
+                second.join(5000);
+                if (first.isAlive() || second.isAlive()) {
+                    throw new AssertionError("Console initialization deadlocked");
+                }
+                if (failure.get() != null) {
+                    throw new AssertionError("Console initialization failed", failure.get());
+                }
+                System.out.print("no deadlock");
+            } else if (args[0].equals("default")) {
                 System.out.print(java.nio.charset.Charset.defaultCharset().name());
             } else if (args[0].equals("stdin")) {
                 if (System.console() != null || System.console() != null) {
@@ -87,6 +120,9 @@ public class NativeCharsetBoundaries {
         checkBytes("UTF-8", "unicode", new byte[] {(byte) 0xc3, (byte) 0xa9});
         checkBytes("ISO-8859-1", "unicode", new byte[] {(byte) 0xe9});
         checkBytes("US-ASCII", "ascii", new byte[] {'A'});
+        ProcessTools.executeTestJava("-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8",
+                NativeCharsetBoundaries.class.getName(), "locks")
+                .shouldHaveExitValue(0).shouldContain("no deadlock");
         reject("stdout.encoding");
         reject("stderr.encoding");
         ProcessTools.executeTestJava("-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8",
@@ -100,6 +136,10 @@ public class NativeCharsetBoundaries {
                 .shouldNotHaveExitValue(0).shouldContain("Unsupported stdout.encoding: bad name");
         ProcessTools.executeTestJava("-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8",
                 "-Dstdin.encoding=windows-1252",
+                NativeCharsetBoundaries.class.getName(), "stdin")
+                .shouldHaveExitValue(0).shouldContain("rejected stdin");
+        ProcessTools.executeTestJava("--add-modules=jdk.internal.le", "-Djdk.console=jdk.internal.le",
+                "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "-Dstdin.encoding=windows-1252",
                 NativeCharsetBoundaries.class.getName(), "stdin")
                 .shouldHaveExitValue(0).shouldContain("rejected stdin");
     }

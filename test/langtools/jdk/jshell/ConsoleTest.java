@@ -211,6 +211,14 @@ public class ConsoleTest extends KullaTesting {
     }
 
     @Test
+    public void testRemoteConsoleWithUnsupportedStdinEncoding() {
+        getState().close();
+        setUp(b -> b.remoteVMOptions("-Dstdin.encoding=windows-1252",
+                                     "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8"));
+        assertEval("System.console() != null", "true");
+    }
+
+    @Test
     public void testNPE() {
         console = new ThrowingJShellConsole();
         assertEval("System.console().readLine(null)", DiagCheck.DIAG_OK, DiagCheck.DIAG_OK, chain(added(Status.VALID), null, EvalException.class));

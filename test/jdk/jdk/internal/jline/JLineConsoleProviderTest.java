@@ -107,7 +107,7 @@ public class JLineConsoleProviderTest {
     public static class ConsoleTest {
         public static void main(String... args) {
             // directly instantiate JLine JdkConsole, simulating isTTY=true
-            var impl = new JdkConsoleProviderImpl().console(true, StandardCharsets.UTF_8, StandardCharsets.UTF_8);
+            var impl = new JdkConsoleProviderImpl().console(true, () -> StandardCharsets.UTF_8, () -> StandardCharsets.UTF_8);
             switch (args[0]) {
                 case "testCorrectOutputReadLine" ->
                     impl.readLine(null, "%%s");
