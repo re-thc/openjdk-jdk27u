@@ -197,11 +197,6 @@ public final class System {
     private static @Stable InputStream initialIn;
     private static @Stable PrintStream initialErr;
 
-    // `sun.jnu.encoding` if it is not supported. Otherwise null.
-    // It is initialized in `initPhase1()` before any charset providers
-    // are initialized.
-    private static String notSupportedJnuEncoding;
-
     /**
      * Reassigns the "standard" input stream.
      *
@@ -1798,11 +1793,11 @@ public final class System {
         VM.saveProperties(tempProps);
         props = createProperties(tempProps);
 
-        // Check if sun.jnu.encoding is supported. If not, replace it with UTF-8.
+        // A UTF-8 fallback would reinterpret native path bytes incorrectly.
         var jnuEncoding = props.getProperty("sun.jnu.encoding");
         if (jnuEncoding == null || !Charset.isSupported(jnuEncoding)) {
-            notSupportedJnuEncoding = jnuEncoding == null ? "null" : jnuEncoding;
-            props.setProperty("sun.jnu.encoding", "UTF-8");
+            throw new InternalError("Unsupported native filesystem encoding: "
+                    + jnuEncoding + ". Use a UTF-8 locale.");
         }
 
         StaticProperty.javaHome();          // Load StaticProperty to cache the property values
@@ -1970,14 +1965,6 @@ public final class System {
                     throw new Error("A command line option has attempted to allow or enable the Security Manager."
                             + " Enabling a Security Manager is not supported.");
             }
-        }
-
-        // Emit a warning if `sun.jnu.encoding` is not supported.
-        if (notSupportedJnuEncoding != null) {
-            System.err.println(
-                    "WARNING: The encoding of the underlying platform's" +
-                    " file system is not supported: " +
-                    notSupportedJnuEncoding);
         }
 
         // initializing the system class loader

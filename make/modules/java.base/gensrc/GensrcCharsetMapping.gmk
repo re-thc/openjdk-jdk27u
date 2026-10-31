@@ -44,11 +44,26 @@ CHARSET_STANDARD_JAVA_TEMPLATES := \
 CHARSET_STANDARD_OS := stdcs-$(OPENJDK_TARGET_OS)
 
 $(CHARSET_DONE_BASE)-stdcs: $(CHARSET_DATA_DIR)/charsets \
+    $(CHARSET_DATA_DIR)/modern-profile \
     $(wildcard $(CHARSET_DATA_DIR)/$(CHARSET_STANDARD_OS)) \
     $(CHARSET_TEMPLATES) $(CHARSET_STANDARD_JAVA_TEMPLATES) \
     $(BUILD_TOOLS_JDK)
 	$(call LogInfo, Generating java.base charset mapping)
 	$(call MakeDir, $(@D))
+	@for f in '$(JDK_OUTPUTDIR)/modules/java.base/sun/nio/cs/'*.class; do \
+	  [ -f "$$f" ] || continue; \
+	  case "$${f##*/}" in \
+	    ArrayDecoder*.class|ArrayEncoder*.class|HistoricallyNamedCharset*.class|StreamDecoder*.class|\
+	    StreamEncoder*.class|Surrogate*.class|ThreadLocalCoders*.class|\
+	    StandardCharsets*.class|Unicode*.class|US_ASCII*.class|ISO_8859_1.class|ISO_8859_1\$$*.class|\
+	    UTF_8*.class|UTF_16*.class|UTF_32*.class) ;; \
+	    *) echo "Legacy charset output $$f found; run make clean." >&2; exit 1;; esac; \
+	done
+	@for f in '$(@D)'/*.java; do \
+	  [ -f "$$f" ] || continue; \
+	  case "$${f##*/}" in StandardCharsets.java) ;; \
+	    *) echo 'Legacy generated charset sources found; run make clean.' >&2; exit 1;; esac; \
+	done
 	$(TOOL_CHARSETMAPPING) $(CHARSET_DATA_DIR) $(CHARSET_GENSRC_JAVA_DIR_BASE) \
 	    stdcs charsets $(CHARSET_STANDARD_OS) \
 	    $(CHARSET_STANDARD_JAVA_TEMPLATES) $(CHARSET_EXTSRC_DIR) \

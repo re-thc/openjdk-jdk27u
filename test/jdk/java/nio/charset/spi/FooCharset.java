@@ -24,6 +24,9 @@
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CoderResult;
 
 
 public class FooCharset
@@ -35,11 +38,40 @@ public class FooCharset
               new String[] { "FOO-1", "FOO-2" });
     }
 
+    public FooCharset(String name, String[] aliases) {
+        super(name, aliases);
+    }
+
     public boolean contains(Charset cs) {
         return (cs instanceof FooCharset);
     }
 
-    public CharsetDecoder newDecoder() { return null; }
-    public CharsetEncoder newEncoder() { return null; }
+    public CharsetDecoder newDecoder() { return new Decoder(this); }
+    public CharsetEncoder newEncoder() { return new Encoder(this); }
+
+    private static class Decoder extends CharsetDecoder {
+        Decoder(Charset charset) { super(charset, 1, 1); }
+        protected CoderResult decodeLoop(ByteBuffer in, CharBuffer out) {
+            while (in.hasRemaining()) {
+                if (!out.hasRemaining()) return CoderResult.OVERFLOW;
+                out.put((char)(in.get() & 0xff));
+            }
+            return CoderResult.UNDERFLOW;
+        }
+    }
+
+    private static class Encoder extends CharsetEncoder {
+        Encoder(Charset charset) { super(charset, 1, 1); }
+        protected CoderResult encodeLoop(CharBuffer in, ByteBuffer out) {
+            while (in.hasRemaining()) {
+                char ch = in.get(in.position());
+                if (ch > 255) return CoderResult.unmappableForLength(1);
+                if (!out.hasRemaining()) return CoderResult.OVERFLOW;
+                in.get();
+                out.put((byte)ch);
+            }
+            return CoderResult.UNDERFLOW;
+        }
+    }
 
 }

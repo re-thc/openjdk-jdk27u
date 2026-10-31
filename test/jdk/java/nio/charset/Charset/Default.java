@@ -30,7 +30,7 @@ import java.nio.charset.*;
 public class Default {
 
     public static void main(String[] args) {
-        System.out.println(Charset.defaultCharset());
+        System.out.println("DEFAULT_CHARSET=" + Charset.defaultCharset());
     }
 
 }

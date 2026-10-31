@@ -25,6 +25,8 @@
 
 ################################################################################
 
-COPY += .dat
+# Keep an empty provider module for module resolution compatibility.
+EXCLUDE_FILES += $(filter-out %/AbstractCharsetProvider.java, \
+    $(wildcard $(TOPDIR)/src/jdk.charsets/share/classes/sun/nio/cs/ext/*.java))
 
 ################################################################################

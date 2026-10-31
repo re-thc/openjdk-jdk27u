@@ -32,6 +32,9 @@
 
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -43,6 +46,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class RegisteredCharsets {
+    private static final Set<String> PROFILE;
+    static {
+        try {
+            PROFILE = Set.copyOf(Files.readAllLines(Path.of(System.getProperty("test.src", "."),
+                    "../../../../../../make/data/charsetmapping/modern-profile")));
+        } catch (Exception e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     // Charset.forName should throw an exception when passed "default"
     @Test
@@ -60,8 +72,13 @@ public class RegisteredCharsets {
     @MethodSource("aliases")
     public void testAliases(String canonicalName, String[] aliasNames) {
         for (String aliasName : aliasNames) {
-            Charset cs = Charset.forName(aliasName);
-            assertEquals(cs.name(), canonicalName);
+            if (PROFILE.contains(canonicalName)) {
+                Charset cs = Charset.forName(aliasName);
+                assertEquals(cs.name(), canonicalName);
+            } else {
+                assertThrows(UnsupportedCharsetException.class,
+                        () -> Charset.forName(aliasName));
+            }
         }
     }
 
@@ -90,6 +107,10 @@ public class RegisteredCharsets {
      * it should be.
      */
     static void check(String csn, boolean testRegistered) throws Exception {
+        if (!PROFILE.contains(csn) && !csn.equals("UTF8")) {
+            assertThrows(UnsupportedCharsetException.class, () -> Charset.forName(csn));
+            return;
+        }
         if (!Charset.forName(csn).isRegistered() && testRegistered) {
             throw new Exception("Not registered: " + csn);
         }
