@@ -31,6 +31,8 @@
 #include "oops/trainingData.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+class ciMethod;
+
 namespace CompilationPolicyUtils {
 template<typename T>
 class Queue {
@@ -339,6 +341,9 @@ class CompilationPolicy : AllStatic {
   static void maybe_compile_early(const methodHandle& m, TRAPS);
   static void replay_training_at_init_impl(InstanceKlass* klass, JavaThread* current);
  public:
+  static bool c1l_enabled();
+  static bool c1l_eligible(const methodHandle& method);
+  static bool c1l_eligible(ciMethod* method);
   static int min_invocations() { return Tier4MinInvocationThreshold; }
   static int c1_count() { return _c1_count; }
   static int c2_count() { return _c2_count; }

@@ -3869,6 +3869,21 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
   // Proper inlining of methods with jsrs requires a little more work.
   if (callee->has_jsrs()                 ) INLINE_BAILOUT("jsrs not handled properly by inliner yet");
 
+  bool inlinee_by_directive = compilation()->directive()->should_inline(callee);
+  // Lean full-profile C1 is a temporary tier. Avoid parsing nontrivial never-executed
+  // callees (often error paths) and requesting their MDOs. As in C2, do not use
+  // invocation counts with -Xcomp. ciMethod normalizes zero to one, so use its
+  // cached count only as a prefilter and honor compiled/counter-carry history.
+  // Keep trivial helpers and explicit force-inline requests on the normal path.
+  if (compilation()->is_c1l() && UseInterpreter &&
+      !callee->force_inline() && !inlinee_by_directive &&
+      callee->code_size_for_inlining() > C1MaxTrivialSize &&
+      callee->interpreter_invocation_count() <= 1 &&
+      !callee->has_compiled_code() &&
+      !callee->was_executed_more_than(0)) {
+    INLINE_BAILOUT("cold callee in C1L");
+  }
+
   if (is_profiling() && !callee->ensure_method_data()) {
     INLINE_BAILOUT("mdo allocation failed");
   }
@@ -3891,7 +3906,6 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
   }
 
   // now perform tests that are based on flag settings
-  bool inlinee_by_directive = compilation()->directive()->should_inline(callee);
   if (callee->force_inline() || inlinee_by_directive) {
     if (inline_level() > MaxForceInlineLevel                      ) INLINE_BAILOUT("MaxForceInlineLevel");
     if (recursive_inline_level(callee) > C1MaxRecursiveInlineLevel) INLINE_BAILOUT("recursive inlining too deep");

@@ -23,11 +23,14 @@
  */
 
 #include "cds/aotLinkedClassBulkLoader.hpp"
+#include "ci/ciMethod.hpp"
+#include "ci/ciUtilities.inline.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
+#include "compiler/compilerThread.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
@@ -255,6 +258,29 @@ CompLevel CompilationPolicy::comp_level(Method* method) {
   return CompLevel_none;
 }
 
+// Keep C1L out of terminal-tier, C2-only and training-directed modes.
+bool CompilationPolicy::c1l_enabled() {
+  return UseC1L && TieredCompilation && CompilerConfig::is_c1_enabled() &&
+         TieredStopAtLevel > CompLevel_full_profile &&
+         CompilationModeFlag::normal() && !MethodTrainingData::have_data();
+}
+
+bool CompilationPolicy::c1l_eligible(const methodHandle& method) {
+  // Share admission and code-generation eligibility. Check monitors before the
+  // lazy loop scan, and retain the conservative exclusions for both C1 tiers.
+  return c1l_enabled() &&
+         (method->has_monitors() || method->has_loops()) &&
+         !CompilerOracle::should_exclude(method, CompLevel_limited_profile) &&
+         !CompilerOracle::should_exclude(method, CompLevel_full_profile);
+}
+
+bool CompilationPolicy::c1l_eligible(ciMethod* method) {
+  if (!c1l_enabled()) return false;
+  VM_ENTRY_MARK;
+  const methodHandle mh(THREAD, method->get_Method());
+  return c1l_eligible(mh);
+}
+
 // Call and loop predicates determine whether a transition to a higher
 // compilation level should be performed (pointers to predicate functions
 // are passed to common()).
@@ -263,6 +289,7 @@ CompLevel CompilationPolicy::comp_level(Method* method) {
 // the threshold values double.
 class LoopPredicate : AllStatic {
 public:
+  static bool use_c1l(const methodHandle& method) { return false; }
   static bool apply_scaled(const methodHandle& method, CompLevel cur_level, int i, int b, double scale) {
     double threshold_scaling;
     if (CompilerOracle::has_option_value(method, CompileCommandEnum::CompileThresholdScaling, threshold_scaling)) {
@@ -301,6 +328,9 @@ public:
 
 class CallPredicate : AllStatic {
 public:
+  static bool use_c1l(const methodHandle& method) {
+    return CompilationPolicy::c1l_eligible(method);
+  }
   static bool apply_scaled(const methodHandle& method, CompLevel cur_level, int i, int b, double scale) {
     double threshold_scaling;
     if (CompilerOracle::has_option_value(method, CompileCommandEnum::CompileThresholdScaling, threshold_scaling)) {
@@ -333,6 +363,11 @@ public:
     }
     default:
       return true;
+    }
+    // Only interpreter-to-C1 call admission is reduced. Full-profile C1 retains
+    // the ordinary C2 promotion thresholds and required profiling.
+    if (cur_level == CompLevel_none && use_c1l(method)) {
+      k *= 0.25;
     }
     return apply_scaled(method, cur_level, i, b, k);
   }

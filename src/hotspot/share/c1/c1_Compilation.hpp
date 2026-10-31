@@ -71,6 +71,7 @@ class Compilation: public StackObj {
   CompileLog*        _log;
   ciMethod*          _method;
   int                _osr_bci;
+  const bool         _is_c1l; // Immutable for this compilation; never toggle global flags.
   IR*                _hir;
   FrameMap*          _frame_map;
   C1_MacroAssembler* _masm;
@@ -155,6 +156,7 @@ class Compilation: public StackObj {
   Arena* arena()                                 { return _arena; }
   bool has_access_indexed()                      { return _has_access_indexed; }
   bool should_install_code()                     { return _install_code; }
+  bool is_c1l() const                            { return _is_c1l; }
   LinearScan* allocator()                        { return _allocator; }
 
   // Instruction ids
