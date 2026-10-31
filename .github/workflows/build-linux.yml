@@ -103,6 +103,10 @@ jobs:
         id: gtest
         uses: ./.github/actions/get-gtest
 
+      - name: 'Get Rust'
+        uses: ./.github/actions/get-rust
+        if: (inputs.platform == 'linux-x64' || inputs.platform == 'linux-aarch64') && inputs.static-suffix != '-static'
+
       - name: 'Set architecture'
         id: arch
         run: |
@@ -176,6 +180,13 @@ jobs:
           cat config.log &&
           exit 1)
 
+      - name: 'Require native Instant backend'
+        if: (inputs.platform == 'linux-x64' || inputs.platform == 'linux-aarch64') && inputs.static-suffix != '-static'
+        run: |
+          if ! grep -Eq '^ENABLE_INSTANT_SPEEDATE *:?= *true *$' 'build/${{ inputs.platform }}/spec.gmk'; then
+            echo '::error::The supported CI build must enable the native Instant backend.'
+            exit 1
+          fi
       - name: 'Check configured GCC selection'
         env:
           GCC_BIN: ${{ steps.gcc.outputs.path }}

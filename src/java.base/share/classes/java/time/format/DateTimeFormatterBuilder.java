@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3791,6 +3792,19 @@ public final class DateTimeFormatterBuilder {
      * Prints or parses an ISO-8601 instant.
      */
     static final class InstantPrinterParser implements DateTimePrinterParser {
+        // Defer construction until parsing to avoid formatter initialization cycles.
+        private static final class ParserHolder {
+            static final CompositePrinterParser PARSER = new DateTimeFormatterBuilder()
+                    .append(DateTimeFormatter.ISO_LOCAL_DATE).appendLiteral('T')
+                    .appendValue(HOUR_OF_DAY, 2).appendLiteral(':')
+                    .appendValue(MINUTE_OF_HOUR, 2).appendLiteral(':')
+                    .appendValue(SECOND_OF_MINUTE, 2)
+                    .appendFraction(NANO_OF_SECOND, 0, 9, true)
+                    .parseLenient()
+                    .appendOffset("+HH", "Z")
+                    .toFormatter().toPrinterParser(false);
+        }
+
         // days in a 400 year cycle = 146097
         // days in a 10,000 year cycle = 146097 * 25
         // seconds per day = 86400
@@ -3887,7 +3901,7 @@ public final class DateTimeFormatterBuilder {
             // new context to avoid overwriting fields like year/month/day
             int minDigits = (fractionalDigits < 0 ? 0 : fractionalDigits);
             int maxDigits = (fractionalDigits < 0 ? 9 : fractionalDigits);
-            CompositePrinterParser parser = new DateTimeFormatterBuilder()
+            CompositePrinterParser parser = fractionalDigits < 0 ? ParserHolder.PARSER : new DateTimeFormatterBuilder()
                     .append(DateTimeFormatter.ISO_LOCAL_DATE).appendLiteral('T')
                     .appendValue(HOUR_OF_DAY, 2).appendLiteral(':')
                     .appendValue(MINUTE_OF_HOUR, 2).appendLiteral(':')

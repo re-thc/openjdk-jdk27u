@@ -54,6 +54,7 @@ tier1_part3 = \
     :jdk_svc_sanity \
     :jdk_foreign \
     :jdk_vector_sanity \
+    :jdk_time_sanity \
     :jdk_headless_beans \
     java/text/Format/DecimalFormat/DoubleFormattingTest.java \
     java/text/Format/DecimalFormat/RoundingTiesNearZeroTest.java \
@@ -83,7 +84,8 @@ tier2_part2 = \
     -sun/nio/cs/ISO8859x.java \
     :jdk_other \
     :jdk_text \
-    :jdk_time
+    :jdk_time \
+    -:jdk_time_sanity
 
 tier2_part3 = \
     :jdk_net
@@ -230,6 +232,12 @@ jdk_net = \
 
 jdk_time = \
     java/time
+
+jdk_time_sanity = \
+    java/time/test/java/time/TestInstantSpeedate.java \
+    java/time/test/java/time/format/TestInstantParserCache.java \
+    java/time/nonjunit/java/time/InstantSpeedateDisabled.java \
+    java/time/nonjunit/java/time/InstantSpeedateUnavailable.java
 
 jdk_rmi = \
     java/rmi \

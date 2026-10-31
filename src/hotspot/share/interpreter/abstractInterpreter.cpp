@@ -121,6 +121,13 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
     }
 
     switch (iid) {
+#if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
+      case vmIntrinsics::_parseInstant:
+        if (UseInstantParseIntrinsic && vmIntrinsics::is_intrinsic_available(iid)) {
+          return java_time_instant_parse;
+        }
+        break;
+#endif
 #ifndef ZERO
       // Use optimized stub code for CRC32 native methods.
       case vmIntrinsics::_updateCRC32:       return java_util_zip_CRC32_update;
@@ -196,6 +203,9 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
 
 vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   switch (kind) {
+#if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
+  case java_time_instant_parse    : return vmIntrinsics::_parseInstant;
+#endif
   case java_lang_math_sin         : return vmIntrinsics::_dsin;
   case java_lang_math_cos         : return vmIntrinsics::_dcos;
   case java_lang_math_tan         : return vmIntrinsics::_dtan;
@@ -325,6 +335,9 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_util_zip_CRC32C_updateDirectByteBuffer: tty->print("java_util_zip_CRC32C_updateDirectByteByffer"); break;
     case java_lang_ref_reference_get0         : tty->print("java_lang_ref_reference_get0"); break;
     case java_lang_Thread_currentThread       : tty->print("java_lang_Thread_currentThread"); break;
+#if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
+    case java_time_instant_parse              : tty->print("java_time_instant_parse"); break;
+#endif
     case java_lang_Float_float16ToFloat       : tty->print("java_lang_Float_float16ToFloat"); break;
     case java_lang_Float_floatToFloat16       : tty->print("java_lang_Float_floatToFloat16"); break;
     default:

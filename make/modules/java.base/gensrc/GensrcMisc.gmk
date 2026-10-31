@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -83,6 +84,13 @@ $(eval $(call SetupTextFileProcessing, BUILD_PLATFORMPROPERTIES_JAVA, \
 ))
 
 TARGETS += $(BUILD_VERSION_JAVA) $(BUILD_PLATFORMPROPERTIES_JAVA)
+
+$(eval $(call SetupTextFileProcessing, BUILD_INSTANT_PARSER_CONFIG, \
+    SOURCE_FILES := $(TOPDIR)/src/java.base/share/classes/java/time/InstantParserConfig.java.template, \
+    OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/time/InstantParserConfig.java, \
+    REPLACEMENTS := @@ENABLE_INSTANT_SPEEDATE@@ => $(ENABLE_INSTANT_SPEEDATE), \
+))
+TARGETS += $(BUILD_INSTANT_PARSER_CONFIG)
 ################################################################################
 
 ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )

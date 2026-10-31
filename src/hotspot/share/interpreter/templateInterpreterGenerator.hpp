@@ -101,6 +101,9 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_currentThread();
   address generate_Float_float16ToFloat_entry();
   address generate_Float_floatToFloat16_entry();
+#if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
+  address generate_instant_parse_entry();
+#endif
 
   // Some platforms don't need registers, other need two. Unused function is
   // left unimplemented.

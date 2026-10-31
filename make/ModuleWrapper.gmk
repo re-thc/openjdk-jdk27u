@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -61,7 +62,10 @@ ifeq ($(MAKEFILE_PREFIX), Lib)
   ifneq ($($(MODULE)_INCLUDED_LIBS), )
     LIBLIST := $(SUPPORT_OUTPUTDIR)/modules_static-libs/$(MODULE)/module-included-libs.txt
 
-    $(LIBLIST): $(TARGETS)
+    LIBLIST_VARDEPS := $(call DependOnVariable, $(MODULE)_INCLUDED_LIBS, \
+        $(LIBLIST).vardeps)
+
+    $(LIBLIST): $(TARGETS) $(LIBLIST_VARDEPS)
 	$(call MakeDir, $(@D))
 	$(ECHO) $($(MODULE)_INCLUDED_LIBS) > $@
 

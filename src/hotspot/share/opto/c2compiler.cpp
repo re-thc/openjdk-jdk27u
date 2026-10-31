@@ -235,6 +235,12 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   }
 
   switch (id) {
+  case vmIntrinsics::_parseInstant:
+#if (defined(AMD64) || defined(AARCH64)) && !defined(ZERO)
+    return true;
+#else
+    return false;
+#endif
   case vmIntrinsics::_getObjectSize:
     // Four-byte objects may grow when GC preserves their identity hash.
     // Use JVMTI's mark-aware size calculation instead of a fixed layout.

@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -176,11 +177,24 @@ ifneq ($(TOOLCHAIN_TYPE), gcc)
   LEGAL_EXCLUDES += gcc.md
 endif
 
+ifneq ($(ENABLE_INSTANT_SPEEDATE), true)
+  LEGAL_EXCLUDES += speedate.md
+endif
+
 $(eval $(call SetupCopyLegalFiles, COPY_LEGAL, \
     EXCLUDES := $(LEGAL_EXCLUDES), \
 ))
 
 TARGETS += $(COPY_LEGAL)
+
+ifeq ($(ENABLE_INSTANT_SPEEDATE), true)
+  $(eval $(call SetupCopyFiles, COPY_SPEEDATE_RUST_LICENSE, \
+      SRC := $(dir $(SPEEDATE_RUST_LICENSE)), \
+      DEST := $(LEGAL_DST_DIR), \
+      FILES := $(SPEEDATE_RUST_LICENSE), \
+  ))
+  TARGETS += $(COPY_SPEEDATE_RUST_LICENSE)
+endif
 
 ################################################################################
 # Optionally copy libffi.so.? into the image

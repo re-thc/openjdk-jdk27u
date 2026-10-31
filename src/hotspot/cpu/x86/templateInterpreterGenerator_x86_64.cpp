@@ -23,11 +23,14 @@
  */
 
 #include "asm/macroAssembler.hpp"
+#include "classfile/javaClasses.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
+#include "oops/arrayOop.hpp"
+#include "runtime/instantParser.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -175,6 +178,33 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   return entry;
 }
 #endif  // __WIN64
+
+// The interpreter and C ABI both return jlong in rax. The bounded leaf
+// borrows String storage without a frame, safepoint or JNI transition.
+address TemplateInterpreterGenerator::generate_instant_parse_entry() {
+  if (!UseInstantParseIntrinsic) {
+    return nullptr;
+  }
+  address entry = __ pc();
+  Label slow_path;
+  __ safepoint_poll(slow_path, false, false);
+  __ movptr(c_rarg0, Address(rsp, wordSize));
+  __ testptr(c_rarg0, c_rarg0);
+  __ jcc(Assembler::zero, slow_path);
+  __ load_unsigned_byte(c_rarg2, Address(c_rarg0, java_lang_String::coder_offset()));
+  // Distinct scratch preserves the source field address for GC barriers.
+  __ load_heap_oop(c_rarg0, Address(c_rarg0, java_lang_String::value_offset()), rax);
+  __ movl(c_rarg1, Address(c_rarg0, arrayOopDesc::length_offset_in_bytes()));
+  __ addptr(c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InstantParser::parse),
+                        c_rarg0, c_rarg1, c_rarg2);
+  __ pop(rdi);
+  __ mov(rsp, r13);
+  __ jmp(rdi);
+  __ bind(slow_path);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+  return entry;
+}
 
 /**
  * Method entry for static native methods:

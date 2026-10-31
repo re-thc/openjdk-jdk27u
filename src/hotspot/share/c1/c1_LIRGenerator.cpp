@@ -33,12 +33,14 @@
 #include "ci/ciInstance.hpp"
 #include "ci/ciObjArray.hpp"
 #include "ci/ciUtilities.hpp"
+#include "classfile/javaClasses.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/methodCounters.hpp"
+#include "runtime/instantParser.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
@@ -2830,6 +2832,35 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
 
 
 
+void LIRGenerator::do_parseInstant(Intrinsic* x) {
+  LIRItem str(x->argument_at(0), this);
+  str.load_item();
+  __ null_check(str.result(), state_for(x));
+  LIR_Opr value = new_register(T_OBJECT);
+  access_load_at(IN_HEAP, T_OBJECT, str,
+                 LIR_OprFact::intConst(java_lang_String::value_offset()), value);
+  LIR_Opr coder = new_register(T_INT);
+  access_load_at(IN_HEAP, T_BYTE, str,
+                 LIR_OprFact::intConst(java_lang_String::coder_offset()), coder);
+  LIR_Opr length = new_register(T_INT);
+  __ move(new LIR_Address(value, arrayOopDesc::length_offset_in_bytes(), T_INT), length);
+  LIR_Opr data = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(new LIR_Address(value,
+             arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), data);
+  BasicTypeList signature(3);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  signature.append(T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(data, cc->at(0));
+  __ move(length, cc->at(1));
+  __ move(coder, cc->at(2));
+  LIR_Opr result = result_register_for(x->type());
+  __ call_runtime_leaf(CAST_FROM_FN_PTR(address, InstantParser::parse),
+                       getThreadTemp(), result, cc->args());
+  __ move(result, rlock_result(x));
+}
+
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   switch (x->id()) {
   case vmIntrinsics::_intBitsToFloat      :
@@ -2931,6 +2962,9 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_update_CRC32C(x);
     break;
 
+  case vmIntrinsics::_parseInstant:
+    do_parseInstant(x);
+    break;
   case vmIntrinsics::_vectorizedMismatch:
     do_vectorizedMismatch(x);
     break;

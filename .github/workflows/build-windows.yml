@@ -106,6 +106,10 @@ jobs:
         id: gtest
         uses: ./.github/actions/get-gtest
 
+      - name: 'Get Rust'
+        uses: ./.github/actions/get-rust
+        if: inputs.platform == 'windows-x64'
+
       - name: 'Check toolchain installed for x64'
         id: toolchain-check-x64
         run: |
@@ -151,22 +155,27 @@ jobs:
         if: ${{ ( inputs.architecture == 'ARM64') && (steps.toolchain-check-arm64.outputs.toolchain-installed != 'true') }}
 
       - name: 'Configure'
-        run: >
-          bash bin/configure-dev
-          --with-conf-name=${{ inputs.platform }}
-          ${{ matrix.flags }}
-          --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
-          --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
-          --with-jtreg=${{ steps.jtreg.outputs.path }}
-          --with-gtest=${{ steps.gtest.outputs.path }}
-          --with-toolchain-version=2026
-          --with-msvc-toolset-version=${{ inputs.msvc-toolset-version }}
-          --with-jmod-compress=zip-1
-          --with-external-symbols-in-bundles=none
-          ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
-          echo "Dumping config.log:" &&
-          cat config.log &&
-          exit 1)
+        run: |
+          rust_options=()
+          if [[ '${{ inputs.platform }}' == windows-x64 ]]; then
+            rust_options+=("CARGO=$(cygpath -u "$JDK_CARGO")" "RUSTC=$(cygpath -u "$JDK_RUSTC")")
+          fi
+          bash bin/configure-dev \
+            --with-conf-name=${{ inputs.platform }} \
+            ${{ matrix.flags }} \
+            --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA} \
+            --with-boot-jdk=${{ steps.bootjdk.outputs.path }} \
+            --with-jtreg=${{ steps.jtreg.outputs.path }} \
+            --with-gtest=${{ steps.gtest.outputs.path }} \
+            --with-toolchain-version=2026 \
+            --with-msvc-toolset-version=${{ inputs.msvc-toolset-version }} \
+            --with-jmod-compress=zip-1 \
+            --with-external-symbols-in-bundles=none \
+            "${rust_options[@]}" \
+            ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
+            echo "Dumping config.log:" &&
+            cat config.log &&
+            exit 1)
         env:
           # We need a minimal PATH on Windows
           # Set PATH to "", so just GITHUB_PATH is included
@@ -189,6 +198,14 @@ jobs:
             fi
             echo "$compiler: $version (Visual Studio 2026, toolset $toolset)"
           done
+
+      - name: 'Require native Instant backend'
+        if: inputs.platform == 'windows-x64'
+        run: |
+          if ! grep -Eq '^ENABLE_INSTANT_SPEEDATE *:?= *true *$' 'build/${{ inputs.platform }}/spec.gmk'; then
+            echo '::error::The supported CI build must enable the native Instant backend.'
+            exit 1
+          fi
 
       - name: 'Build'
         id: build

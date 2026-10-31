@@ -162,6 +162,10 @@ JVM_LoadZipLibrary();
 JNIEXPORT void * JNICALL
 JVM_LoadLibrary(const char *name, jboolean throwException);
 
+/* Register the bounded parser from the bootstrap-owned libinstant. */
+JNIEXPORT void JNICALL
+JVM_RegisterInstantParser(void *parser);
+
 JNIEXPORT void JNICALL
 JVM_UnloadLibrary(void * handle);
 
