@@ -497,6 +497,9 @@ public final class ProcessTools {
     }
 
     private static boolean hasLegacyStreamOption(String[] command, String stream) {
+        if (stream.equals("stdin")) {
+            return false;
+        }
         String property = "-Dsun." + stream + ".encoding";
         Set<String> optionsWithArgument = Set.of("-cp", "-classpath", "--class-path",
                 "-p", "--module-path", "--upgrade-module-path", "--add-modules",

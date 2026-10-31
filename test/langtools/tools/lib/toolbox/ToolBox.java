@@ -134,7 +134,8 @@ public class ToolBox {
             String legacyProperty = prefix + "-Dsun." + stream + ".encoding";
             boolean specified = supplied.stream().anyMatch(arg ->
                     arg.equals(property) || arg.startsWith(property + "=") ||
-                    arg.equals(legacyProperty) || arg.startsWith(legacyProperty + "="));
+                    (!stream.equals("stdin") &&
+                            (arg.equals(legacyProperty) || arg.startsWith(legacyProperty + "="))));
             if (!specified) {
                 options.add(property + "=" + encoding);
             }
@@ -143,14 +144,15 @@ public class ToolBox {
         return options;
     }
 
-    List<String> testJavaOptions(List<String> supplied) {
-        List<String> inherited = split(System.getProperty("test.java.opts", ""), " +");
+    List<String> testOptions(String property, List<String> supplied) {
+        List<String> inherited = split(System.getProperty(property, ""), " +");
         String encoding = System.getProperty("test.stream.encoding");
         if (encoding == null) {
             return inherited;
         }
         return inherited.stream().filter(arg -> List.of("stdin", "stdout", "stderr").stream()
-                .noneMatch(stream -> arg.equals("-D" + stream + ".encoding=" + encoding)
+                .noneMatch(stream -> !stream.equals("stdin")
+                        && arg.equals("-D" + stream + ".encoding=" + encoding)
                         && supplied.stream().anyMatch(option ->
                                 option.equals("-Dsun." + stream + ".encoding")
                                 || option.startsWith("-Dsun." + stream + ".encoding="))))

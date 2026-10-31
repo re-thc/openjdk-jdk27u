@@ -50,7 +50,9 @@ public class JcmdOutputEncodingTest {
         Thread.currentThread().setName(marker);
 
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jcmd");
-        launcher.addVMArgs(Utils.getTestJavaOpts());
+        launcher.addVMArgs(System.getProperty("test.stream.encoding") == null
+                ? Utils.getTestJavaOpts()
+                : Utils.getFilteredTestJavaOpts("^-Dstdout\\.encoding="));
         launcher.addVMArg("-Dfile.encoding=" + cs);
         launcher.addVMArg("-Dsun.stdout.encoding=" + cs);
         // Thread.print command output may be lengthy, disable streaming output to avoid deadlocks

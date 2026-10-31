@@ -145,7 +145,7 @@ public class JDKToolLauncher {
         List<String> command = new ArrayList<String>();
         command.add(executable);
         for (String option : ProcessTools.testStreamOptions(javaLauncher ? "" : "-J")) {
-            boolean shadowed = Stream.of("stdin", "stdout", "stderr").anyMatch(stream ->
+            boolean shadowed = Stream.of("stdout", "stderr").anyMatch(stream ->
                     option.startsWith((javaLauncher ? "" : "-J") + "-D" + stream + ".encoding=")
                     && vmArgs.stream().anyMatch(arg -> arg.equals("-Dsun." + stream + ".encoding")
                             || arg.startsWith("-Dsun." + stream + ".encoding=")));
