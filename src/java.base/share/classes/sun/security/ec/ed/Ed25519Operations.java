@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +50,15 @@ public class Ed25519Operations extends EdECOperations {
     private static final BigInteger TWO = BigInteger.valueOf(2);
     private static final BigInteger SEVEN = BigInteger.valueOf(7);
     private final BigInteger sizeMinus5;
+
+    // Initialized only when a square-root correction is needed.
+    private static class Ed25519Constants {
+        private static final BigInteger MODULUS =
+            BigInteger.ONE.shiftLeft(255).subtract(BigInteger.valueOf(19));
+        // 2^((p - 1) / 4) mod p for p = 2^255 - 19, a square root of -1.
+        private static final BigInteger SQRT_MINUS_ONE = new BigInteger(
+            "2b8324804fc1df0b2b4d00993dfbd7a72f431806ad2fe478c4ee1b274a0ea0b0", 16);
+    }
 
     public Ed25519Operations(ImmutableIntegerModuloP d, BigInteger baseX,
                              BigInteger baseY) {
@@ -126,8 +136,10 @@ public class Ed25519Operations extends EdECOperations {
         if (bigVX2.equals(u.asBigInteger())) {
             // do nothing---x is correct
         } else if (bigVX2.equals(u.additiveInverse().asBigInteger())) {
-            BigInteger exp = p.subtract(BigInteger.ONE).shiftRight(2);
-            IntegerModuloP twoPow = field.getElement(TWO.modPow(exp, p));
+            BigInteger twoPowValue = p.equals(Ed25519Constants.MODULUS)
+                ? Ed25519Constants.SQRT_MINUS_ONE
+                : TWO.modPow(p.subtract(BigInteger.ONE).shiftRight(2), p);
+            IntegerModuloP twoPow = field.getElement(twoPowValue);
             x.setProduct(twoPow);
         } else {
             throw exception.apply("Invalid point");
