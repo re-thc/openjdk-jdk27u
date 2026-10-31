@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
    @bug 4691554 6221056 6380723 6404504 6419565 6529796 8301119 8368845
    @summary Test the supported New I/O coders
    @modules jdk.charsets

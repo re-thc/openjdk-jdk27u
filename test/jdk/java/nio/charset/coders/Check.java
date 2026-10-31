@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 4712786 8229960
  * @summary Check charsets against reference files
  * @modules jdk.charsets

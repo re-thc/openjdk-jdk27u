@@ -23,11 +23,14 @@
 
 /*
  * @test
+ * @library /test/lib
  * @bug 8155808
  * @requires vm.flagless
  * @run main SkipTest
  * @summary verify skip method of Process Input Stream
  */
+
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -49,7 +52,9 @@ public class SkipTest {
     public static void main(String[] args) throws Throwable {
 
         // Start a Process to generate the test data to stdout and stderr
-        ProcessBuilder pb = new ProcessBuilder(javaExe, "-classpath", classpath, "SkipTest$GenerateData");
+        ProcessBuilder pb = new ProcessBuilder(javaExe);
+        pb.command().addAll(ProcessTools.testStreamOptions(""));
+        pb.command().addAll(java.util.List.of("-classpath", classpath, "SkipTest$GenerateData"));
         System.out.printf("cmd: %s%n", pb.command());
         Process process = pb.start();
 

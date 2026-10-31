@@ -45,17 +45,22 @@ import jdk.test.lib.process.ProcessTools;
 public class LazyJdkConsoleProvider {
 
     public static void main(String... args) throws Throwable {
+        if (new JdkConsoleProviderImpl().console(false,
+                () -> { throw new AssertionError("stdin charset resolved without a terminal"); },
+                () -> { throw new AssertionError("stdout charset resolved without a terminal"); }) != null) {
+            throw new AssertionError("Expected no console without a terminal");
+        }
         // directly instantiate JLine JdkConsole, simulating isTTY=true
         switch (args.length > 0 ? args[0] : "default") {
             case "write" -> {
-                var impl = new JdkConsoleProviderImpl().console(true, StandardCharsets.UTF_8, StandardCharsets.UTF_8);
+                var impl = new JdkConsoleProviderImpl().console(true, () -> StandardCharsets.UTF_8, () -> StandardCharsets.UTF_8);
                 impl.println("Hello!\n");
                 impl.println("Hello!");
                 impl.format(null, "\nHello!\n");
                 impl.flush();
             }
             case "read" -> new JdkConsoleProviderImpl()
-                .console(true, StandardCharsets.UTF_8, StandardCharsets.UTF_8)
+                .console(true, () -> StandardCharsets.UTF_8, () -> StandardCharsets.UTF_8)
                 .readLine(null, "Hello!");
             case "default" -> {
                 new LazyJdkConsoleProvider().runTest();

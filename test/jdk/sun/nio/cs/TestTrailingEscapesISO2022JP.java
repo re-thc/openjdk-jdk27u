@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 4697605 4741233
  * @summary Check decoder behaves correctly in ISO2022_JP
  * @modules jdk.charsets

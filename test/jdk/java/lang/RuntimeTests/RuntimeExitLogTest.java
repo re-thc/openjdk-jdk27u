@@ -22,6 +22,8 @@
  */
 
 
+import jdk.test.lib.process.ProcessTools;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -40,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
+ * @library /test/lib
  * @summary verify logging of call to System.exit or Runtime.exit.
  * @requires vm.flagless
  * @run junit/othervm RuntimeExitLogTest
@@ -155,13 +158,16 @@ public class RuntimeExitLogTest {
 
         List<String> cmd = pb.command();
         cmd.add(Path.of(TEST_JDK,"bin", "java").toString());
+        cmd.addAll(ProcessTools.testStreamOptions(""));
         cmd.addAll(logProps);
         cmd.add(this.getClass().getName());
         cmd.add(Integer.toString(status));
 
         try {
             Process process = pb.start();
-            try (BufferedReader reader = process.inputReader()) {
+            String encoding = System.getProperty("test.stream.encoding");
+            try (BufferedReader reader = encoding == null ? process.inputReader()
+                    : process.inputReader(java.nio.charset.Charset.forName(encoding))) {
                 List<String> lines = reader.lines().toList();
                 boolean match = (expectMessage.isEmpty())
                         ? lines.isEmpty()

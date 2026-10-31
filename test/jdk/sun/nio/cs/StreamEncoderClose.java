@@ -26,10 +26,13 @@
  * @summary Check if StreamEncoder close() method works correctly from
  *          error recovery after the underneath OutputStream failed to
  *          close the first time.
- * @modules jdk.charsets
+ * @library /test/lib
+ * @build jdk.test.lib.charset.StatefulTestCharset
+ * @run main StreamEncoderClose
  */
 
 import java.io.*;
+import jdk.test.lib.charset.StatefulTestCharset;
 public class StreamEncoderClose {
     private static void ck(String s, int actual, int expected)
         throws IOException {
@@ -46,12 +49,14 @@ public class StreamEncoderClose {
                            (byte)0x1b,(byte)0x28,(byte)0x42};
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         MyBufferedOutputStream mbos = new MyBufferedOutputStream(baos);
-        PrintWriter pw = new PrintWriter(new OutputStreamWriter(mbos, "ISO-2022-JP"));
+        PrintWriter pw = new PrintWriter(new OutputStreamWriter(mbos, new StatefulTestCharset()));
         mbos.dontClose();
         pw.write("\u4e00");
         pw.close();             //  1st PrintWriter Close
+        ck("First close attempt", mbos.closeAttempts, 1);
         mbos.canClose();
         pw.close();             //  2nd PrintWriter Close
+        ck("Underlying stream closed only once", mbos.closeAttempts, 1);
 
         //double check, probably not necessary
         byte[] out = baos.toByteArray();
@@ -67,6 +72,7 @@ public class StreamEncoderClose {
             super(os);
         }
         private boolean status;
+        private int closeAttempts;
         public void dontClose() {
             status = false;
         }
@@ -74,6 +80,7 @@ public class StreamEncoderClose {
             status = true;
         }
         public void close() throws IOException {
+            closeAttempts++;
             if ( status == false ) {
                 throw new IOException("Can't close ");
             }

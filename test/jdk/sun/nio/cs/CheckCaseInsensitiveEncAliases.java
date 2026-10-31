@@ -63,21 +63,13 @@ public class CheckCaseInsensitiveEncAliases
     tryToEncode( "UNICODE" );
     tryToEncode( "unicode" );
 
-    // Variants on Big5
-    tryToEncode( "Big5" );
-    tryToEncode( "big5" );
-    tryToEncode( "bIg5" );
-    tryToEncode( "biG5" );
-    tryToEncode( "bIG5" );
-
-    // Variants of Cp1252
-    tryToEncode( "Cp1252" );
-    tryToEncode( "cp1252" );
-    tryToEncode( "CP1252" );
-
-    // Variants of PCK
-    tryToEncode( "pck" );
-    tryToEncode( "Pck" );
+    // Removed built-in names remain unavailable in every tested case.
+    for (String name : new String[] {"Big5", "big5", "bIg5", "Cp1252", "CP1252", "pck"}) {
+      try {
+        ENCODE_STRING.getBytes(name);
+        throw new Exception("Removed encoding recognized: " + name);
+      } catch (UnsupportedEncodingException expected) { }
+    }
 
   }
 

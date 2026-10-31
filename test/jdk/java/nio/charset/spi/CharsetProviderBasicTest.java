@@ -39,6 +39,7 @@
  */
 
 import java.io.File;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -59,17 +60,13 @@ public class CharsetProviderBasicTest {
     );
 
     private static boolean checkSupports(String locale) throws Throwable {
-        return ProcessTools.executeProcess("sh", "-c", "LC_ALL=" + locale + " && "
-                                           + "locale -a | grep " + locale)
-                           .getStdout()
-                           .replace(System.lineSeparator(), "")
-                           .equals(locale);
+        return ProcessTools.executeProcess("locale", "-a").getStdout().lines()
+                .anyMatch(name -> name.equalsIgnoreCase(locale));
     }
 
     public static Stream<Arguments> testCases() {
         return Stream.of("",
-                        "ja_JP.eucJP",
-                        "tr_TR")
+                        "ja_JP.eucjp", "tr_TR", "ru_RU", "zh_CN", "en_US", "en_US.utf8")
                 .map(locale -> Arguments.of(locale, "FOO"));
     }
 
@@ -98,7 +95,19 @@ public class CharsetProviderBasicTest {
             pb.environment().put("LC_ALL", locale);
         }
 
-        ProcessTools.executeCommand(pb)
-                    .shouldHaveExitValue(0);
+        var result = ProcessTools.executeCommand(pb);
+        boolean nativeSupported = true;
+        if (!locale.isEmpty()) {
+            ProcessBuilder charmap = new ProcessBuilder("locale", "charmap");
+            charmap.environment().put("LC_ALL", locale);
+            nativeSupported = Charset.isSupported(ProcessTools.executeCommand(charmap)
+                    .shouldHaveExitValue(0).getStdout().trim());
+        }
+        if (nativeSupported) {
+            result.shouldHaveExitValue(0);
+        } else {
+            result.shouldNotHaveExitValue(0)
+                  .shouldContain("Unsupported native filesystem encoding");
+        }
     }
 }

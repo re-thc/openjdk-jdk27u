@@ -450,6 +450,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
         List<String> args = new ArrayList<>();
         Path javac = toolBox.getJDKTool("javac");
         args.add(javac.toString());
+        args.addAll(toolBox.testStreamOptions("-J", getAllArgs()));
         if (includeStandardOptions) {
             args.addAll(toolBox.split(System.getProperty("test.tool.vm.opts"), " +"));
             args.addAll(toolBox.split(System.getProperty("test.compiler.opts"), " +"));

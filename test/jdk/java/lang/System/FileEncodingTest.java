@@ -32,7 +32,6 @@
 
 import java.nio.charset.Charset;
 import java.util.List;
-import java.util.Locale;
 
 import jdk.test.lib.process.ProcessTools;
 
@@ -48,7 +47,6 @@ public class FileEncodingTest {
             {"UTF-8", "UTF-8"},
             {"ISO-8859-1", "ISO-8859-1"},
             {"", "UTF-8"},
-            {"dummy", "UTF-8"},
             {"COMPAT", "<should_be_replaced>"}
         };
     };
@@ -57,13 +55,16 @@ public class FileEncodingTest {
     public void testFileEncodingToDefault(String fileEncoding, String expected) throws Exception {
         if (fileEncoding.equals("COMPAT")) {
             if (OS_NAME.startsWith("Windows")) {
-                // Only tests on English locales
-                if (Locale.getDefault().getLanguage().equals("en")) {
-                    expected = "windows-1252";
-                } else {
-                    System.out.println("Tests only run on Windows with English locales");
+                String nativeEncoding = System.getProperty("native.encoding");
+                if (!Charset.isSupported(nativeEncoding)) {
+                    var pb = ProcessTools.createTestJavaProcessBuilder(
+                            "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8",
+                            "-Dfile.encoding=COMPAT", FileEncodingTest.class.getName(), "unused");
+                    ProcessTools.executeProcess(pb).shouldNotHaveExitValue(0)
+                            .shouldContain("Unsupported native encoding for file.encoding=COMPAT");
                     return;
                 }
+                expected = Charset.forName(nativeEncoding).name();
             } else if (OS_NAME.startsWith("AIX")) {
                 expected = "ISO-8859-1";
             } else {
@@ -71,8 +72,9 @@ public class FileEncodingTest {
             }
         }
         var cmds = fileEncoding.isEmpty()
-                ? List.of(FileEncodingTest.class.getName(), expected)
-                : List.of("-Dfile.encoding=" + fileEncoding, FileEncodingTest.class.getName(), expected);
+                ? List.of("-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", FileEncodingTest.class.getName(), expected)
+                : List.of("-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8",
+                          "-Dfile.encoding=" + fileEncoding, FileEncodingTest.class.getName(), expected);
         var pb = ProcessTools.createTestJavaProcessBuilder(cmds);
         var env = pb.environment();
         env.put("LANG", "C");
@@ -81,6 +83,20 @@ public class FileEncodingTest {
                 .outputTo(System.out)
                 .errorTo(System.err)
                 .shouldHaveExitValue(0);
+    }
+
+    @DataProvider
+    public Object[][] unsupportedEncodings() {
+        return new Object[][] {{"dummy"}, {""}, {"windows-1252"}};
+    }
+
+    @Test(dataProvider = "unsupportedEncodings")
+    public void testUnsupportedFileEncoding(String encoding) throws Exception {
+        var pb = ProcessTools.createTestJavaProcessBuilder(
+                "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8",
+                "-Dfile.encoding=" + encoding, FileEncodingTest.class.getName(), "unused");
+        ProcessTools.executeProcess(pb).shouldNotHaveExitValue(0)
+                .shouldContain("Unsupported file.encoding:");
     }
 
     public static void main(String... args) {

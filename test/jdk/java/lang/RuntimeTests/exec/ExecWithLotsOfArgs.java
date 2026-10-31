@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @library /test/lib
    @bug 4033560
    @summary 4033560 limited args of exec to 198 on Solaris. We check
             that we can actually exec more args than that.
@@ -29,6 +30,8 @@
    @author Anand Palaniswamy
    @run main/othervm ExecWithLotsOfArgs
 */
+
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -46,7 +49,7 @@ public class ExecWithLotsOfArgs {
     }
 
     public static void main(String[] args) throws Exception {
-        String[] command = new String[300];
+        String[] command = new String[300 + ProcessTools.testStreamOptions("").size()];
         int n = 0;
 
         /*
@@ -55,6 +58,7 @@ public class ExecWithLotsOfArgs {
          */
         command[n++] = System.getProperty("java.home") + File.separator +
             "bin" + File.separator + "java";
+        for (String option : ProcessTools.testStreamOptions("")) command[n++] = option;
         if (System.getProperty("java.class.path") != null) {
             command[n++] = "-classpath";
             command[n++] = System.getProperty("java.class.path");

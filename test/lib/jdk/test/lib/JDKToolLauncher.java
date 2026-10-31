@@ -26,6 +26,7 @@ package jdk.test.lib;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
+import jdk.test.lib.process.ProcessTools;
 
 /**
  * A utility for constructing command lines for starting JDK tool processes.
@@ -49,10 +50,12 @@ import java.util.stream.Stream;
  */
 public class JDKToolLauncher {
     private final String executable;
+    private final boolean javaLauncher;
     private final List<String> vmArgs = new ArrayList<String>();
     private final List<String> toolArgs = new ArrayList<String>();
 
     private JDKToolLauncher(String tool, boolean useCompilerJDK) {
+        javaLauncher = tool.equals("java");
         if (useCompilerJDK) {
             executable = JDKToolFinder.getJDKTool(tool);
         } else {
@@ -141,6 +144,15 @@ public class JDKToolLauncher {
     public String[] getCommand() {
         List<String> command = new ArrayList<String>();
         command.add(executable);
+        for (String option : ProcessTools.testStreamOptions(javaLauncher ? "" : "-J")) {
+            boolean shadowed = Stream.of("stdin", "stdout", "stderr").anyMatch(stream ->
+                    option.startsWith((javaLauncher ? "" : "-J") + "-D" + stream + ".encoding=")
+                    && vmArgs.stream().anyMatch(arg -> arg.equals("-Dsun." + stream + ".encoding")
+                            || arg.startsWith("-Dsun." + stream + ".encoding=")));
+            if (!shadowed) {
+                command.add(option);
+            }
+        }
         // Add -J in front of all vmArgs
         for (String arg : vmArgs) {
             command.add("-J" + arg);

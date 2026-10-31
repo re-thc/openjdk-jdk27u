@@ -25,6 +25,7 @@
 package jdk.internal.io;
 
 import java.nio.charset.Charset;
+import java.util.function.Supplier;
 
 /**
  * Service provider interface for JdkConsole implementations.
@@ -38,8 +39,8 @@ public interface JdkConsoleProvider {
     /**
      * {@return the Console instance, or {@code null} if not available}
      * @param isTTY indicates if the jvm is attached to a terminal
-     * @param inCharset Standard input charset of the platform console
-     * @param outCharset Standard output charset of the platform console
+     * @param inCharset supplies the standard input charset when needed
+     * @param outCharset supplies the standard output charset when needed
      */
-    JdkConsole console(boolean isTTY, Charset inCharset, Charset outCharset);
+    JdkConsole console(boolean isTTY, Supplier<Charset> inCharset, Supplier<Charset> outCharset);
 }

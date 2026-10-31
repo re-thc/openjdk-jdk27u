@@ -83,7 +83,7 @@ public class EnsureNewOldDoclet extends TestRunner {
         testClasses = System.getProperty("test.classes");
         tb = new ToolBox();
         javadocPath = tb.getJDKTool("javadoc");
-        task = new ExecTask(tb, javadocPath);
+        task = new ExecTask(tb, javadocPath).jdkToolStreamOptions("-J");
         testSrc = new File("Foo.java");
         generateSample(testSrc);
     }

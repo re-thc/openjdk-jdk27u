@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 4734607 4767225 4863613
  * @summary Decode a file using EUC-TW, test for decode errors
  * @modules jdk.charsets

@@ -25,7 +25,7 @@
  * @test
  * @bug 8153654 8176333
  * @summary Tests for jdeps tool with multi-release jar files
- * @library mrjar mrjar/base mrjar/9 mrjar/10 mrjar/v9 mrjar/v10
+ * @library /tools/lib mrjar mrjar/base mrjar/9 mrjar/10 mrjar/v9 mrjar/v10
  * @build test.* p.* q.* foo/* Main
  * @run testng MultiReleaseJar
  */
@@ -41,6 +41,9 @@ import java.io.RandomAccessFile;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import toolbox.ToolBox;
 
 public class MultiReleaseJar {
     Path mrjar;
@@ -340,7 +343,11 @@ public class MultiReleaseJar {
     Result run(String cmd) throws Exception {
         String[] cmds = cmd.split(" +");
         cmds[0] = cmdPath.resolve(cmds[0]).toString();
-        ProcessBuilder pb = new ProcessBuilder(cmds);
+        var command = new ArrayList<String>();
+        command.add(cmds[0]);
+        command.addAll(new ToolBox().testStreamOptions("-J"));
+        command.addAll(Arrays.asList(cmds).subList(1, cmds.length));
+        ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(mrjar.toFile());
         Process p = null;
         try {

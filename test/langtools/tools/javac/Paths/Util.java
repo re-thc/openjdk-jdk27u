@@ -413,6 +413,7 @@ class Util {
         }
         var cmd = new ArrayList<String>();
         cmd.add(tool.toString());
+        cmd.addAll(tb.testStreamOptions(name.equals(JAVA) ? "" : "-J"));
         cmd.addAll(List.of(args));
         ProcessBuilder pb = new ProcessBuilder(cmd)
                 .redirectErrorStream(true);
@@ -425,7 +426,9 @@ class Util {
         }
         Process p = pb.start();
         StringBuilder sb = new StringBuilder();
-        try (var in = p.inputReader()) {
+        String encoding = System.getProperty("test.stream.encoding");
+        try (var in = encoding == null ? p.inputReader()
+                : p.inputReader(java.nio.charset.Charset.forName(encoding))) {
             in.lines().forEach(l -> {
                 sb.append(l).append("\n");
                 out.println(name + ": " + l);

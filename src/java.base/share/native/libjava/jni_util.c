@@ -24,6 +24,7 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "jvm.h"
@@ -652,6 +653,15 @@ getStringCp1252Chars(JNIEnv *env, jstring jstr, jboolean strict)
             case 0x0178: result[i] = (char)0x9F; break;
             default:     result[i] = '?';  break;
         }
+        // This helper is also used for native paths and names. Do not turn an
+        // unrepresentable character into a different platform string.
+        if (result[i] == '?' && c != '?') {
+            (*env)->ReleaseStringCritical(env, jstr, str);
+            free(result);
+            JNU_ThrowIllegalArgumentException(env,
+                    "Character not representable in native Cp1252 encoding");
+            return NULL;
+        }
     }
 
     result[len] = 0;
@@ -661,6 +671,7 @@ getStringCp1252Chars(JNIEnv *env, jstring jstr, jboolean strict)
 
 static int fastEncoding = NO_ENCODING_YET;
 static jobject jnuCharset = NULL;
+static char unsupportedEncodingMessage[256];
 
 /* Cached method IDs */
 static jmethodID String_init_ID;        /* String(byte[], Charset) */
@@ -790,12 +801,12 @@ InitializeEncoding(JNIEnv *env, const char *encname)
                 jnuCharset = (*env)->NewGlobalRef(env, charset.l);
                 (*env)->DeleteLocalRef(env, charset.l);
                 break; // success, continue below
-            } else if (strcmp(charsetname, "UTF-8") != 0) { // fall back
-                charsetname = "UTF-8";
-                fastEncoding = FAST_UTF_8;
-            } else { // give up
-                fastEncoding = NO_ENCODING_YET;
-                return;
+            } else {
+                // Never reinterpret bytes in an unsupported native encoding as UTF-8.
+                snprintf(unsupportedEncodingMessage, sizeof(unsupportedEncodingMessage),
+                         "Unsupported native filesystem encoding: %.160s", encname);
+                fastEncoding = UNSUPPORTED_ENCODING;
+                break;
             }
         }
     } else {
@@ -827,6 +838,18 @@ JNU_NewStringPlatform(JNIEnv *env, const char *str)
         return newString646_US(env, str);
     if (fastEncoding == FAST_CP1252)
         return newStringCp1252(env, str);
+    if (fastEncoding == UNSUPPORTED_ENCODING) {
+#ifdef _WIN32
+        // Windows ANSI code pages preserve ASCII. This permits native library
+        // names and other ASCII platform strings without guessing at non-ASCII
+        // bytes in the unavailable code page.
+        const unsigned char *p = (const unsigned char *)str;
+        while (*p != 0 && *p < 0x80) p++;
+        if (*p == 0) return newString646_US(env, str);
+#endif
+        JNU_ThrowInternalError(env, unsupportedEncodingMessage);
+        return NULL;
+    }
     if (fastEncoding == NO_ENCODING_YET) {
         JNU_ThrowInternalError(env, "platform encoding not initialized");
         return NULL;
@@ -972,6 +995,20 @@ getStringPlatformChars0(JNIEnv *env, jstring jstr, jboolean *isCopy, jboolean st
         return getString646_USChars(env, jstr, strict);
     if (fastEncoding == FAST_CP1252)
         return getStringCp1252Chars(env, jstr, strict);
+    if (fastEncoding == UNSUPPORTED_ENCODING) {
+#ifdef _WIN32
+        // See JNU_NewStringPlatform: only the invariant ASCII subset is safe.
+        jsize len = (*env)->GetStringLength(env, jstr);
+        const jchar *chars = (*env)->GetStringCritical(env, jstr, NULL);
+        if (chars == NULL) return NULL;
+        jsize i = 0;
+        while (i < len && chars[i] < 0x80) i++;
+        (*env)->ReleaseStringCritical(env, jstr, chars);
+        if (i == len) return getString646_USChars(env, jstr, strict);
+#endif
+        JNU_ThrowInternalError(env, unsupportedEncodingMessage);
+        return NULL;
+    }
     if (fastEncoding == NO_ENCODING_YET) {
         JNU_ThrowInternalError(env, "platform encoding not initialized");
         return 0;

@@ -29,6 +29,8 @@
  */
 
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
@@ -76,6 +78,16 @@ public class Contains {
         }
     }
 
+    @Test
+    public void externalLegacyNameContainment() {
+        Charset external = new Charset("GBK", null) {
+            public boolean contains(Charset cs) { return cs == this; }
+            public CharsetEncoder newEncoder() { throw new UnsupportedOperationException(); }
+            public CharsetDecoder newDecoder() { throw new UnsupportedOperationException(); }
+        };
+        assertTrue(Charset.forName("UTF-16").contains(external));
+    }
+
     /**
      * Helper method that checks if a charset should contain another charset.
      */
@@ -90,63 +102,14 @@ public class Contains {
                 "utf-8",
                 "utf-16le",
                 "utf-16be",
-                "x-utf-16le-bom"
+                "x-utf-16le-bom",
+                "UTF-32", "UTF-32BE", "UTF-32LE", "X-UTF-32BE-BOM", "X-UTF-32LE-BOM"
         };
 
         String[] charsetNames = {
-                "US-ASCII",
-                "UTF-8",
-                "UTF-16",
-                "UTF-16BE",
-                "UTF-16LE",
-                "x-UTF-16LE-BOM",
-                "GBK",
-                "GB18030",
-                "ISO-8859-1",
-                "ISO-8859-15",
-                "ISO-8859-2",
-                "ISO-8859-3",
-                "ISO-8859-4",
-                "ISO-8859-5",
-                "ISO-8859-6",
-                "ISO-8859-7",
-                "ISO-8859-8",
-                "ISO-8859-9",
-                "ISO-8859-13",
-                "JIS_X0201",
-                "x-JIS0208",
-                "JIS_X0212-1990",
-                "GB2312",
-                "EUC-KR",
-                "x-EUC-TW",
-                "EUC-JP",
-                "x-euc-jp-linux",
-                "KOI8-R",
-                "TIS-620",
-                "x-ISCII91",
-                "windows-1251",
-                "windows-1252",
-                "windows-1253",
-                "windows-1254",
-                "windows-1255",
-                "windows-1256",
-                "windows-1257",
-                "windows-1258",
-                "windows-932",
-                "x-mswin-936",
-                "x-windows-949",
-                "x-windows-950",
-                "windows-31j",
-                "Big5",
-                "Big5-HKSCS",
-                "x-MS950-HKSCS",
-                "ISO-2022-JP",
-                "ISO-2022-KR",
-                "x-ISO-2022-CN-CNS",
-                "x-ISO-2022-CN-GB",
-                "Big5-HKSCS",
-                "x-Johab",
-                "Shift_JIS"
+                "US-ASCII", "ISO-8859-1", "UTF-8", "UTF-16", "UTF-16BE", "UTF-16LE",
+                "x-UTF-16LE-BOM", "UTF-32", "UTF-32BE", "UTF-32LE",
+                "X-UTF-32BE-BOM", "X-UTF-32LE-BOM"
         };
 
         // All charsets in utfNames should contain
@@ -156,55 +119,28 @@ public class Contains {
     }
 
     private static Stream<Arguments> charsets() {
-        Charset us_ascii = Charset.forName("US-ASCII");
-        Charset iso_8859_1 = Charset.forName("ISO-8859-1");
-        Charset iso_8859_15 = Charset.forName("ISO-8859-15");
-        Charset utf_8 = Charset.forName("UTF-8");
-        Charset utf_16be = Charset.forName("UTF-16BE");
-        Charset cp1252 = Charset.forName("CP1252");
+        Charset ascii = Charset.forName("US-ASCII");
+        Charset latin1 = Charset.forName("ISO-8859-1");
+        Charset utf8 = Charset.forName("UTF-8");
+        Charset utf16be = Charset.forName("UTF-16BE");
 
         return Stream.of(
-            Arguments.of(us_ascii, us_ascii, true),
-            Arguments.of(us_ascii, iso_8859_1, false),
-            Arguments.of(us_ascii, iso_8859_15, false),
-            Arguments.of(us_ascii, utf_8, false),
-            Arguments.of(us_ascii, utf_16be, false),
-            Arguments.of(us_ascii, cp1252, false),
-
-            Arguments.of(iso_8859_1, us_ascii, true),
-            Arguments.of(iso_8859_1, iso_8859_1, true),
-            Arguments.of(iso_8859_1, iso_8859_15, false),
-            Arguments.of(iso_8859_1, utf_8, false),
-            Arguments.of(iso_8859_1, utf_16be, false),
-            Arguments.of(iso_8859_1, cp1252, false),
-
-            Arguments.of(iso_8859_15, us_ascii, true),
-            Arguments.of(iso_8859_15, iso_8859_1, false),
-            Arguments.of(iso_8859_15, iso_8859_15, true),
-            Arguments.of(iso_8859_15, utf_8, false),
-            Arguments.of(iso_8859_15, utf_16be, false),
-            Arguments.of(iso_8859_15, cp1252, false),
-
-            Arguments.of(utf_8, us_ascii, true),
-            Arguments.of(utf_8, iso_8859_1, true),
-            Arguments.of(utf_8, iso_8859_15, true),
-            Arguments.of(utf_8, utf_8, true),
-            Arguments.of(utf_8, utf_16be, true),
-            Arguments.of(utf_8, cp1252, true),
-
-            Arguments.of(utf_16be, us_ascii, true),
-            Arguments.of(utf_16be, iso_8859_1, true),
-            Arguments.of(utf_16be, iso_8859_15, true),
-            Arguments.of(utf_16be, utf_8, true),
-            Arguments.of(utf_16be, utf_16be, true),
-            Arguments.of(utf_16be, cp1252, true),
-
-            Arguments.of(cp1252, us_ascii, true),
-            Arguments.of(cp1252, iso_8859_1, false),
-            Arguments.of(cp1252, iso_8859_15, false),
-            Arguments.of(cp1252, utf_8, false),
-            Arguments.of(cp1252, utf_16be, false),
-            Arguments.of(cp1252, cp1252, true)
+            Arguments.of(ascii, ascii, true),
+            Arguments.of(ascii, latin1, false),
+            Arguments.of(ascii, utf8, false),
+            Arguments.of(ascii, utf16be, false),
+            Arguments.of(latin1, ascii, true),
+            Arguments.of(latin1, latin1, true),
+            Arguments.of(latin1, utf8, false),
+            Arguments.of(latin1, utf16be, false),
+            Arguments.of(utf8, ascii, true),
+            Arguments.of(utf8, latin1, true),
+            Arguments.of(utf8, utf8, true),
+            Arguments.of(utf8, utf16be, true),
+            Arguments.of(utf16be, ascii, true),
+            Arguments.of(utf16be, latin1, true),
+            Arguments.of(utf16be, utf8, true),
+            Arguments.of(utf16be, utf16be, true)
         );
     }
 }

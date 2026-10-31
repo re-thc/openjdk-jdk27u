@@ -31,6 +31,25 @@ throw `UnsupportedOperationException`, and they supply no GUI API or behavior.
 are unsupported. The upstream desktop sources remain available in the checkout;
 only the explicit beans source list and headless signature types are compiled.
 
+This fork builds these public charsets and their aliases: US-ASCII,
+ISO-8859-1, UTF-8, UTF-16, UTF-16BE, UTF-16LE, x-UTF-16LE-BOM, UTF-32,
+UTF-32BE, UTF-32LE, X-UTF-32BE-BOM and X-UTF-32LE-BOM. Other built-in
+charsets are absent, including CESU-8. Applications can still install an
+external `CharsetProvider`. Locale formatting data and internal modified
+UTF-8 are separate and remain available.
+
+A Unix host must use a supported filesystem encoding. The standard output and
+error encodings must also be supported; if configured explicitly, they must
+match the destination's encoding. Unsupported native byte conversions fail
+instead of interpreting the bytes as UTF-8. On Windows, Unicode filesystem and
+process APIs do not require a public ANSI-code-page charset, but native APIs
+that require non-ASCII bytes from an unavailable code page cannot be used.
+This includes native library paths that require such a conversion. The default
+process reader and writer methods require the native encoding; pass an explicit
+charset matching the child process to their overloads when needed. Setting
+`file.encoding` to a removed encoding, or `COMPAT` on an unsupported native
+encoding, fails at startup.
+
 On x64 and AArch64, this fork defaults to four-byte object headers with Serial,
 G1 and ZGC. `-XX:-UseFourByteObjectHeaders` selects eight-byte compact headers;
 `-XX:-UseCompactObjectHeaders` selects legacy headers and overrides any

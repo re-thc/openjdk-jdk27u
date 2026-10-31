@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 8186803
  * @summary Check if the linefeed is de/encoded correctly in ebcdic
  * @modules jdk.charsets

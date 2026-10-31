@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @summary test Bug 4199484
  * @modules jdk.charsets
  * @run main ConverterTest

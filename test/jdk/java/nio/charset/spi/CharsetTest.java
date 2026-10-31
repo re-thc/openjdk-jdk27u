@@ -51,6 +51,12 @@ public class CharsetTest {
         if (!((Charset)available.get(cs.name())).equals(cs))
             fail(csn, "Available charset != looked-up charset");
 
+        if (csn.equalsIgnoreCase("windows-1252") || csn.equalsIgnoreCase("cp1252")) {
+            String text = "external provider";
+            if (!text.equals(new String(text.getBytes(cs), cs)))
+                fail(csn, "External provider did not round-trip ASCII");
+        }
+
         if (csn.equalsIgnoreCase("FOO")) {
             if (!(cs instanceof FooCharset))
                 fail(csn, "instanceof failed");

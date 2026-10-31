@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
    @bug 4658679 4879644
    @summary Checks replacement logic within EUC-TW decoder
 */

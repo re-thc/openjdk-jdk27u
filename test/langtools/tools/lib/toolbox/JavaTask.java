@@ -139,9 +139,10 @@ public class JavaTask extends AbstractTask<JavaTask> {
     public Task.Result run() {
         List<String> args = new ArrayList<>();
         args.add(toolBox.getJDKTool("java").toString());
+        args.addAll(toolBox.testStreamOptions("", vmOptions == null ? List.of() : vmOptions));
         if (includeStandardOptions) {
             args.addAll(toolBox.split(System.getProperty("test.vm.opts"), " +"));
-            args.addAll(toolBox.split(System.getProperty("test.java.opts"), " +"));
+            args.addAll(toolBox.testJavaOptions(vmOptions == null ? List.of() : vmOptions));
         }
         if (classpath != null) {
             args.add("-classpath");

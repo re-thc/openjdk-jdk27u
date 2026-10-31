@@ -31,13 +31,13 @@ import java.util.*;
  * @modules jdk.compiler
  * @build TestHelper TestFileEncoding ExpectedEncoding
  * @run main TestFileEncoding UTF-8
- * @run main/othervm -Dfile.encoding=MyEncoding -DuserEncoding=MyEncoding TestFileEncoding MyEncoding
+ * @run main/othervm -Dfile.encoding=ISO-8859-1 -DuserEncoding=ISO-8859-1 TestFileEncoding ISO-8859-1
  * @run main/othervm -DuserEncoding=COMPAT TestFileEncoding UTF-8
  * @run main TestFileEncoding UTF-8 en_US.UTF-8
- * @run main/othervm -Dfile.encoding=MyEncoding -DuserEncoding=MyEncoding TestFileEncoding MyEncoding en_US.UTF-8
+ * @run main/othervm -Dfile.encoding=ISO-8859-1 -DuserEncoding=ISO-8859-1 TestFileEncoding ISO-8859-1 en_US.UTF-8
  * @run main/othervm -DuserEncoding=COMPAT TestFileEncoding UTF-8 en_US.UTF-8
  * @run main TestFileEncoding UTF-8 C
- * @run main/othervm -Dfile.encoding=MyEncoding -DuserEncoding=MyEncoding TestFileEncoding MyEncoding C
+ * @run main/othervm -Dfile.encoding=ISO-8859-1 -DuserEncoding=ISO-8859-1 TestFileEncoding ISO-8859-1 C
  * @run main/othervm -DuserEncoding=COMPAT TestFileEncoding US-ASCII C
  * @author Brent Christian
  */

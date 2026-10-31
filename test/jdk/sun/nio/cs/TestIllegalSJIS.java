@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 4117820
  * @summary Verify that SJIS.Decoder works properly for values between 0xA000 and 0xA0FC
  * @modules jdk.charsets

@@ -35,6 +35,8 @@
  * @summary Basic test for incubator modules in jmods and images
  */
 
+import jdk.test.lib.process.ProcessTools;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -317,7 +319,8 @@ public class ImageModules {
     static ToolResult java(Path image, String... opts) throws Throwable {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream ps = new PrintStream(baos);
-        String[] options = Stream.concat(Stream.of(getJava(image)),
+        String[] options = Stream.concat(Stream.concat(Stream.of(getJava(image)),
+                                         ProcessTools.testStreamOptions("").stream()),
                                          Stream.of(opts).filter(s -> !s.equals("")))
                                  .toArray(String[]::new);
 

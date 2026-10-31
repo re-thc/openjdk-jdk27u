@@ -117,6 +117,46 @@ public class ToolBox {
         return osName.toLowerCase(Locale.ENGLISH).startsWith("windows");
     }
 
+    // Defaults for test environments that explicitly configure their pipes.
+    // Task-specific options follow these and can override them.
+    public List<String> testStreamOptions(String prefix) {
+        return testStreamOptions(prefix, List.of());
+    }
+
+    List<String> testStreamOptions(String prefix, List<String> supplied) {
+        String encoding = System.getProperty("test.stream.encoding");
+        if (encoding == null) {
+            return List.of();
+        }
+        List<String> options = new ArrayList<>();
+        for (String stream : List.of("stdin", "stdout", "stderr")) {
+            String property = prefix + "-D" + stream + ".encoding";
+            String legacyProperty = prefix + "-Dsun." + stream + ".encoding";
+            boolean specified = supplied.stream().anyMatch(arg ->
+                    arg.equals(property) || arg.startsWith(property + "=") ||
+                    arg.equals(legacyProperty) || arg.startsWith(legacyProperty + "="));
+            if (!specified) {
+                options.add(property + "=" + encoding);
+            }
+        }
+        options.add(prefix + "-Dtest.stream.encoding=" + encoding);
+        return options;
+    }
+
+    List<String> testJavaOptions(List<String> supplied) {
+        List<String> inherited = split(System.getProperty("test.java.opts", ""), " +");
+        String encoding = System.getProperty("test.stream.encoding");
+        if (encoding == null) {
+            return inherited;
+        }
+        return inherited.stream().filter(arg -> List.of("stdin", "stdout", "stderr").stream()
+                .noneMatch(stream -> arg.equals("-D" + stream + ".encoding=" + encoding)
+                        && supplied.stream().anyMatch(option ->
+                                option.equals("-Dsun." + stream + ".encoding")
+                                || option.startsWith("-Dsun." + stream + ".encoding="))))
+                .toList();
+    }
+
     /**
      * Splits a string around matches of the given regular expression.
      * If the string is empty, an empty list will be returned.

@@ -31,6 +31,7 @@
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -129,10 +130,16 @@ public class CharsetContainmentTest {
         if (encodings.length != contains.length) {
             throw new RuntimeException("Testing data is not set up correctly");
         }
+        // Restrict the historical table to this distribution's explicit profile.
+        Set<String> profile = Set.of("US-ASCII", "ISO-8859-1", "UTF-8", "UTF-16",
+                "UTF-16BE", "UTF-16LE", "x-UTF-16LE-BOM", "UTF-32", "UTF-32BE",
+                "UTF-32LE", "X-UTF-32BE-BOM", "X-UTF-32LE-BOM");
         List<Arguments> charsetList = new ArrayList<Arguments>();
         for (int i = 0; i < encodings.length; i++) {
             for (int j = 0 ; j < contains[i].length; j++) {
-                charsetList.add(Arguments.of(encodings[i], contains[i][j]));
+                if (profile.contains(encodings[i]) && profile.contains(contains[i][j])) {
+                    charsetList.add(Arguments.of(encodings[i], contains[i][j]));
+                }
             }
         }
         return charsetList.stream();

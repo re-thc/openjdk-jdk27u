@@ -33,6 +33,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.function.Supplier;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
@@ -64,7 +65,7 @@ public class ConsoleImpl {
         private static RemoteConsole console;
 
         @Override
-        public JdkConsole console(boolean isTTY, Charset inCharset, Charset outCharset) {
+        public JdkConsole console(boolean isTTY, Supplier<Charset> inCharset, Supplier<Charset> outCharset) {
             synchronized (ConsoleProviderImpl.class) {
                 if (remoteOutput != null && remoteInput != null) {
                     return console = new RemoteConsole(remoteOutput, remoteInput);

@@ -33,6 +33,7 @@ import java.util.Locale;
 
 import jdk.internal.io.JdkConsole;
 import jdk.internal.io.JdkConsoleProvider;
+import java.util.function.Supplier;
 import jdk.internal.org.jline.reader.EndOfFileException;
 import jdk.internal.org.jline.reader.LineReader;
 import jdk.internal.org.jline.reader.LineReaderBuilder;
@@ -49,8 +50,8 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
      * {@inheritDoc}
      */
     @Override
-    public JdkConsole console(boolean isTTY, Charset inCharset, Charset outCharset) {
-        return isTTY ? new LazyDelegatingJdkConsoleImpl(inCharset, outCharset) : null;
+    public JdkConsole console(boolean isTTY, Supplier<Charset> inCharset, Supplier<Charset> outCharset) {
+        return isTTY ? new LazyDelegatingJdkConsoleImpl(inCharset.get(), outCharset.get()) : null;
     }
 
     private static class LazyDelegatingJdkConsoleImpl implements JdkConsole {

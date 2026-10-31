@@ -453,6 +453,19 @@ public final class ProcessTools {
         List<String> args = new ArrayList<>();
         args.add(javapath);
 
+        // Some test environments explicitly configure the encoding of their
+        // process pipes. Put these defaults before the test's own arguments,
+        // so a test can still exercise an unsupported stream encoding.
+        String streamEncoding = System.getProperty("test.stream.encoding");
+        if (streamEncoding != null) {
+            for (String stream : List.of("stdin", "stdout", "stderr")) {
+                if (!hasLegacyStreamOption(command, stream)) {
+                    args.add("-D" + stream + ".encoding=" + streamEncoding);
+                }
+            }
+            args.add("-Dtest.stream.encoding=" + streamEncoding);
+        }
+
         String noCPString = System.getProperty("test.noclasspath", "false");
         boolean noCP = Boolean.valueOf(noCPString);
         if (!noCP) {
@@ -481,6 +494,40 @@ public final class ProcessTools {
             pb.environment().remove("CLASSPATH");
         }
         return pb;
+    }
+
+    private static boolean hasLegacyStreamOption(String[] command, String stream) {
+        String property = "-Dsun." + stream + ".encoding";
+        Set<String> optionsWithArgument = Set.of("-cp", "-classpath", "--class-path",
+                "-p", "--module-path", "--upgrade-module-path", "--add-modules",
+                "--limit-modules", "--add-exports", "--add-opens", "--add-reads",
+                "--patch-module", "--enable-native-access", "--source");
+        for (int i = 0; i < command.length; i++) {
+            String arg = command[i];
+            if (arg.equals(property) || arg.startsWith(property + "=")) {
+                return true;
+            }
+            if (arg.equals("-jar") || arg.equals("-m") || arg.equals("--module") ||
+                    arg.startsWith("--module=") || arg.startsWith("@") || !arg.startsWith("-")) {
+                break;
+            }
+            if (optionsWithArgument.contains(arg)) {
+                i++;
+            }
+        }
+        return false;
+    }
+
+    /** Options for subprocess pipes explicitly configured by the test environment. */
+    public static List<String> testStreamOptions(String prefix) {
+        String encoding = System.getProperty("test.stream.encoding");
+        if (encoding == null) {
+            return List.of();
+        }
+        return List.of(prefix + "-Dstdin.encoding=" + encoding,
+                       prefix + "-Dstdout.encoding=" + encoding,
+                       prefix + "-Dstderr.encoding=" + encoding,
+                       prefix + "-Dtest.stream.encoding=" + encoding);
     }
 
     // 8377729: Check for duplicate VM JVMTI agent options, as it may
@@ -562,7 +609,31 @@ public final class ProcessTools {
      * @return The ProcessBuilder instance representing the java command.
      */
     public static ProcessBuilder createTestJavaProcessBuilder(String... command) {
-        return createJavaProcessBuilder(Utils.prependTestJavaOpts(command));
+        String[] allOptions = Utils.prependTestJavaOpts(command);
+        String streamEncoding = System.getProperty("test.stream.encoding");
+        if (streamEncoding == null) {
+            return createJavaProcessBuilder(allOptions);
+        }
+        // A test's legacy sun.* property must not be shadowed by the
+        // configured canonical default inherited through test.java.opts.
+        int inheritedCount = allOptions.length - command.length;
+        List<String> options = new ArrayList<>();
+        for (int i = 0; i < allOptions.length; i++) {
+            boolean shadowed = false;
+            if (i < inheritedCount) {
+                for (String stream : List.of("stdin", "stdout", "stderr")) {
+                    if (allOptions[i].equals("-D" + stream + ".encoding=" + streamEncoding)
+                            && hasLegacyStreamOption(command, stream)) {
+                        shadowed = true;
+                        break;
+                    }
+                }
+            }
+            if (!shadowed) {
+                options.add(allOptions[i]);
+            }
+        }
+        return createJavaProcessBuilder(options.toArray(String[]::new));
     }
 
     /**

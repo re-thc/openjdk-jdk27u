@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -45,7 +46,7 @@ public class EncDec {
     @MethodSource("stringProvider")
     public void roundTripTest(String pre) {
         ByteBuffer bb = ByteBuffer.allocate(100);
-        Charset preCs = Charset.forName("ISO-8859-15");
+        Charset preCs = Charset.forName("ISO-8859-1");
         if (!preCs.canEncode()) {
             throw new RuntimeException("Error: Trying to test encode and " +
                     "decode methods on a charset that does not support encoding");
@@ -60,5 +61,14 @@ public class EncDec {
                 "Hello, world!",
                 "apple, banana, orange",
                 "car, truck, horse");
+    }
+
+    @Test
+    public void nonAsciiRoundTrip() {
+        for (String name : new String[] { "ISO-8859-1", "UTF-8", "UTF-16", "UTF-32" }) {
+            Charset cs = Charset.forName(name);
+            String text = "caf\u00e9";
+            assertEquals(text, cs.decode(cs.encode(text)).toString(), name);
+        }
     }
 }

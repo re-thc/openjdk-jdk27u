@@ -24,8 +24,9 @@
  */
 
 /**
- * Provides {@link java.nio.charset.Charset charsets} that
- * are not in {@code java.base} (mostly double byte and IBM charsets).
+ * Retains the charset provider module for compatibility with module graphs.
+ * This distribution's provider contains no additional built-in charsets;
+ * applications may install their own {@link java.nio.charset.spi.CharsetProvider}.
  *
  * @provides java.nio.charset.spi.CharsetProvider
  *

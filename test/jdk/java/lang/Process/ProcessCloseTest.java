@@ -22,12 +22,16 @@
  */
 package jdk.java.lang.Process;
 
+import jdk.test.lib.process.ProcessTools;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FilterInputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
@@ -38,6 +42,7 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.lang.reflect.Field;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -51,6 +56,7 @@ import java.util.stream.Stream;
 
 /*
  * @test
+ * @library /test/lib
  * @bug 8364361
  * @summary Tests for Process.close
  * @modules java.base/java.lang:+open java.base/java.io:+open
@@ -62,13 +68,32 @@ public class ProcessCloseTest {
     private final static String CAT_PROGRAM = "cat";
     public static final String FORCED_CLOSE_MSG = "Forced close";
     private static List<String> JAVA_ARGS;
+    private static final String STREAM_ENCODING = System.getProperty("test.stream.encoding");
+    private static final Charset STREAM_CHARSET = STREAM_ENCODING == null
+            ? null : Charset.forName(STREAM_ENCODING);
+
+    private static BufferedReader inputReader(Process process) {
+        return STREAM_CHARSET == null ? process.inputReader() : process.inputReader(STREAM_CHARSET);
+    }
+
+    private static BufferedReader errorReader(Process process) {
+        return STREAM_CHARSET == null ? process.errorReader() : process.errorReader(STREAM_CHARSET);
+    }
+
+    private static BufferedWriter outputWriter(Process process) {
+        return STREAM_CHARSET == null ? process.outputWriter() : process.outputWriter(STREAM_CHARSET);
+    }
 
     private static List<String> setupJavaEXE() {
         String JAVA_HOME = System.getProperty("test.jdk");
         if (JAVA_HOME == null)
             JAVA_HOME = System.getProperty("JAVA_HOME");
         String classPath = System.getProperty("test.class.path");
-        return  List.of(JAVA_HOME + "/bin/java", "-cp", classPath, ProcessCloseTest.class.getName());
+        List<String> args = new ArrayList<>();
+        args.add(JAVA_HOME + "/bin/java");
+        args.addAll(ProcessTools.testStreamOptions(""));
+        args.addAll(List.of("-cp", classPath, ProcessCloseTest.class.getName()));
+        return args;
     }
 
     private static List<String> javaArgs(ChildCommand... moreArgs) {
@@ -324,7 +349,7 @@ public class ProcessCloseTest {
 
         private static void stdoutPrintAllLines(Process p) {
             try {
-                var lines = p.inputReader().readAllLines();
+                var lines = inputReader(p).readAllLines();
                 Assertions.assertNotEquals(0, lines.size(), "stdout should not be empty");
                 Log.printf("        %d lines\n", lines.size());
                 Log.printf("%s%n", lines.toString().indent(8));
@@ -335,7 +360,7 @@ public class ProcessCloseTest {
 
         private static void stderrPrintAllLines(Process p) {
             try {
-                var lines = p.errorReader().readAllLines();
+                var lines = errorReader(p).readAllLines();
                 Assertions.assertNotEquals(0, lines.size(), "stderr should not be empty");
                 Log.printf("        %d lines\n", lines.size());
                 Log.printf("%s%n", lines.toString().indent(8));
@@ -346,7 +371,7 @@ public class ProcessCloseTest {
 
         private static void writerWrite(Process p) {
             try {
-                p.outputWriter().write("Now is the time.");
+                outputWriter(p).write("Now is the time.");
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe);
             }
@@ -354,7 +379,7 @@ public class ProcessCloseTest {
 
         private static void writerClose(Process p) {
             try {
-                p.outputWriter().close();
+                outputWriter(p).close();
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe);
             }
@@ -685,22 +710,30 @@ public class ProcessCloseTest {
         }
     }
 
-    // Copy of ProcessExamples in java/lang/snippet-files/ProcessExamples.java
+    // Exercise the ProcessExamples pattern, using a Java echo child on Windows.
     @Test
     void example() {
-        try (Process p = new ProcessBuilder(CAT_PROGRAM).start();
-             Writer writer = p.outputWriter();
-             Reader reader = p.inputReader()) {
+        List<String> command = OS_WINDOWS ? javaArgs(ChildCommand.STDOUT_ECHO) : List.of(CAT_PROGRAM);
+        try (Process p = new ProcessBuilder(command).start();
+             Writer writer = outputWriter(p);
+             Reader reader = inputReader(p)) {
             writer.write(haiku);
             writer.close();
-            // Read all lines and print each
-            reader.readAllLines()
-                    .forEach(System.out::println);
+            List<String> lines = reader.readAllLines();
+            if (OS_WINDOWS) {
+                Assertions.assertEquals(haiku.lines().toList(), lines);
+            } else {
+                lines.forEach(System.out::println);
+            }
             var status = p.waitFor();
             if (status != 0)
                 throw new RuntimeException("unexpected process status: " + status);
         } catch (Exception e) {
-            System.err.println("Process failed: " + e);
+            if (OS_WINDOWS) {
+                Assertions.fail("Process failed", e);
+            } else {
+                System.err.println("Process failed: " + e);
+            }
         }
     }
 

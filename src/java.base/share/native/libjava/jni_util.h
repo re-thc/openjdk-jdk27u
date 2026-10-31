@@ -346,6 +346,7 @@ JNU_GetEnv(JavaVM *vm, jint version);
 enum {
     NO_ENCODING_YET = 0,        /* "sun.jnu.encoding" not yet set */
     NO_FAST_ENCODING,           /* Platform encoding is not fast */
+    UNSUPPORTED_ENCODING,       /* No platform byte converter is available */
     FAST_8859_1,                /* ISO-8859-1 */
     FAST_CP1252,                /* MS-DOS Cp1252 */
     FAST_646_US,                /* US-ASCII : ISO646-US */

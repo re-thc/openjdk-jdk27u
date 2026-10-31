@@ -606,6 +606,9 @@ public class Basic {
         List<String> javaArgs = new ArrayList<>();
         javaArgs.add(javaExe);
         javaArgs.add("-XX:+DisplayVMOutputToStderr");
+        javaArgs.add("-Dstdin.encoding=UTF-8");
+        javaArgs.add("-Dstdout.encoding=UTF-8");
+        javaArgs.add("-Dstderr.encoding=UTF-8");
         // Propagate launchMechanism mode to spawned java processes if specified.
         var launchMechanism = System.getProperty("jdk.lang.Process.launchMechanism");
         if (launchMechanism != null) {
@@ -624,10 +627,9 @@ public class Basic {
             // If round trip conversion works, should be able to set env vars
             // correctly in child.
             String jnuEncoding = System.getProperty("sun.jnu.encoding");
-            Charset cs = jnuEncoding != null
-                ? Charset.forName(jnuEncoding, Charset.defaultCharset())
-                : Charset.defaultCharset();
-            if (new String(tested.getBytes(cs), cs).equals(tested)) {
+            Charset cs = jnuEncoding != null && Charset.isSupported(jnuEncoding)
+                ? Charset.forName(jnuEncoding) : null;
+            if (Windows.is() || (cs != null && new String(tested.getBytes(cs), cs).equals(tested))) {
                 out.println("Testing " + encoding + " environment values");
                 ProcessBuilder pb = new ProcessBuilder();
                 pb.environment().put("ASCIINAME",tested);

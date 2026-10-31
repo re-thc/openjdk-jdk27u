@@ -22,11 +22,14 @@
  */
 
 /* @test
+ * @library /test/lib
    @bug 4180429
    @summary Lossage in dup2 if System.in is closed.
    @requires vm.flagless
    @run main/othervm Duped
  */
+
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.BufferedReader;
 import java.io.PrintStream;
@@ -52,7 +55,7 @@ public class Duped {
             File.separator +
             "bin" +
             File.separator +
-            "java -classpath " +
+            "java " + String.join(" ", ProcessTools.testStreamOptions("")) + " -classpath " +
             System.getProperty("java.class.path") +
             " Duped$Echo";
 

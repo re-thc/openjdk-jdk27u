@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
    @bug 4750497
    @summary Check surrogate coverage of Big5-HKSCS (2001)
  */

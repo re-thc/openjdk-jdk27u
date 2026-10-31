@@ -583,12 +583,16 @@ public class TestCharsetMapping {
         int skipped = 0;
         int known = 0;
 
+        Set<String> profile = new HashSet<>(Files.readAllLines(dir.resolve("modern-profile")));
+        Set<String> remaining = new HashSet<>(profile);
+        remaining.removeIf(s -> s.isBlank() || s.startsWith("#"));
         for (CharsetInfo csinfo : charsets(dir.resolve("charsets"))) {
             String csname = csinfo.csName;
 
-            if (csinfo.isInternal) {
+            if (csinfo.isInternal || !profile.contains(csname)) {
                 continue;
             }
+            remaining.remove(csname);
 
             log.printf("%ntesting: %-16s", csname);
 
@@ -665,6 +669,7 @@ public class TestCharsetMapping {
         log.println(tested + " charset" + plural(tested) + " tested, "
                     + skipped + " skipped, " + known + " known issue(s)");
         log.println();
+        if (!remaining.isEmpty()) throw new Exception("Profile entries missing from mapping: " + remaining);
         if (errors > 0)
             throw new Exception("Errors detected in "
                                 + errors + " charset" + plural(errors));

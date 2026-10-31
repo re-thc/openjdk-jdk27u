@@ -32,6 +32,8 @@
  * @run main/othervm/native -Xcheck:jni TestLoadLibraryDeadlock
  */
 
+import jdk.test.lib.process.ProcessTools;
+
 import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.*;
@@ -63,7 +65,11 @@ public class TestLoadLibraryDeadlock {
     private static String classPathSeparator = System.getProperty("path.separator");
 
     private static OutputAnalyzer runCommand(File workingDirectory, String... commands) throws Throwable {
-        ProcessBuilder pb = new ProcessBuilder(commands);
+        List<String> args = new ArrayList<>();
+        args.add(commands[0]);
+        args.addAll(ProcessTools.testStreamOptions("-J"));
+        args.addAll(Arrays.asList(commands).subList(1, commands.length));
+        ProcessBuilder pb = new ProcessBuilder(args);
         pb.directory(workingDirectory);
         System.out.println("COMMAND: " + String.join(" ", commands));
         return ProcessTools.executeProcess(pb);
