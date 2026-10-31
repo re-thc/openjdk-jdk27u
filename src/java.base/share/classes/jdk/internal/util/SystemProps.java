@@ -26,6 +26,7 @@ package jdk.internal.util;
 
 
 import java.lang.annotation.Native;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 import java.io.File;
@@ -85,7 +86,21 @@ public final class SystemProps {
         if (fileEncoding == null) {
             put(props, "file.encoding", "UTF-8");
         } else if ("COMPAT".equals(fileEncoding)) {
+            if (!Charset.isSupported(nativeEncoding)) {
+                throw new InternalError("Unsupported native encoding for file.encoding=COMPAT: "
+                        + nativeEncoding);
+            }
             put(props, "file.encoding", nativeEncoding);
+        } else {
+            boolean supported;
+            try {
+                supported = Charset.isSupported(fileEncoding);
+            } catch (java.nio.charset.IllegalCharsetNameException ignored) {
+                supported = false;
+            }
+            if (!supported) {
+                throw new InternalError("Unsupported file.encoding: " + fileEncoding);
+            }
         }
 
         // Encoding properties for stdin, stdout, and stderr. For stdout and stderr,

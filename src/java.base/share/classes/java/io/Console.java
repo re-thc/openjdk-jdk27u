@@ -33,7 +33,6 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
 import jdk.internal.util.StaticProperty;
-import sun.nio.cs.UTF_8;
 
 /**
  * Methods to access the character-based console device, if any, associated
@@ -557,10 +556,12 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     // ttyStatus() returns bit patterns above, a bit is set if the corresponding file
     // descriptor is a character device
     private static final int ttyStatus = ttyStatus();
-    private static final Charset STDIN_CHARSET =
-        Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE);
-    private static final Charset STDOUT_CHARSET =
-        Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE);
+    private static Charset stdinCharset() {
+        return Charset.forName(StaticProperty.stdinEncoding());
+    }
+    private static Charset stdoutCharset() {
+        return Charset.forName(StaticProperty.stdoutEncoding());
+    }
     private static final Console cons = instantiateConsole();
     static {
         // Set up JavaIOAccess in SharedSecrets
@@ -594,7 +595,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
             if (!consModName.equals("java.base")) {
                 for (var jcp : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class)) {
                     if (consModName.equals(jcp.getClass().getModule().getName())) {
-                        var jc = jcp.console(isStdinTty() && isStdoutTty(), STDIN_CHARSET, STDOUT_CHARSET);
+                        var jc = jcp.console(isStdinTty() && isStdoutTty(), stdinCharset(), stdoutCharset());
                         if (jc != null) {
                             c = new ProxyingConsole(jc);
                         }
@@ -607,7 +608,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
         // If not found, default to built-in Console
         if (isStdinTty() && isStdoutTty() && c == null) {
-            c = new ProxyingConsole(new JdkConsoleImpl(STDIN_CHARSET, STDOUT_CHARSET));
+            c = new ProxyingConsole(new JdkConsoleImpl(stdinCharset(), stdoutCharset()));
         }
 
         return c;
