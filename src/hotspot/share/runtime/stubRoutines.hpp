@@ -168,6 +168,9 @@ public:
 
 #include CPU_HEADER(stubRoutines)
 
+  static bool use_zlib_ng_crc32();
+  static constexpr int zlib_ng_crc32_min_length = 64;
+
   static const char* get_blob_name(BlobId id);
   static const char* get_stub_name(StubId id);
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +75,7 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
 public class Inflater implements AutoCloseable {
 
     private final InflaterZStreamRef zsRef;
+    private final boolean rawCRC32;
     private ByteBuffer input = ZipUtils.defaultBuf;
     private byte[] inputArray;
     private int inputPos, inputLim;
@@ -86,6 +88,8 @@ public class Inflater implements AutoCloseable {
     /*
      * These fields are used as an "out" parameter from JNI when a
      * DataFormatException is thrown during the inflate operation.
+     * On successful completion, outputConsumed instead caches the final
+     * native checksum. The packed return still carries both byte counts.
      */
     private int inputConsumed;
     private int outputConsumed;
@@ -108,7 +112,19 @@ public class Inflater implements AutoCloseable {
      */
     @SuppressWarnings("this-escape")
     public Inflater(boolean nowrap) {
-        this.zsRef = new InflaterZStreamRef(this, init(nowrap));
+        this.rawCRC32 = false;
+        this.zsRef = new InflaterZStreamRef(this, init(nowrap ? 1 : 0));
+    }
+
+    // Only GZIP's owned, exact-class inflater requests the raw payload CRC.
+    @SuppressWarnings("this-escape")
+    Inflater(boolean nowrap, boolean rawCRC32) {
+        // One initialization argument: 0 wrapped, 1 raw, 2 owned raw CRC.
+        long result = init(nowrap ? (rawCRC32 ? 2 : 1) : 0);
+        // calloc returns an aligned address. Bit zero reports supported mode;
+        // the address kept by the cleaner and all processing calls is untagged.
+        this.rawCRC32 = (result & 1) != 0;
+        this.zsRef = new InflaterZStreamRef(this, result & ~1L);
     }
 
     /**
@@ -615,6 +631,17 @@ public class Inflater implements AutoCloseable {
         }
     }
 
+    // Owner-only Java metadata, following the same synchronization discipline
+    // as hasPendingOutput(). No native address is accessed. GZIP reads these
+    // on its owner thread after inflate returns; cached bits survive end().
+    boolean hasRawCRC32() {
+        return rawCRC32;
+    }
+
+    int rawCRC32() {
+        return finished && rawCRC32 ? outputConsumed : 0;
+    }
+
     /**
      * Returns the total number of compressed bytes input so far.
      *
@@ -692,6 +719,7 @@ public class Inflater implements AutoCloseable {
             finished = false;
             needDict = false;
             bytesRead = bytesWritten = 0;
+            inputConsumed = outputConsumed = 0;
         }
     }
 
@@ -743,19 +771,23 @@ public class Inflater implements AutoCloseable {
     }
 
     private static native void initIDs();
-    private static native long init(boolean nowrap);
+    private static native long init(int mode);
     private static native void setDictionary(long addr, byte[] b, int off,
                                              int len);
     private static native void setDictionaryBuffer(long addr, long bufAddress, int len);
+    @jdk.internal.vm.annotation.IntrinsicCandidate
     private native long inflateBytesBytes(long addr,
         byte[] inputArray, int inputOff, int inputLen,
         byte[] outputArray, int outputOff, int outputLen) throws DataFormatException;
+    @jdk.internal.vm.annotation.IntrinsicCandidate
     private native long inflateBytesBuffer(long addr,
         byte[] inputArray, int inputOff, int inputLen,
         long outputAddress, int outputLen) throws DataFormatException;
+    @jdk.internal.vm.annotation.IntrinsicCandidate
     private native long inflateBufferBytes(long addr,
         long inputAddress, int inputLen,
         byte[] outputArray, int outputOff, int outputLen) throws DataFormatException;
+    @jdk.internal.vm.annotation.IntrinsicCandidate
     private native long inflateBufferBuffer(long addr,
         long inputAddress, int inputLen,
         long outputAddress, int outputLen) throws DataFormatException;

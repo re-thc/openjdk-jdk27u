@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +31,7 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/methodData.hpp"
+#include "runtime/zipRuntime.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
@@ -230,6 +232,20 @@ void TemplateInterpreterGenerator::generate_all() {
   // intrinsic is disabled.
   native_method_entry(java_lang_Thread_currentThread)
   native_method_entry(java_lang_ref_reference_get0)
+
+#if defined(AMD64) || defined(AARCH64)
+  native_method_entry(java_util_zip_Deflater_deflateBytesBytes)
+  native_method_entry(java_util_zip_Deflater_deflateBytesBuffer)
+  native_method_entry(java_util_zip_Deflater_deflateBufferBytes)
+  native_method_entry(java_util_zip_Deflater_deflateBufferBuffer)
+  native_method_entry(java_util_zip_Inflater_inflateBytesBytes)
+  native_method_entry(java_util_zip_Inflater_inflateBytesBuffer)
+  native_method_entry(java_util_zip_Inflater_inflateBufferBytes)
+  native_method_entry(java_util_zip_Inflater_inflateBufferBuffer)
+  native_method_entry(java_util_zip_Adler32_update)
+  native_method_entry(java_util_zip_Adler32_updateBytes)
+  native_method_entry(java_util_zip_Adler32_updateByteBuffer)
+#endif
 
   native_method_entry(java_util_zip_CRC32_update)
   native_method_entry(java_util_zip_CRC32_updateBytes)
@@ -470,6 +486,22 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
                                            : entry_point = generate_math_entry(Interpreter::java_lang_math_sqrt); break;
   case Interpreter::java_lang_ref_reference_get0
                                            : entry_point = generate_Reference_get_entry(); break;
+#if defined(AMD64) || defined(AARCH64)
+  case Interpreter::java_util_zip_Deflater_deflateBytesBytes:
+  case Interpreter::java_util_zip_Deflater_deflateBytesBuffer:
+  case Interpreter::java_util_zip_Deflater_deflateBufferBytes:
+  case Interpreter::java_util_zip_Deflater_deflateBufferBuffer:
+  case Interpreter::java_util_zip_Inflater_inflateBytesBytes:
+  case Interpreter::java_util_zip_Inflater_inflateBytesBuffer:
+  case Interpreter::java_util_zip_Inflater_inflateBufferBytes:
+  case Interpreter::java_util_zip_Inflater_inflateBufferBuffer:
+    if (UseZipIntrinsics) entry_point = generate_zip_entry(kind);
+    break;
+  case Interpreter::java_util_zip_Adler32_update:
+  case Interpreter::java_util_zip_Adler32_updateBytes:
+  case Interpreter::java_util_zip_Adler32_updateByteBuffer:
+    entry_point = generate_Adler32_entry(kind); break;
+#endif
   case Interpreter::java_util_zip_CRC32_update
                                            : entry_point = generate_CRC32_update_entry();  break;
   case Interpreter::java_util_zip_CRC32_updateBytes
@@ -492,3 +524,29 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   }
   return entry_point;
 }
+
+#if defined(AMD64) || defined(AARCH64)
+address TemplateInterpreterGenerator::generate_zip_entry(AbstractInterpreter::MethodKind kind) {
+  address entry;
+  switch (kind) {
+  case Interpreter::java_util_zip_Deflater_deflateBytesBytes:
+    entry = CAST_FROM_FN_PTR(address, ZipRuntime::deflate_bytes_bytes_interpreter); break;
+  case Interpreter::java_util_zip_Deflater_deflateBytesBuffer:
+    entry = CAST_FROM_FN_PTR(address, ZipRuntime::deflate_bytes_buffer_interpreter); break;
+  case Interpreter::java_util_zip_Deflater_deflateBufferBytes:
+    entry = CAST_FROM_FN_PTR(address, ZipRuntime::deflate_buffer_bytes_interpreter); break;
+  case Interpreter::java_util_zip_Deflater_deflateBufferBuffer:
+    entry = CAST_FROM_FN_PTR(address, ZipRuntime::deflate_buffer_buffer_interpreter); break;
+  case Interpreter::java_util_zip_Inflater_inflateBytesBytes:
+    entry = CAST_FROM_FN_PTR(address, ZipRuntime::inflate_bytes_bytes_interpreter); break;
+  case Interpreter::java_util_zip_Inflater_inflateBytesBuffer:
+    entry = CAST_FROM_FN_PTR(address, ZipRuntime::inflate_bytes_buffer_interpreter); break;
+  case Interpreter::java_util_zip_Inflater_inflateBufferBytes:
+    entry = CAST_FROM_FN_PTR(address, ZipRuntime::inflate_buffer_bytes_interpreter); break;
+  case Interpreter::java_util_zip_Inflater_inflateBufferBuffer:
+    entry = CAST_FROM_FN_PTR(address, ZipRuntime::inflate_buffer_buffer_interpreter); break;
+  default: ShouldNotReachHere(); return nullptr;
+  }
+  return generate_native_entry(false, entry);
+}
+#endif

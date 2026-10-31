@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,6 +223,51 @@ public class CloseWrappedStream {
                 "Expected wrapped output stream to be closed once");
     }
 
+    @Test
+    public void entryAfterFailedFinish() throws IOException {
+        assertClosedAfterFailure(true, false);
+    }
+
+    @Test
+    public void entryAfterFailedWrappedClose() throws IOException {
+        assertClosedAfterFailure(false, true);
+    }
+
+    @Test
+    public void entryAfterFailedFinishAndClose() throws IOException {
+        assertClosedAfterFailure(true, true);
+    }
+
+    private static void assertClosedAfterFailure(boolean failOnWrite,
+                                                 boolean failOnClose) throws IOException {
+        WrappedOutputStream wrappedStream = new WrappedOutputStream();
+        ZipOutputStream zip = new ZipOutputStream(wrappedStream);
+        if (failOnWrite) {
+            zip.putNextEntry(new ZipEntry("file.txt"));
+            zip.write("hello".getBytes(StandardCharsets.UTF_8));
+        }
+        wrappedStream.failOnWrite = failOnWrite;
+        wrappedStream.failOnClose = failOnClose;
+        IOException failure = assertThrows(IOException.class, zip::close);
+        assertEquals(failOnClose ? WrappedOutputStream.CLOSE_MSG
+                                : WrappedOutputStream.WRITE_MSG, failure.getMessage());
+
+        // Do not let another injected failure conceal an accepted entry.
+        wrappedStream.failOnWrite = false;
+        wrappedStream.failOnClose = false;
+        int size = wrappedStream.size();
+        ZipEntry entry = new ZipEntry("after-close");
+        entry.setMethod(ZipEntry.STORED);
+        entry.setSize(0);
+        entry.setCrc(0);
+        assertThrows(IOException.class, () -> zip.putNextEntry(entry));
+        assertEquals(size, wrappedStream.size(), "Closed stream wrote another entry");
+
+        zip.close();
+        zip.close();
+        assertEquals(1, wrappedStream.timesClosed, "Repeated close reached the wrapped stream");
+    }
+
     /**
      * Output stream which conditionally throws IOException on writes
      * and tracks its close status.
@@ -237,6 +282,10 @@ public class CloseWrappedStream {
 
         public WrappedOutputStream() {
             super(new ByteArrayOutputStream());
+        }
+
+        int size() {
+            return ((ByteArrayOutputStream) out).size();
         }
 
         @Override

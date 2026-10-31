@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,15 +39,23 @@ typedef jzentry* (*ZIP_FindEntry_t)(jzfile* zip, const char* name, jint* sizeP, 
 typedef jboolean(*ZIP_ReadEntry_t)(jzfile* zip, jzentry* entry, unsigned char* buf, char* namebuf);
 typedef void(*ZIP_FreeEntry_t)(jzfile *zip, jzentry *entry);
 typedef jint(*ZIP_CRC32_t)(jint crc, const jbyte* buf, jint len);
+typedef jint(*ZIP_Adler32_t)(jint adler, const jbyte* buf, jint len);
+typedef jint(*ZIP_Adler32Byte_t)(jint adler, jint value);
 typedef const char* (*ZIP_GZip_InitParams_t)(size_t, size_t*, size_t*, int);
 typedef size_t(*ZIP_GZip_Fully_t)(char*, size_t, char*, size_t, char*, size_t, int, char*, char const**);
 
+typedef jlong (*ZIP_Process_t)(jboolean, jlong, jlong, jint, jlong, jint, intptr_t, jint);
+static ZIP_Process_t ZIP_Process = nullptr;
+typedef jlong (*ZIP_Complete_t)(JNIEnv*, jboolean, jobject, jlong, jint, jint, jint, jint);
+static ZIP_Complete_t ZIP_Complete = nullptr;
 static ZIP_Open_t ZIP_Open = nullptr;
 static ZIP_Close_t ZIP_Close = nullptr;
 static ZIP_FindEntry_t ZIP_FindEntry = nullptr;
 static ZIP_ReadEntry_t ZIP_ReadEntry = nullptr;
 static ZIP_FreeEntry_t ZIP_FreeEntry = nullptr;
 static ZIP_CRC32_t ZIP_CRC32 = nullptr;
+static ZIP_Adler32_t ZIP_Adler32 = nullptr;
+static ZIP_Adler32Byte_t ZIP_Adler32Byte = nullptr;
 static ZIP_GZip_InitParams_t ZIP_GZip_InitParams = nullptr;
 static ZIP_GZip_Fully_t ZIP_GZip_Fully = nullptr;
 
@@ -78,12 +87,16 @@ static void* dll_lookup(const char* name, const char* path, bool vm_exit_on_fail
 
 static void store_function_pointers(const char* path, bool vm_exit_on_failure) {
   assert(_zip_handle != nullptr, "invariant");
+  ZIP_Complete = CAST_TO_FN_PTR(ZIP_Complete_t, dll_lookup("ZIP_Complete", path, vm_exit_on_failure));
+  ZIP_Process = CAST_TO_FN_PTR(ZIP_Process_t, dll_lookup("ZIP_Process", path, vm_exit_on_failure));
   ZIP_Open = CAST_TO_FN_PTR(ZIP_Open_t, dll_lookup("ZIP_Open", path, vm_exit_on_failure));
   ZIP_Close = CAST_TO_FN_PTR(ZIP_Close_t, dll_lookup("ZIP_Close", path, vm_exit_on_failure));
   ZIP_FindEntry = CAST_TO_FN_PTR(ZIP_FindEntry_t, dll_lookup("ZIP_FindEntry", path, vm_exit_on_failure));
   ZIP_ReadEntry = CAST_TO_FN_PTR(ZIP_ReadEntry_t, dll_lookup("ZIP_ReadEntry", path, vm_exit_on_failure));
   ZIP_FreeEntry = CAST_TO_FN_PTR(ZIP_FreeEntry_t, dll_lookup("ZIP_FreeEntry", path, vm_exit_on_failure));
   ZIP_CRC32 = CAST_TO_FN_PTR(ZIP_CRC32_t, dll_lookup("ZIP_CRC32", path, vm_exit_on_failure));
+  ZIP_Adler32 = CAST_TO_FN_PTR(ZIP_Adler32_t, dll_lookup("ZIP_Adler32", path, vm_exit_on_failure));
+  ZIP_Adler32Byte = CAST_TO_FN_PTR(ZIP_Adler32Byte_t, dll_lookup("ZIP_Adler32Byte", path, vm_exit_on_failure));
   // The following entry points are most likely optional from a zip library implementation perspective.
   // Hence no vm_exit on a resolution failure. Further refactorings should investigate this,
   // and if possible, streamline setting all entry points consistently.
@@ -214,4 +227,38 @@ void* ZipLibrary::handle() {
   assert(is_loaded(), "invariant");
   assert(_zip_handle != nullptr, "invariant");
   return _zip_handle;
+}
+
+Atomic<address> ZipLibrary::_process_entry{nullptr};
+
+address ZipLibrary::initialize_process() {
+  // Publish only after initialize() has acquired/completed the existing DLL
+  // setup. Error completion may immediately need the other resolved entries.
+  initialize();
+  address entry = CAST_FROM_FN_PTR(address, ZIP_Process);
+  _process_entry.release_store(entry);
+  return entry;
+}
+
+jlong ZipLibrary::complete(JNIEnv* env, jboolean inflate, jobject receiver, jlong stream,
+                          jint input_len, jint output_len, jint params, jint status) {
+  return ZIP_Complete(env, inflate, receiver, stream, input_len, output_len, params, status);
+}
+
+address ZipLibrary::adler32_address() {
+  initialize();
+  assert(ZIP_Adler32 != nullptr, "invariant");
+  return CAST_FROM_FN_PTR(address, ZIP_Adler32);
+}
+
+address ZipLibrary::adler32_byte_address() {
+  initialize();
+  assert(ZIP_Adler32Byte != nullptr, "invariant");
+  return CAST_FROM_FN_PTR(address, ZIP_Adler32Byte);
+}
+
+address ZipLibrary::crc32_address() {
+  initialize();
+  assert(ZIP_CRC32 != nullptr, "invariant");
+  return CAST_FROM_FN_PTR(address, ZIP_CRC32);
 }

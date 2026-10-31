@@ -236,7 +236,14 @@ public class CopyZipFile {
                             zos.closeEntry();
                         }
                         case "NO_COMPRESSION.txt", "BEST_SPEED.txt" -> {
-                            // NO_COMPRESSION and BEST_SPEED should lead to an unexpected recompressed size
+                            // Different levels may produce the same size with another
+                            // conforming compressor. Require an exception only for a
+                            // size mismatch, which is what this test validates.
+                            long targetSize = zf.getEntry("DEFAULT_COMPRESSION.txt").getCompressedSize();
+                            if (entry.getCompressedSize() == targetSize) {
+                                zos.closeEntry();
+                                break;
+                            }
                             ZipException ze = assertThrows(ZipException.class, () -> {
                                 zos.closeEntry();
                             });

@@ -44,7 +44,7 @@
 #include "io_util.h"
 #include "io_util_md.h"
 #include "zip_util.h"
-#include <zlib.h>
+#include "zip_zlib_backend.h"
 
 /* USE_MMAP means mmap the CEN & ENDHDR part of the zip file. */
 #ifdef USE_MMAP
@@ -1378,7 +1378,7 @@ InflateFully(jzfile *zip, jzentry *entry, void *buf, char **msg)
 
     memset(&strm, 0, sizeof(z_stream));
     if (inflateInit2(&strm, -MAX_WBITS) != Z_OK) {
-        *msg = strm.msg;
+        *msg = (char *)strm.msg;
         return JNI_FALSE;
     }
 
@@ -1511,7 +1511,7 @@ ZIP_InflateFully(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pm
     *pmsg = NULL; /* Reset error message */
 
     if (inflateInit2(&strm, MAX_WBITS) != Z_OK) {
-        *pmsg = strm.msg;
+        *pmsg = (char *)strm.msg;
         return JNI_FALSE;
     }
 

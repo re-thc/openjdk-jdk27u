@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +46,7 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/zipLibrary.hpp"
 
 #ifdef ASSERT
 #define __ gen()->lir(__FILE__, __LINE__)->
@@ -2920,6 +2922,23 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_Reference_get0(x);
     break;
 
+#if defined(AMD64) || defined(AARCH64)
+  case vmIntrinsics::_deflateBytesBytes: do_zip_process(x, false, true, true); break;
+  case vmIntrinsics::_deflateBytesBuffer: do_zip_process(x, false, true, false); break;
+  case vmIntrinsics::_deflateBufferBytes: do_zip_process(x, false, false, true); break;
+  case vmIntrinsics::_deflateBufferBuffer: do_zip_process(x, false, false, false); break;
+  case vmIntrinsics::_inflateBytesBytes: do_zip_process(x, true, true, true); break;
+  case vmIntrinsics::_inflateBytesBuffer: do_zip_process(x, true, true, false); break;
+  case vmIntrinsics::_inflateBufferBytes: do_zip_process(x, true, false, true); break;
+  case vmIntrinsics::_inflateBufferBuffer: do_zip_process(x, true, false, false); break;
+#endif
+#if defined(AMD64) || defined(AARCH64)
+  case vmIntrinsics::_updateAdler32:
+  case vmIntrinsics::_updateBytesAdler32:
+  case vmIntrinsics::_updateByteBufferAdler32:
+    do_update_Adler32(x);
+    break;
+#endif
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
@@ -3484,3 +3503,95 @@ LIR_Opr LIRGenerator::mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& 
   value = value_fixed;
   return value;
 }
+
+#if defined(AMD64) || defined(AARCH64)
+void LIRGenerator::do_update_Adler32(Intrinsic* x) {
+  assert(UseAdler32Intrinsics, "Adler32 intrinsic must be enabled");
+  LIR_Opr result;
+  if (x->id() == vmIntrinsics::_updateAdler32) {
+    result = call_runtime(x->argument_at(0), x->argument_at(1),
+                          ZipLibrary::adler32_byte_address(), x->type(), nullptr);
+  } else {
+    LIRItem adler(x->argument_at(0), this);
+    LIRItem buf(x->argument_at(1), this);
+    LIRItem off(x->argument_at(2), this);
+    LIRItem len(x->argument_at(3), this);
+    adler.load_item();
+    buf.load_item();
+    off.load_item();
+    len.load_item();
+
+    // AArch64 cannot combine a register index and a nonzero displacement.
+    LIR_Opr base = buf.result();
+    if (x->id() == vmIntrinsics::_updateBytesAdler32) {
+      base = new_pointer_register();
+      __ leal(LIR_OprFact::address(new LIR_Address(buf.result(),
+          arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), base);
+    }
+    LIR_Opr index = new_register(T_LONG);
+    __ convert(Bytecodes::_i2l, off.result(), index);
+    LIR_Opr addr = new_register(T_ADDRESS);
+    __ leal(LIR_OprFact::address(new LIR_Address(base, index, 0, T_BYTE)), addr);
+
+    BasicTypeList signature(3);
+    signature.append(T_INT);
+    signature.append(T_ADDRESS);
+    signature.append(T_INT);
+    LIR_OprList args(3);
+    args.append(adler.result());
+    args.append(addr);
+    args.append(len.result());
+    result = call_runtime(&signature, &args, ZipLibrary::adler32_address(), x->type(), nullptr);
+  }
+  __ move(result, rlock_result(x));
+}
+
+void LIRGenerator::do_zip_process(Intrinsic* x, bool inflate, bool input_array, bool output_array) {
+  CodeEmitInfo* info = state_for(x, x->state());
+  auto load_arg = [&](int index, bool widen = false) {
+    LIRItem item(x->argument_at(index), this);
+    item.load_item();
+    LIR_Opr value = item.result();
+    if (widen) {
+      value = new_register(T_LONG);
+      __ convert(Bytecodes::_i2l, item.result(), value);
+    }
+    return value;
+  };
+  int index = 2; // skip the receiver and native stream
+  LIR_Opr input = load_arg(index++);
+  LIR_Opr input_offset = input_array ? load_arg(index++, true) : input;
+  LIR_Opr input_len = load_arg(index++);
+  LIR_Opr output = load_arg(index++);
+  LIR_Opr output_offset = output_array ? load_arg(index++, true) : output;
+  LIR_Opr output_len = load_arg(index++);
+  LIR_Opr flush = inflate ? LIR_OprFact::intConst(0) : load_arg(index++);
+  LIR_Opr params = inflate ? LIR_OprFact::intConst(0) : load_arg(index++);
+  // AArch64 constant-to-memory stores support only zero. Materialize the
+  // nonzero inflate selector in a register before storing the argument block.
+  LIR_Opr operation = LIR_OprFact::intConst(inflate);
+  if (inflate) operation = load_constant(operation->as_constant_ptr());
+  LIR_Opr normalized[] = {
+    operation, load_arg(0), load_arg(1),
+    input_array ? input : LIR_OprFact::oopConst(nullptr), input_offset, input_len,
+    output_array ? output : LIR_OprFact::oopConst(nullptr), output_offset, output_len,
+    flush, params
+  };
+  frame_map()->update_reserved_argument_area_size(ARRAY_SIZE(normalized) * BytesPerLong);
+  for (unsigned i = 0; i < ARRAY_SIZE(normalized); i++) {
+    LIR_Address* slot = new LIR_Address(FrameMap::stack_pointer(),
+        i * BytesPerLong, normalized[i]->type());
+    // Preserve the full-oop block layout used by the runtime stub's OopMap.
+    __ move_wide(normalized[i], slot);
+  }
+  LIR_Opr block = new_pointer_register();
+  __ leal(LIR_OprFact::address(new LIR_Address(FrameMap::stack_pointer(), 0, T_ADDRESS)), block);
+  BasicTypeList signature;
+  signature.append(T_ADDRESS);
+  LIR_OprList args;
+  args.append(block);
+  LIR_Opr result = call_runtime(&signature, &args,
+      Runtime1::entry_for(StubId::c1_zip_process_id), x->type(), info);
+  __ move(result, rlock_result(x));
+}
+#endif

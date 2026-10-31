@@ -56,6 +56,16 @@ configure:
 	$(BASH) $(TOPDIR)/test/make/autoconf/test-configure.sh \
 	    "$(AUTOCONF)" "$(TOPDIR)" "$(TEST_SUPPORT_DIR)"
 
+# Executable-mode checks are qualified on Linux hosts; no Python dependency
+# is added to the make-test suite on other platforms.
+ifeq ($(OPENJDK_BUILD_OS), linux)
+  PYTHON3 ?= python3
+  zlib-ng-import:
+	$(PYTHON3) -B $(TOPDIR)/test/make/zlib-ng/test-import.py -v
+
+  TARGETS += zlib-ng-import
+endif
+
 TARGETS += make-base java-compilation copy-files execute fix-deps-file idea \
     compile-commands configure headless prebuilt-spec
 

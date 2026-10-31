@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +86,19 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_fmaF,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_math_fmaD,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_ref_reference_get0,                               // implementation of java.lang.ref.Reference.get()
+#if defined(AMD64) || defined(AARCH64)
+    java_util_zip_Deflater_deflateBytesBytes,
+    java_util_zip_Deflater_deflateBytesBuffer,
+    java_util_zip_Deflater_deflateBufferBytes,
+    java_util_zip_Deflater_deflateBufferBuffer,
+    java_util_zip_Inflater_inflateBytesBytes,
+    java_util_zip_Inflater_inflateBytesBuffer,
+    java_util_zip_Inflater_inflateBufferBytes,
+    java_util_zip_Inflater_inflateBufferBuffer,
+    java_util_zip_Adler32_update,
+    java_util_zip_Adler32_updateBytes,
+    java_util_zip_Adler32_updateByteBuffer,
+#endif
     java_util_zip_CRC32_update,                                 // implementation of java.util.zip.CRC32.update()
     java_util_zip_CRC32_updateBytes,                            // implementation of java.util.zip.CRC32.updateBytes()
     java_util_zip_CRC32_updateByteBuffer,                       // implementation of java.util.zip.CRC32.updateByteBuffer()
@@ -167,8 +181,20 @@ class AbstractInterpreter: AllStatic {
       case vmIntrinsics::_fmaF  : // fall thru
       case vmIntrinsics::_floatToFloat16       : // fall thru
       case vmIntrinsics::_float16ToFloat       : // fall thru
-      case vmIntrinsics::_Continuation_doYield : // fall thru
+      case vmIntrinsics::_Continuation_doYield :
         return false;
+
+      case vmIntrinsics::_deflateBytesBytes:
+      case vmIntrinsics::_deflateBytesBuffer:
+      case vmIntrinsics::_deflateBufferBytes:
+      case vmIntrinsics::_deflateBufferBuffer:
+      case vmIntrinsics::_inflateBytesBytes:
+      case vmIntrinsics::_inflateBytesBuffer:
+      case vmIntrinsics::_inflateBufferBytes:
+      case vmIntrinsics::_inflateBufferBuffer:
+        // Keep the interpreter intrinsic entry only while it is enabled.
+        // Disabled intrinsics retain ordinary compiled JNI wrappers.
+        return !InlineIntrinsics || !vmIntrinsics::is_intrinsic_available(m->intrinsic_id());
 
       default:
         return true;

@@ -62,6 +62,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/zipLibrary.hpp"
 
 //---------------------------make_vm_intrinsic----------------------------
 CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
@@ -673,6 +674,14 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_encodeAsciiArray:
     return inline_encodeISOArray(true);
 
+  case vmIntrinsics::_deflateBytesBytes: return inline_zip_process(false, true, true);
+  case vmIntrinsics::_deflateBytesBuffer: return inline_zip_process(false, true, false);
+  case vmIntrinsics::_deflateBufferBytes: return inline_zip_process(false, false, true);
+  case vmIntrinsics::_deflateBufferBuffer: return inline_zip_process(false, false, false);
+  case vmIntrinsics::_inflateBytesBytes: return inline_zip_process(true, true, true);
+  case vmIntrinsics::_inflateBytesBuffer: return inline_zip_process(true, true, false);
+  case vmIntrinsics::_inflateBufferBytes: return inline_zip_process(true, false, true);
+  case vmIntrinsics::_inflateBufferBuffer: return inline_zip_process(true, false, false);
   case vmIntrinsics::_updateCRC32:
     return inline_updateCRC32();
   case vmIntrinsics::_updateBytesCRC32:
@@ -685,6 +694,10 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
     return inline_updateDirectByteBufferCRC32C();
 
+#if defined(AMD64) || defined(AARCH64)
+  case vmIntrinsics::_updateAdler32:
+    return inline_updateAdler32();
+#endif
   case vmIntrinsics::_updateBytesAdler32:
     return inline_updateBytesAdler32();
   case vmIntrinsics::_updateByteBufferAdler32:
@@ -6911,6 +6924,23 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
   return true;
 }
 
+bool LibraryCallKit::inline_zip_process(bool inflate, bool input_array, bool output_array) {
+  // The existing native signatures use two Java slots for either an array and
+  // its int offset, or a native long address. Lengths are at the same slots.
+  Node* input_offset = input_array ? _gvn.transform(new ConvI2LNode(argument(4))) : argument(3);
+  Node* output_offset = output_array ? _gvn.transform(new ConvI2LNode(argument(7))) : argument(6);
+  Node* call = make_runtime_call(RC_NO_LEAF, OptoRuntime::zip_process_Type(),
+      OptoRuntime::zip_process_Java(), nullptr, TypePtr::BOTTOM,
+      intcon(inflate), argument(5), argument(8),
+      inflate ? intcon(0) : argument(9), inflate ? intcon(0) : argument(10),
+      argument(0), argument(1), top(),
+      input_array ? argument(3) : null(), output_array ? argument(6) : null(),
+      input_offset, top(), output_offset, top());
+  make_slow_call_ex(call, env()->Throwable_klass(), false);
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  return true;
+}
+
 /**
  * Calculate CRC32 for byte.
  * int java.util.zip.CRC32.update(int crc, int b)
@@ -6946,6 +6976,38 @@ bool LibraryCallKit::inline_updateCRC32() {
   return true;
 }
 
+Node* LibraryCallKit::make_crc32_call(Node* crc, Node* src, Node* length) {
+  if (!StubRoutines::use_zlib_ng_crc32()) {
+    Node* call = make_runtime_call(RC_LEAF | RC_NO_FP, OptoRuntime::updateBytesCRC32_Type(),
+        StubRoutines::updateBytesCRC32(), "updateBytesCRC32", TypePtr::BOTTOM,
+        crc, src, length);
+    return _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  }
+
+  IdealKit ideal(this);
+  IdealVariable result(ideal);
+  ideal.declarations_done();
+  ideal.if_then(length, BoolTest::ge, intcon(StubRoutines::zlib_ng_crc32_min_length)); {
+    sync_kit(ideal);
+    // A native C call must use the full C ABI floating-point clobber mask.
+    Node* call = make_runtime_call(RC_LEAF, OptoRuntime::updateBytesCRC32_Type(),
+        ZipLibrary::crc32_address(), "updateBytesCRC32", TypePtr::BOTTOM,
+        crc, src, length);
+    ideal.sync_kit(this);
+    ideal.set(result, _gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  } ideal.else_(); {
+    sync_kit(ideal);
+    // The shared stub takes its original kernel path for inputs below the cutoff.
+    Node* call = make_runtime_call(RC_LEAF | RC_NO_FP, OptoRuntime::updateBytesCRC32_Type(),
+        StubRoutines::updateBytesCRC32(), "updateBytesCRC32", TypePtr::BOTTOM,
+        crc, src, length);
+    ideal.sync_kit(this);
+    ideal.set(result, _gvn.transform(new ProjNode(call, TypeFunc::Parms)));
+  } ideal.end_if();
+  final_sync(ideal);
+  return ideal.value(result);
+}
+
 /**
  * Calculate CRC32 for byte[] array.
  * int java.util.zip.CRC32.updateBytes(int crc, byte[] buf, int off, int len)
@@ -6978,15 +7040,7 @@ bool LibraryCallKit::inline_updateBytesCRC32() {
   // We assume that range check is done by caller.
   // TODO: generate range check (offset+length < src.length) in debug VM.
 
-  // Call the stub.
-  address stubAddr = StubRoutines::updateBytesCRC32();
-  const char *stubName = "updateBytesCRC32";
-
-  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::updateBytesCRC32_Type(),
-                                 stubAddr, stubName, TypePtr::BOTTOM,
-                                 crc, src_start, length);
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(result);
+  set_result(make_crc32_call(crc, src_start, length));
   return true;
 }
 
@@ -7010,15 +7064,7 @@ bool LibraryCallKit::inline_updateByteBufferCRC32() {
   // 'src_start' points to src array + scaled offset
   Node* src_start = off_heap_plus_addr(base, offset);
 
-  // Call the stub.
-  address stubAddr = StubRoutines::updateBytesCRC32();
-  const char *stubName = "updateBytesCRC32";
-
-  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::updateBytesCRC32_Type(),
-                                 stubAddr, stubName, TypePtr::BOTTOM,
-                                 crc, src_start, length);
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(result);
+  set_result(make_crc32_call(crc, src_start, length));
   return true;
 }
 
@@ -7121,6 +7167,20 @@ bool LibraryCallKit::inline_updateDirectByteBufferCRC32C() {
                                  crc, src_start, length, table_start);
   Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
   set_result(result);
+  return true;
+}
+
+//------------------------------inline_updateAdler32---------------------------
+//
+// Calculate Adler32 for a single byte.
+// int java.util.zip.Adler32.update(int adler, int value)
+//
+bool LibraryCallKit::inline_updateAdler32() {
+  assert(UseAdler32Intrinsics, "Adler32 intrinsic must be enabled");
+  Node* call = make_runtime_call(RC_LEAF, OptoRuntime::updateAdler32_Type(),
+      ZipLibrary::adler32_byte_address(), "updateAdler32", TypePtr::BOTTOM,
+      argument(0), argument(1));
+  set_result(_gvn.transform(new ProjNode(call, TypeFunc::Parms)));
   return true;
 }
 

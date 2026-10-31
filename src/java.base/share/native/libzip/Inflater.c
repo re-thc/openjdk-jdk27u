@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +31,14 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <errno.h>
 #include <string.h>
 #include "jlong.h"
 #include "jni.h"
 #include "jvm.h"
 #include "jni_util.h"
-#include <zlib.h>
+#include "zip_zlib_backend.h"
 #include "java_util_zip_Inflater.h"
 
 #define ThrowDataFormatException(env, msg) \
@@ -55,7 +57,7 @@ Java_java_util_zip_Inflater_initIDs(JNIEnv *env, jclass cls)
 }
 
 JNIEXPORT jlong JNICALL
-Java_java_util_zip_Inflater_init(JNIEnv *env, jclass cls, jboolean nowrap)
+Java_java_util_zip_Inflater_init(JNIEnv *env, jclass cls, jint mode)
 {
     z_stream *strm = calloc(1, sizeof(z_stream));
 
@@ -64,9 +66,14 @@ Java_java_util_zip_Inflater_init(JNIEnv *env, jclass cls, jboolean nowrap)
         return jlong_zero;
     } else {
         const char *msg;
-        int ret = inflateInit2(strm, nowrap ? -MAX_WBITS : MAX_WBITS);
+        int ret = inflateInit2(strm, mode != 0 ? -MAX_WBITS : MAX_WBITS);
         switch (ret) {
           case Z_OK:
+#ifdef INCLUDE_ZLIBNG
+            if (mode == 2 && zng_inflateEnableRawCRC32(strm) == Z_OK) {
+                return ptr_to_jlong(strm) | 1;
+            }
+#endif
             return ptr_to_jlong(strm);
           case Z_MEM_ERROR:
             free(strm);
@@ -151,6 +158,11 @@ static jlong checkInflateStatus(JNIEnv *env, jobject this, jlong addr,
 
     switch (ret) {
     case Z_STREAM_END:
+        // Intrinsics use the call-local scalar output and store after unpinning.
+        // JNI wrappers are already past ReleasePrimitiveArrayCritical here.
+        if (env != NULL) {
+            (*env)->SetIntField(env, this, outputConsumedID, (jint)strm->adler);
+        }
         finished = 1;
         /* fall through */
     case Z_OK:
@@ -180,7 +192,18 @@ static jlong checkInflateStatus(JNIEnv *env, jobject this, jlong addr,
         JNU_ThrowInternalError(env, strm->msg);
         break;
     }
-    return ((jlong)inputUsed) | (((jlong)outputUsed) << 31) | (((jlong)finished) << 62) | (((jlong)needDict) << 63);
+    return ((jlong)inputUsed) | (((jlong)outputUsed) << 31) | (((jlong)finished) << 62) | ((jlong)((uint64_t)needDict << 63));
+}
+
+JNIEXPORT jint JNICALL
+ZIP_Inflate(jlong addr, jlong input, jint inputLen, jlong output, jint outputLen) {
+    return doInflate(addr, jlong_to_ptr(input), inputLen, jlong_to_ptr(output), outputLen);
+}
+
+JNIEXPORT jlong JNICALL
+ZIP_FinishInflate(JNIEnv* env, jobject receiver, jlong addr,
+                  jint inputLen, jint outputLen, jint status) {
+    return checkInflateStatus(env, receiver, addr, inputLen, outputLen, status);
 }
 
 JNIEXPORT jlong JNICALL

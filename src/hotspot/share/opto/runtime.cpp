@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +77,7 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vframeArray.hpp"
+#include "runtime/zipRuntime.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/preserveException.hpp"
 
@@ -170,6 +172,7 @@ bool OptoRuntime::generate(ciEnv* env) {
 
 // #undef gen
 
+const TypeFunc* OptoRuntime::_zip_process_Type = nullptr;
 const TypeFunc* OptoRuntime::_new_instance_Type                   = nullptr;
 const TypeFunc* OptoRuntime::_new_array_Type                      = nullptr;
 const TypeFunc* OptoRuntime::_multianewarray2_Type                = nullptr;
@@ -240,6 +243,7 @@ const TypeFunc* OptoRuntime::_intpoly_assign_Type                 = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesCRC32_Type               = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesCRC32C_Type              = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesAdler32_Type             = nullptr;
+const TypeFunc* OptoRuntime::_updateAdler32_Type                  = nullptr;
 const TypeFunc* OptoRuntime::_osr_end_Type                        = nullptr;
 const TypeFunc* OptoRuntime::_register_finalizer_Type             = nullptr;
 const TypeFunc* OptoRuntime::_vthread_transition_Type             = nullptr;
@@ -573,6 +577,31 @@ JRT_END
 JRT_ENTRY(void, OptoRuntime::vthread_end_transition_C(oopDesc* vt, jboolean is_mount, JavaThread* current))
   MountUnmountDisabler::end_transition(current, vt, is_mount, false /*is_thread_start*/);
 JRT_END
+
+
+JRT_ENTRY(jlong, OptoRuntime::zip_process_C(jint inflate, jint input_len, jint output_len,
+    jint flush, jint params, oopDesc* receiver, jlong stream,
+    oopDesc* input, oopDesc* output, jlong input_offset, jlong output_offset,
+    JavaThread* current))
+  return ZipRuntime::process(inflate, receiver, stream, input, input_offset, input_len,
+      output, output_offset, output_len, flush, params, current);
+JRT_END
+
+static const TypeFunc* make_zip_process_Type() {
+  // Keep all subword scalar arguments in registers. Apple AArch64 runtime
+  // stubs cannot pass packed subword arguments on the native stack.
+  const Type* args[] = {TypeInt::BOOL, TypeInt::INT, TypeInt::INT, TypeInt::INT, TypeInt::INT,
+      TypeInstPtr::NOTNULL, TypeLong::LONG, Type::HALF,
+      TypeInstPtr::BOTTOM, TypeInstPtr::BOTTOM,
+      TypeLong::LONG, Type::HALF, TypeLong::LONG, Type::HALF};
+  const Type** fields = TypeTuple::fields(14);
+  for (int i = 0; i < 14; i++) fields[TypeFunc::Parms + i] = args[i];
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 14, fields);
+  fields = TypeTuple::fields(2);
+  fields[TypeFunc::Parms] = TypeLong::LONG;
+  fields[TypeFunc::Parms + 1] = Type::HALF;
+  return TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 2, fields));
+}
 
 static const TypeFunc* make_new_instance_Type() {
   // create input type (domain)
@@ -1052,6 +1081,16 @@ static const TypeFunc* make_updateBytesCRC32C_Type() {
   fields[TypeFunc::Parms+0] = TypeInt::INT; // crc result
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms+1, fields);
   return TypeFunc::make(domain, range);
+}
+
+static const TypeFunc* make_updateAdler32_Type() {
+  const Type** fields = TypeTuple::fields(2);
+  fields[TypeFunc::Parms] = TypeInt::INT;
+  fields[TypeFunc::Parms + 1] = TypeInt::INT;
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 2, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInt::INT;
+  return TypeFunc::make(domain, TypeTuple::make(TypeFunc::Parms + 1, fields));
 }
 
 static const TypeFunc* make_updateBytesAdler32_Type() {
@@ -2285,6 +2324,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
 }
 
 void OptoRuntime::initialize_types() {
+  _zip_process_Type                   = make_zip_process_Type();
   _new_instance_Type                  = make_new_instance_Type();
   _new_array_Type                     = make_new_array_Type();
   _multianewarray2_Type               = multianewarray_Type(2);
@@ -2355,6 +2395,7 @@ void OptoRuntime::initialize_types() {
   _updateBytesCRC32_Type              = make_updateBytesCRC32_Type();
   _updateBytesCRC32C_Type             = make_updateBytesCRC32C_Type();
   _updateBytesAdler32_Type            = make_updateBytesAdler32_Type();
+  _updateAdler32_Type                 = make_updateAdler32_Type();
   _osr_end_Type                       = make_osr_end_Type();
   _register_finalizer_Type            = make_register_finalizer_Type();
   _vthread_transition_Type            = make_vthread_transition_Type();

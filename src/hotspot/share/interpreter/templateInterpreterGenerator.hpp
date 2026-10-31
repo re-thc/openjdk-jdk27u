@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +96,11 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_abstract_entry(void);
   address generate_math_entry(AbstractInterpreter::MethodKind kind);
   address generate_Reference_get_entry();
+#if defined(AMD64) || defined(AARCH64)
+  address generate_native_entry(bool synchronized, address zip_entry);
+  address generate_zip_entry(AbstractInterpreter::MethodKind kind);
+  address generate_Adler32_entry(AbstractInterpreter::MethodKind kind);
+#endif
   address generate_CRC32_update_entry();
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
   address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind);

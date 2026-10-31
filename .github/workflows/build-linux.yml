@@ -167,7 +167,6 @@ jobs:
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
           --with-jtreg=${{ steps.jtreg.outputs.path }}
           --with-gtest=${{ steps.gtest.outputs.path }}
-          --with-zlib=system
           --with-jmod-compress=zip-1
           --with-external-symbols-in-bundles=none
           --with-native-debug-symbols-level=1
@@ -190,6 +189,10 @@ jobs:
           test "${cxx##* }" = "$GCC_BIN/g++"
           test "$(sed -n 's/^SYSROOT := //p' "$spec")" = /
           mold --version
+
+      - name: 'Test maintained zlib-ng import (offline)'
+        run: make CONF=${{ inputs.platform }} test-make-zlib-ng-import
+        if: ${{ inputs.dry-run == false && inputs.platform == 'linux-x64' && matrix.debug-level == 'release' }}
 
       - name: 'Build'
         id: build

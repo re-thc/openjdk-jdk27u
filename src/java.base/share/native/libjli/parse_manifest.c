@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "jni.h"
 #include "jli_util.h"
 
-#include <zlib.h>
+#include "jli_zlib_backend.h"
 #include "manifest_info.h"
 
 static char     *manifest;
@@ -87,12 +87,14 @@ inflate_file(int fd, zentry *entry, int *size_out)
             return (NULL);
         }
         if ((out = malloc(entry->isize + 1)) == NULL) {
+            inflateEnd(&zs);
             free(in);
             return (NULL);
         }
         zs.next_out = (Byte*)out;
         zs.avail_out = (uInt)entry->isize;
         if (inflate(&zs, Z_PARTIAL_FLUSH) < 0) {
+            inflateEnd(&zs);
             free(in);
             free(out);
             return (NULL);

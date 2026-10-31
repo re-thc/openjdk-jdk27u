@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +40,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "stubGenerator_x86_64.hpp"
+#include "utilities/zipLibrary.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #include "opto/c2_globals.hpp"
@@ -3548,6 +3550,12 @@ address StubGenerator::generate_updateBytesCRC32() {
   BLOCK_COMMENT("Entry:");
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
+  Label bulk_entry;
+  Label* bulk_target = nullptr;
+  if (StubRoutines::use_zlib_ng_crc32()) {
+    bulk_target = &bulk_entry;
+  }
+
   if (VM_Version::supports_sse4_1() && VM_Version::supports_avx512_vpclmulqdq() &&
       VM_Version::supports_avx512bw() &&
       VM_Version::supports_avx512vl()) {
@@ -3559,13 +3567,21 @@ address StubGenerator::generate_updateBytesCRC32() {
     __ kernel_crc32_avx512(crc, buf, len, table, tmp1, tmp2);
     __ notl(crc);
   } else {
-    __ kernel_crc32(crc, buf, len, table, tmp1);
+    __ kernel_crc32(crc, buf, len, table, tmp1,
+                    StubRoutines::zlib_ng_crc32_min_length, bulk_target);
   }
 
   __ movl(rax, crc);
   __ vzeroupper();
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
+
+  if (bulk_target != nullptr) {
+    __ bind(bulk_entry);
+    __ notl(crc);
+    __ leave();
+    __ jump(RuntimeAddress(ZipLibrary::crc32_address()), r10);
+  }
 
   // record the stub entry and end
   store_archive_data(stub_id, start, __ pc());

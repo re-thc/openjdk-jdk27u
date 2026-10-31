@@ -905,18 +905,20 @@ searching for runtime libraries.
   #running-tests)
 
 Certain third-party libraries used by the JDK (libjpeg, giflib, libpng, lcms
-and zlib) are included in the JDK repository. The default behavior of the JDK
-build is to use the included ("bundled") versions of libjpeg, giflib, libpng
-and lcms. For zlib, the system lib (if present) is used except on Windows and
-AIX. However the bundled libraries may be replaced by an external version. To
-do so, specify `system` as the `<source>` option in these arguments. (The
-default is `bundled`).
+and compression libraries) are included in the JDK repository. The default
+behavior is to use the included ("bundled") versions. libjpeg, giflib, libpng
+and lcms may be replaced by an external version by selecting `system` as the
+`<source>` in these options:
 
 * `--with-libjpeg=<source>` - Use the specified source for libjpeg
 * `--with-giflib=<source>` - Use the specified source for giflib
 * `--with-libpng=<source>` - Use the specified source for libpng
 * `--with-lcms=<source>` - Use the specified source for lcms
-* `--with-zlib=<source>` - Use the specified source for zlib
+
+Compression uses bundled zlib-ng on Linux, macOS and Windows x86-64/AArch64,
+including the launcher. Other targets retain bundled stock zlib. The obsolete
+`--with-zlib` option is rejected; there is no system-zlib selection. See the
+[bundled backend update instructions](../src/java.base/share/native/libzip/UPDATING.txt).
 
 On Linux, it is possible to select either static or dynamic linking of the C++
 runtime. The default is static linking, with dynamic linking as fallback if the

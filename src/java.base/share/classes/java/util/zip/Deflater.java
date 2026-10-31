@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -380,8 +381,12 @@ public class Deflater implements AutoCloseable {
             throw new IllegalArgumentException("invalid compression level");
         }
         synchronized (zsRef) {
-            if (this.level != level) {
-                this.level = level;
+            // zlib and zlib-ng use level 6 for DEFAULT_COMPRESSION. Switching
+            // between those requests does not require a native parameter call.
+            int previous = this.level == DEFAULT_COMPRESSION ? 6 : this.level;
+            int requested = level == DEFAULT_COMPRESSION ? 6 : level;
+            this.level = level;
+            if (previous != requested) {
                 setParams = true;
             }
         }
@@ -937,18 +942,22 @@ public class Deflater implements AutoCloseable {
     private static native void setDictionary(long addr, byte[] b, int off,
                                              int len);
     private static native void setDictionaryBuffer(long addr, long bufAddress, int len);
+    @jdk.internal.vm.annotation.IntrinsicCandidate
     private native long deflateBytesBytes(long addr,
         byte[] inputArray, int inputOff, int inputLen,
         byte[] outputArray, int outputOff, int outputLen,
         int flush, int params);
+    @jdk.internal.vm.annotation.IntrinsicCandidate
     private native long deflateBytesBuffer(long addr,
         byte[] inputArray, int inputOff, int inputLen,
         long outputAddress, int outputLen,
         int flush, int params);
+    @jdk.internal.vm.annotation.IntrinsicCandidate
     private native long deflateBufferBytes(long addr,
         long inputAddress, int inputLen,
         byte[] outputArray, int outputOff, int outputLen,
         int flush, int params);
+    @jdk.internal.vm.annotation.IntrinsicCandidate
     private native long deflateBufferBuffer(long addr,
         long inputAddress, int inputLen,
         long outputAddress, int outputLen,

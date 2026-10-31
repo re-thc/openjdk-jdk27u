@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2025, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +58,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/intpow.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/zipLibrary.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
@@ -8145,6 +8147,7 @@ class StubGenerator: public StubCodeGenerator {
    *   c_rarg0   - int adler result
    */
   address generate_updateBytesAdler32() {
+    address bulk_adler = ZipLibrary::adler32_address();
     StubId stub_id = StubId::stubgen_updateBytesAdler32_id;
     int entry_count = StubInfo::entry_count(stub_id);
     assert(entry_count == 1, "sanity check");
@@ -8155,6 +8158,14 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
     start = __ pc();
+
+    Label use_simd;
+    __ cmpw(c_rarg2, 1024);
+    __ br(Assembler::LT, use_simd);
+    // BR through IP0 is compatible with a native BTI call landing pad.
+    __ lea(r16, RuntimeAddress(bulk_adler));
+    __ br(r16);
+    __ bind(use_simd);
 
     Label L_simple_by1_loop, L_nmax, L_nmax_loop, L_by16, L_by16_loop, L_by1_loop, L_do_mod, L_combine, L_by1;
 

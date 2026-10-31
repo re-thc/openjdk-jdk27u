@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +32,6 @@ import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.EOFException;
-import java.util.Objects;
 
 /**
  * This class implements a stream filter for decompressing GZIP file format data.
@@ -85,6 +85,8 @@ public class GZIPInputStream extends InflaterInputStream {
     private static final boolean alwaysReadNextMember =
             Boolean.getBoolean("jdk.util.gzip.tryReadAheadAfterTrailer");
 
+    private final boolean inflaterCRC;
+
     /**
      * GZIP header magic number.
      */
@@ -135,33 +137,19 @@ public class GZIPInputStream extends InflaterInputStream {
      * @throws    IllegalArgumentException if {@code size <= 0}
      */
     public GZIPInputStream(InputStream in, int size) throws IOException {
-        super(in, createInflater(in, size), size);
-        usesDefaultInflater = true;
+        super(in, size);
         try {
             // we don't expect the stream to be at EOF
             // and if it is, then we want readHeader to
             // raise an exception, so we pass "true" for
             // the "failOnEOF" param.
             readHeader(in, true);
+            // Subclasses can observe or replace the protected crc and inf fields.
+            inflaterCRC = getClass() == GZIPInputStream.class && inf.hasRawCRC32();
         } catch (IOException ioe) {
             this.inf.end();
             throw ioe;
         }
-    }
-
-    /*
-     * Creates and returns an Inflater only if the input stream is not null and the
-     * buffer size is > 0.
-     * If the input stream is null, then this method throws a
-     * NullPointerException. If the size is <= 0, then this method throws
-     * an IllegalArgumentException
-     */
-    private static Inflater createInflater(InputStream in, int size) {
-        Objects.requireNonNull(in);
-        if (size <= 0) {
-            throw new IllegalArgumentException("buffer size <= 0");
-        }
-        return new Inflater(true);
     }
 
     /**
@@ -217,6 +205,9 @@ public class GZIPInputStream extends InflaterInputStream {
         }
         int n = super.read(buf, off, len);
         if (n == -1) {
+            if (inflaterCRC) {
+                crc.setValue(inf.rawCRC32());
+            }
             if (hasNoMoreMembers()) {
                 eos = true;
             } else {
@@ -226,7 +217,7 @@ public class GZIPInputStream extends InflaterInputStream {
                 // decompressed data.
                 return this.read(buf, off, len);
             }
-        } else {
+        } else if (!inflaterCRC) {
             crc.update(buf, off, n);
         }
         return n;

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3670,6 +3671,55 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   }
 }
 
+#ifdef AMD64
+void GraphBuilder::append_adler32_with_fallback(ciMethod* callee, bool ignore_return) {
+  // JNI is faster for large x86 C1 updates; smaller updates use the leaf call.
+  Value length = state()->stack_at(state()->stack_size() - 1);
+  Value limit = append(new Constant(new IntConstant(65536)));
+  BlockBegin* leaf = new BlockBegin(bci());
+  BlockBegin* native = new BlockBegin(bci());
+  BlockBegin* continuation = new BlockBegin(next_bci());
+  BlockEnd* branch = append(new If(length, If::lss, false, limit, leaf, native,
+                                   copy_state_before(), false))->as_BlockEnd();
+  block()->set_end(branch);
+  leaf->merge(branch->state(), compilation()->has_irreducible_loops());
+  native->merge(branch->state(), compilation()->has_irreducible_loops());
+
+  _block = leaf;
+  _last = leaf;
+  _state = leaf->state()->copy_for_parsing();
+  leaf->set(BlockBegin::was_visited_flag);
+  kill_all();
+  build_graph_for_intrinsic(callee, ignore_return);
+  BlockEnd* leaf_end = append(new Goto(continuation, false))->as_BlockEnd();
+  leaf->set_end(leaf_end);
+  continuation->merge(leaf_end->state(), compilation()->has_irreducible_loops());
+
+  _block = native;
+  _last = native;
+  _state = native->state()->copy_for_parsing();
+  native->set(BlockBegin::was_visited_flag);
+  kill_all();
+  ValueStack* state_before = copy_state_exhandling();
+  Values* args = state()->pop_arguments(callee->arg_size());
+  Invoke* call = new Invoke(Bytecodes::_invokestatic, intType, nullptr, args,
+                            callee, state_before);
+  append_split(call);
+  if (!ignore_return) {
+    ipush(call);
+  }
+  BlockEnd* native_end = append(new Goto(continuation, false))->as_BlockEnd();
+  native->set_end(native_end);
+  continuation->merge(native_end->state(), compilation()->has_irreducible_loops());
+
+  _block = continuation;
+  _last = continuation;
+  _state = continuation->state()->copy_for_parsing();
+  continuation->set(BlockBegin::was_visited_flag);
+  kill_all();
+}
+#endif
+
 bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
   // For calling is_intrinsic_available we need to transition to
   // the '_thread_in_vm' state because is_intrinsic_available()
@@ -3690,6 +3740,21 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
       return false;
     }
   }
+#ifdef AMD64
+  if (callee->intrinsic_id() == vmIntrinsics::_updateBytesAdler32 ||
+      callee->intrinsic_id() == vmIntrinsics::_updateByteBufferAdler32) {
+    Value length = state()->stack_at(state()->stack_size() - 1);
+    IntConstant* constant = length->type()->as_IntConstant();
+    if (constant != nullptr) {
+      if (constant->value() >= 65536) {
+        return false;
+      }
+    } else {
+      append_adler32_with_fallback(callee, ignore_return);
+      return true;
+    }
+  }
+#endif
   build_graph_for_intrinsic(callee, ignore_return);
   if (_inline_bailout_msg != nullptr) {
     return false;

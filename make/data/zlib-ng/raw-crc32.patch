@@ -1,0 +1,917 @@
+diff --git a/arch/x86/crc32_pclmulqdq.c b/arch/x86/crc32_pclmulqdq.c
+index c8be1b43bad1e73be3d8bcf546fe474fafe30268..f1006522803a547e0f5cace670a63408f1865386 100644
+--- a/arch/x86/crc32_pclmulqdq.c
++++ b/arch/x86/crc32_pclmulqdq.c
+@@ -20,6 +20,10 @@
+ #ifdef X86_PCLMULQDQ_CRC
+ 
+ #include "crc32_pclmulqdq_tpl.h"
++#define CRC32_RAW_COPY_NAME crc32_raw_copy_pclmulqdq
++#define CRC32_RAW_UPDATE_NAME crc32_raw_update_pclmulqdq
++#define CRC32_RAW_FINAL_NAME crc32_raw_final_pclmulqdq
++#include "crc32_raw_fold_tpl.h"
+ 
+ Z_INTERNAL uint32_t crc32_pclmulqdq(uint32_t crc, const uint8_t *buf, size_t len) {
+     return crc32_copy_impl(crc, NULL, buf, len, 0);
+diff --git a/arch/x86/crc32_raw_fold_tpl.h b/arch/x86/crc32_raw_fold_tpl.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..7384ca2115fbc29c9182118011b0ed40c76933d0
+--- /dev/null
++++ b/arch/x86/crc32_raw_fold_tpl.h
+@@ -0,0 +1,202 @@
++/* crc32_raw_fold_tpl.h -- Persist CRC32 state using parallelized folding
++ * approach with the PCLMULQDQ and VPCMULQDQ instructions.
++ *
++ * A white paper describing this algorithm can be found at:
++ *     doc/crc-pclmulqdq.pdf
++ *
++ * Copyright (C) 2020 Wangyang Guo (wangyang.guo@intel.com) (VPCLMULQDQ support)
++ * Copyright (C) 2013 Intel Corporation. All rights reserved.
++ * Copyright (C) 2016 Marian Beermann (support for initial value)
++ * Authors:
++ *     Wajdi Feghali   <wajdi.k.feghali@intel.com>
++ *     Jim Guilford    <james.guilford@intel.com>
++ *     Vinodh Gopal    <vinodh.gopal@intel.com>
++ *     Erdinc Ozturk   <erdinc.ozturk@intel.com>
++ *     Jim Kukunas     <james.t.kukunas@linux.intel.com>
++ *
++ * For conditions of distribution and use, see copyright notice in zlib.h
++ */
++
++/* Persistent update adapted from upstream 2.3.3 partial_fold; bulk and final
++ * reduction reuse 49323f2 helpers. Default CRC entry points are unchanged. */
++#include "crc32_raw.h"
++static inline void raw_partial(size_t len, __m128i *a, __m128i *b, __m128i *c,
++                               __m128i *d, __m128i part) {
++    const __m128i k = _mm_set_epi32(1, 0x54442bd4, 1, 0xc6e41596);
++    const __m128i seq = _mm_setr_epi8(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15);
++    __m128i shl = _mm_add_epi8(seq, _mm_set1_epi8((char)len - 16));
++    __m128i shr = _mm_xor_si128(shl, _mm_set1_epi32((int32_t)0x80808080));
++    __m128i overflow = _mm_shuffle_epi8(*a, shl);
++    *a = _mm_or_si128(_mm_shuffle_epi8(*a, shr), _mm_shuffle_epi8(*b, shl));
++    *b = _mm_or_si128(_mm_shuffle_epi8(*b, shr), _mm_shuffle_epi8(*c, shl));
++    *c = _mm_or_si128(_mm_shuffle_epi8(*c, shr), _mm_shuffle_epi8(*d, shl));
++    *d = _mm_or_si128(_mm_shuffle_epi8(*d, shr), _mm_shuffle_epi8(part, shl));
++    *d = z128_xor3_epi64(*d, _mm_clmulepi64_si128(overflow,k,0x01),
++                              _mm_clmulepi64_si128(overflow,k,0x10));
++}
++Z_FORCEINLINE static void raw_update_impl(crc32_raw_state *state, uint8_t *dst,
++                                         const uint8_t *src, size_t len, const int COPY) {
++    if (len == 0) return;
++    __m128i xmm_crc0 = _mm_load_si128((const __m128i *)state->fold);
++    __m128i xmm_crc1 = _mm_load_si128((const __m128i *)state->fold + 1);
++    __m128i xmm_crc2 = _mm_load_si128((const __m128i *)state->fold + 2);
++    __m128i xmm_crc3 = _mm_load_si128((const __m128i *)state->fold + 3);
++    __m128i xmm_t0, xmm_t1, xmm_t2, xmm_t3;
++    const __m128i xmm_fold4 = _mm_set_epi32(1, 0x54442bd4, 1, 0xc6e41596);
++#if defined(X86_VPCLMULQDQ) && defined(__AVX512F__)
++    /* These upstream bulk helpers use unaligned loads/stores. Consume full
++     * blocks before aligning the tail, so small unaligned updates do not
++     * repeatedly rotate the accumulator for a prefix and a suffix. */
++    if (len >= 256)
++        fold_block_16(&src, &dst, &len, &xmm_crc0, &xmm_crc1, &xmm_crc2, &xmm_crc3, COPY);
++#elif defined(X86_VPCLMULQDQ)
++    /* 256-bit VPCLMULQDQ path (doesn't require AVX-512F) */
++    if (len >= 128)
++        fold_block_8(&src, &dst, &len, &xmm_crc0, &xmm_crc1, &xmm_crc2, &xmm_crc3, xmm_fold4, COPY);
++#endif
++    /* The following 128-bit loads still require source alignment. */
++    if (len >= 16) {
++        size_t align = ALIGN_DIFF(src, 16);
++        if (align) {
++            __m128i part = _mm_loadu_si128((const __m128i *)src);
++            if (COPY) _mm_storeu_si128((__m128i *)dst, part);
++            raw_partial(align, &xmm_crc0,&xmm_crc1,&xmm_crc2,&xmm_crc3,part);
++            src += align; len -= align; if (COPY) dst += align;
++        }
++    }
++#if !defined(X86_VPCLMULQDQ)
++    /* Chorba algorithm for PCLMULQDQ path (when VPCLMULQDQ not available) */
++    if (len >= 512 + 64 + (16 * 8))
++        fold_block_chorba(&src, &dst, &len, &xmm_crc0, &xmm_crc1, &xmm_crc2, &xmm_crc3, xmm_fold4, COPY);
++#endif
++
++    while (len >= 64) {
++        len -= 64;
++        xmm_t0 = _mm_load_si128((__m128i *)src);
++        xmm_t1 = _mm_load_si128((__m128i *)src + 1);
++        xmm_t2 = _mm_load_si128((__m128i *)src + 2);
++        xmm_t3 = _mm_load_si128((__m128i *)src + 3);
++        src += 64;
++
++        fold_state_4(&xmm_crc0, &xmm_crc1, &xmm_crc2, &xmm_crc3, xmm_fold4);
++        if (COPY) {
++            _mm_storeu_si128((__m128i *)dst, xmm_t0);
++            _mm_storeu_si128((__m128i *)dst + 1, xmm_t1);
++            _mm_storeu_si128((__m128i *)dst + 2, xmm_t2);
++            _mm_storeu_si128((__m128i *)dst + 3, xmm_t3);
++            dst += 64;
++        }
++
++        xmm_crc0 = _mm_xor_si128(xmm_crc0, xmm_t0);
++        xmm_crc1 = _mm_xor_si128(xmm_crc1, xmm_t1);
++        xmm_crc2 = _mm_xor_si128(xmm_crc2, xmm_t2);
++        xmm_crc3 = _mm_xor_si128(xmm_crc3, xmm_t3);
++    }
++
++    /*
++     * len = num bytes left - 64
++     */
++    if (len >= 48) {
++        len -= 48;
++
++        xmm_t0 = _mm_load_si128((__m128i *)src);
++        xmm_t1 = _mm_load_si128((__m128i *)src + 1);
++        xmm_t2 = _mm_load_si128((__m128i *)src + 2);
++        src += 48;
++
++        fold_state_3(&xmm_crc0, &xmm_crc1, &xmm_crc2, &xmm_crc3, xmm_fold4);
++        if (COPY) {
++            _mm_storeu_si128((__m128i *)dst, xmm_t0);
++            _mm_storeu_si128((__m128i *)dst + 1, xmm_t1);
++            _mm_storeu_si128((__m128i *)dst + 2, xmm_t2);
++            dst += 48;
++        }
++
++        xmm_crc1 = _mm_xor_si128(xmm_crc1, xmm_t0);
++        xmm_crc2 = _mm_xor_si128(xmm_crc2, xmm_t1);
++        xmm_crc3 = _mm_xor_si128(xmm_crc3, xmm_t2);
++    } else if (len >= 32) {
++        len -= 32;
++
++        xmm_t0 = _mm_load_si128((__m128i *)src);
++        xmm_t1 = _mm_load_si128((__m128i *)src + 1);
++        src += 32;
++
++        fold_state_2(&xmm_crc0, &xmm_crc1, &xmm_crc2, &xmm_crc3, xmm_fold4);
++        if (COPY) {
++            _mm_storeu_si128((__m128i *)dst, xmm_t0);
++            _mm_storeu_si128((__m128i *)dst + 1, xmm_t1);
++            dst += 32;
++        }
++
++        xmm_crc2 = _mm_xor_si128(xmm_crc2, xmm_t0);
++        xmm_crc3 = _mm_xor_si128(xmm_crc3, xmm_t1);
++    } else if (len >= 16) {
++        len -= 16;
++        xmm_t0 = _mm_load_si128((__m128i *)src);
++        src += 16;
++
++        fold_state_1(&xmm_crc0, &xmm_crc1, &xmm_crc2, &xmm_crc3, xmm_fold4);
++        if (COPY) {
++            _mm_storeu_si128((__m128i *)dst, xmm_t0);
++            dst += 16;
++        }
++
++        xmm_crc3 = _mm_xor_si128(xmm_crc3, xmm_t0);
++    }
++
++    if (len) {
++        __m128i part = _mm_setzero_si128();
++        memcpy(&part, src, len);
++        if (COPY) memcpy(dst, &part, len);
++        raw_partial(len, &xmm_crc0,&xmm_crc1,&xmm_crc2,&xmm_crc3,part);
++    }
++    _mm_store_si128((__m128i *)state->fold, xmm_crc0);
++    _mm_store_si128((__m128i *)state->fold + 1, xmm_crc1);
++    _mm_store_si128((__m128i *)state->fold + 2, xmm_crc2);
++    _mm_store_si128((__m128i *)state->fold + 3, xmm_crc3);
++}
++Z_INTERNAL void CRC32_RAW_COPY_NAME(crc32_raw_state *state, uint8_t *dst, const uint8_t *src, size_t len) {
++    raw_update_impl(state,dst,src,len,1);
++}
++Z_INTERNAL void CRC32_RAW_UPDATE_NAME(crc32_raw_state *state, const uint8_t *src, size_t len) {
++    raw_update_impl(state,NULL,src,len,0);
++}
++#ifdef CRC32_RAW_FINAL_NAME
++Z_INTERNAL uint32_t CRC32_RAW_FINAL_NAME(crc32_raw_state *state) {
++    __m128i xmm_crc0 = _mm_load_si128((const __m128i *)state->fold);
++    __m128i xmm_crc1 = _mm_load_si128((const __m128i *)state->fold + 1);
++    __m128i xmm_crc2 = _mm_load_si128((const __m128i *)state->fold + 2);
++    __m128i xmm_crc3 = _mm_load_si128((const __m128i *)state->fold + 3);
++    uint32_t crc;
++    const __m128i k12 = _mm_set_epi32(0x00000001, 0x751997d0, 0x00000000, 0xccaa009e);
++    const __m128i barrett_k = _mm_set_epi32(0x00000001, 0xdb710640, 0xb4e5b025, 0xf7011641);
++
++    /* Fold 4x128-bit into a single 128-bit value using k1/k2 constants */
++    __m128i x_low0  = _mm_clmulepi64_si128(xmm_crc0, k12, 0x01);
++    __m128i x_high0 = _mm_clmulepi64_si128(xmm_crc0, k12, 0x10);
++    xmm_crc1 = z128_xor3_epi64(xmm_crc1, x_low0, x_high0);
++
++    __m128i x_low1  = _mm_clmulepi64_si128(xmm_crc1, k12, 0x01);
++    __m128i x_high1 = _mm_clmulepi64_si128(xmm_crc1, k12, 0x10);
++    xmm_crc2 = z128_xor3_epi64(xmm_crc2, x_low1, x_high1);
++
++    __m128i x_low2  = _mm_clmulepi64_si128(xmm_crc2, k12, 0x01);
++    __m128i x_high2 = _mm_clmulepi64_si128(xmm_crc2, k12, 0x10);
++    xmm_crc3 = z128_xor3_epi64(xmm_crc3, x_low2, x_high2);
++
++    /* Reduce 128-bits to 32-bits using two-stage Barrett reduction */
++    __m128i x_tmp0 = _mm_clmulepi64_si128(xmm_crc3, barrett_k, 0x00);
++    __m128i x_tmp1 = _mm_clmulepi64_si128(x_tmp0, barrett_k, 0x10);
++
++    x_tmp1 = _mm_blend_epi16(x_tmp1, _mm_setzero_si128(), 0xcf);
++    x_tmp0 = _mm_xor_si128(x_tmp1, xmm_crc3);
++
++    __m128i x_res_a = _mm_clmulepi64_si128(x_tmp0, barrett_k, 0x01);
++    __m128i x_res_b = _mm_clmulepi64_si128(x_res_a, barrett_k, 0x10);
++
++    crc = ((uint32_t)_mm_extract_epi32(x_res_b, 2));
++
++    return ~crc;
++}
++#endif
+diff --git a/arch/x86/crc32_vpclmulqdq_avx2.c b/arch/x86/crc32_vpclmulqdq_avx2.c
+index 1cdef13b0904de526f91d01618c2f19c4a438d8a..70a0fb288ab5e6f50afc325b50453f0a7ca8595a 100644
+--- a/arch/x86/crc32_vpclmulqdq_avx2.c
++++ b/arch/x86/crc32_vpclmulqdq_avx2.c
+@@ -6,6 +6,9 @@
+ 
+ #define X86_VPCLMULQDQ
+ #include "crc32_pclmulqdq_tpl.h"
++#define CRC32_RAW_COPY_NAME crc32_raw_copy_avx2
++#define CRC32_RAW_UPDATE_NAME crc32_raw_update_avx2
++#include "crc32_raw_fold_tpl.h"
+ 
+ Z_INTERNAL uint32_t crc32_vpclmulqdq_avx2(uint32_t crc, const uint8_t *buf, size_t len) {
+     return crc32_copy_impl(crc, NULL, buf, len, 0);
+diff --git a/arch/x86/crc32_vpclmulqdq_avx512.c b/arch/x86/crc32_vpclmulqdq_avx512.c
+index a95a448f4932f795aa4e650cfa77ed689ac4020e..b509f23ed40cf13c42e0cb427994df7e95cb9e66 100644
+--- a/arch/x86/crc32_vpclmulqdq_avx512.c
++++ b/arch/x86/crc32_vpclmulqdq_avx512.c
+@@ -6,6 +6,9 @@
+ 
+ #define X86_VPCLMULQDQ
+ #include "crc32_pclmulqdq_tpl.h"
++#define CRC32_RAW_COPY_NAME crc32_raw_copy_avx512
++#define CRC32_RAW_UPDATE_NAME crc32_raw_update_avx512
++#include "crc32_raw_fold_tpl.h"
+ 
+ Z_INTERNAL uint32_t crc32_vpclmulqdq_avx512(uint32_t crc, const uint8_t *buf, size_t len) {
+     return crc32_copy_impl(crc, NULL, buf, len, 0);
+diff --git a/crc32_raw.h b/crc32_raw.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..5f4aa04eb8792e4246d7df2e0b6e5b74003a4401
+--- /dev/null
++++ b/crc32_raw.h
+@@ -0,0 +1,36 @@
++/* Experimental raw inflate CRC state. Not part of the public stream layout.
++ * Copyright (C) 2026 Teamoffy Pte. Ltd.
++ * For conditions of distribution and use, see copyright notice in zlib.h.
++ */
++#ifndef CRC32_RAW_H_
++#define CRC32_RAW_H_
++
++/* CRC-only translation units do not include the public stream headers. */
++#ifdef ZLIB_COMPAT
++#  include "zlib_name_mangling.h"
++#else
++#  include "zlib_name_mangling-ng.h"
++#endif
++typedef struct crc32_raw_state crc32_raw_state;
++struct crc32_raw_state {
++    uint8_t fold[64];
++    uint32_t value;
++    int hardware;
++    int finished;
++    void (*copy)(crc32_raw_state *, uint8_t *, const uint8_t *, size_t);
++    void (*update)(crc32_raw_state *, const uint8_t *, size_t);
++};
++#ifdef X86_PCLMULQDQ_CRC
++Z_INTERNAL void crc32_raw_copy_pclmulqdq(crc32_raw_state *, uint8_t *, const uint8_t *, size_t);
++Z_INTERNAL void crc32_raw_update_pclmulqdq(crc32_raw_state *, const uint8_t *, size_t);
++Z_INTERNAL uint32_t crc32_raw_final_pclmulqdq(crc32_raw_state *);
++#endif
++#ifdef X86_VPCLMULQDQ_AVX2
++Z_INTERNAL void crc32_raw_copy_avx2(crc32_raw_state *, uint8_t *, const uint8_t *, size_t);
++Z_INTERNAL void crc32_raw_update_avx2(crc32_raw_state *, const uint8_t *, size_t);
++#endif
++#ifdef X86_VPCLMULQDQ_AVX512
++Z_INTERNAL void crc32_raw_copy_avx512(crc32_raw_state *, uint8_t *, const uint8_t *, size_t);
++Z_INTERNAL void crc32_raw_update_avx512(crc32_raw_state *, const uint8_t *, size_t);
++#endif
++#endif
+diff --git a/inflate.c b/inflate.c
+index 60dd2e6e34c367c34eb789d2efdbdb8d69b12397..63219986124cc791b960abcb681cae194078c17b 100644
+--- a/inflate.c
++++ b/inflate.c
+@@ -24,10 +24,30 @@ static int inflateStateCheck(PREFIX3(stream) *strm);
+ static void updatewindow(PREFIX3(stream) *strm, const uint8_t *end, uint32_t len, int32_t cksum);
+ static uint32_t syncsearch(uint32_t *have, const unsigned char *buf, uint32_t len);
+ 
++static void raw_crc_reset(crc32_raw_state *s) {
++    uint32_t seed = 0x9db42487;
++    if (s->hardware) {
++        memset(s->fold,0,sizeof(s->fold));
++        memcpy(s->fold,&seed,sizeof(seed));
++    }
++    s->value = CRC32_INITIAL_VALUE;
++    s->finished = 0;
++}
++static void raw_crc_copy_c(crc32_raw_state *s, uint8_t *dst, const uint8_t *src, size_t len) {
++    s->value = FUNCTABLE_CALL(crc32_copy)(s->value,dst,src,len);
++}
++static void raw_crc_update_c(crc32_raw_state *s, const uint8_t *src, size_t len) {
++    s->value = FUNCTABLE_CALL(crc32)(s->value,src,len);
++}
++
+ static inline void inf_chksum_cpy(PREFIX3(stream) *strm, uint8_t *dst,
+                            const uint8_t *src, uint32_t copy) {
+     if (!copy) return;
+     struct inflate_state *state = (struct inflate_state*)strm->state;
++    if (state->raw_crc.copy) {
++        state->raw_crc.copy(&state->raw_crc, dst, src, copy);
++        return;
++    }
+ #ifdef GUNZIP
+     if (state->flags) {
+         strm->adler = state->check = FUNCTABLE_CALL(crc32_copy)(state->check, dst, src, copy);
+@@ -40,6 +60,10 @@ static inline void inf_chksum_cpy(PREFIX3(stream) *strm, uint8_t *dst,
+ 
+ static inline void inf_chksum(PREFIX3(stream) *strm, const uint8_t *src, uint32_t len) {
+     struct inflate_state *state = (struct inflate_state*)strm->state;
++    if (state->raw_crc.copy) {
++        state->raw_crc.update(&state->raw_crc, src, len);
++        return;
++    }
+ #ifdef GUNZIP
+     if (state->flags) {
+         strm->adler = state->check = FUNCTABLE_CALL(crc32)(state->check, src, len);
+@@ -73,6 +97,7 @@ int32_t Z_EXPORT PREFIX(inflateResetKeep)(PREFIX3(stream) *strm) {
+         strm->adler = state->wrap & 1;
+     state->mode = HEAD;
+     state->check = ADLER32_INITIAL_VALUE;
++    if (state->raw_crc.copy) { raw_crc_reset(&state->raw_crc); strm->adler = 0; }
+     state->last = 0;
+     state->havedict = 0;
+     state->flags = -1;
+@@ -132,6 +157,7 @@ int32_t Z_EXPORT PREFIX(inflateReset2)(PREFIX3(stream) *strm, int32_t windowBits
+         return Z_STREAM_ERROR;
+ 
+     /* update state and reset the rest of it */
++    state->raw_crc.copy = NULL; /* Reset2 chooses a new format; extension must be re-enabled. */
+     state->wrap = wrap;
+     state->wbits = (unsigned)windowBits;
+     return PREFIX(inflateReset)(strm);
+@@ -249,6 +275,7 @@ int32_t ZNG_CONDEXPORT PREFIX(inflateInit2)(PREFIX3(stream) *strm, int32_t windo
+     strm->state = (struct internal_state *)state;
+     state->strm = strm;
+     state->mode = HEAD;     /* to pass state test in inflateReset2() */
++    state->raw_crc.copy = NULL;
+     ret = PREFIX(inflateReset2)(strm, windowBits);
+     if (ret != Z_OK) {
+         free_inflate(strm);
+@@ -1181,11 +1208,13 @@ int32_t Z_EXPORT PREFIX(inflate)(PREFIX3(stream) *strm, int32_t flush) {
+   inf_leave:
+     RESTORE();
+     uint32_t check_bytes = out - strm->avail_out;
++    int window_updated = 0;
+     if (INFLATE_NEED_UPDATEWINDOW(strm) &&
+             (state->wsize || (out != strm->avail_out && state->mode < BAD &&
+                  (state->mode < CHECK || flush != Z_FINISH)))) {
+         /* update sliding window with respective checksum if not in "raw" mode */
+-        updatewindow(strm, strm->next_out, check_bytes, state->wrap & 4);
++        updatewindow(strm, strm->next_out, check_bytes, (state->wrap & 4) || state->raw_crc.copy);
++        window_updated = 1;
+     }
+     in -= strm->avail_in;
+     out -= strm->avail_out;
+@@ -1193,6 +1222,17 @@ int32_t Z_EXPORT PREFIX(inflate)(PREFIX3(stream) *strm, int32_t flush) {
+     strm->total_out += out;
+     state->total += out;
+ 
++    if (state->raw_crc.copy) {
++        if (!window_updated && out) state->raw_crc.update(&state->raw_crc, put-out, out);
++        if (ret == Z_STREAM_END && !state->raw_crc.finished) {
++#ifdef X86_PCLMULQDQ_CRC
++            if (state->raw_crc.hardware)
++                state->raw_crc.value = crc32_raw_final_pclmulqdq(&state->raw_crc);
++#endif
++            strm->adler = state->check = state->raw_crc.value;
++            state->raw_crc.finished = 1;
++        }
++    }
+     strm->data_type = (int)state->bits + (state->last ? 64 : 0) +
+                       (state->mode == TYPE ? 128 : 0) + (state->mode == LEN_ || state->mode == COPY_ ? 256 : 0);
+     if (((in == 0 && out == 0) || flush == Z_FINISH) && ret == Z_OK) {
+@@ -1205,6 +1245,34 @@ int32_t Z_EXPORT PREFIX(inflate)(PREFIX3(stream) *strm, int32_t flush) {
+     return ret;
+ }
+ 
++#ifndef ZLIB_COMPAT
++int32_t Z_EXPORT zng_inflateEnableRawCRC32(zng_stream *strm) {
++    if (inflateStateCheck(strm)) return Z_STREAM_ERROR;
++    struct inflate_state *state = (struct inflate_state *)strm->state;
++    if (state->wrap || state->mode != HEAD || strm->total_in || strm->total_out || state->bits)
++        return Z_STREAM_ERROR;
++    crc32_raw_state *s = &state->raw_crc;
++    s->copy = raw_crc_copy_c; s->update = raw_crc_update_c; s->hardware = 0;
++#ifdef X86_PCLMULQDQ_CRC
++    if (FUNCTABLE_FPTR(crc32_copy) == &crc32_copy_pclmulqdq) {
++        s->copy = crc32_raw_copy_pclmulqdq; s->update = crc32_raw_update_pclmulqdq; s->hardware = 1;
++    }
++#ifdef X86_VPCLMULQDQ_AVX2
++    if (FUNCTABLE_FPTR(crc32_copy) == &crc32_copy_vpclmulqdq_avx2) {
++        s->copy = crc32_raw_copy_avx2; s->update = crc32_raw_update_avx2; s->hardware = 1;
++    }
++#endif
++#ifdef X86_VPCLMULQDQ_AVX512
++    if (FUNCTABLE_FPTR(crc32_copy) == &crc32_copy_vpclmulqdq_avx512) {
++        s->copy = crc32_raw_copy_avx512; s->update = crc32_raw_update_avx512; s->hardware = 1;
++    }
++#endif
++#endif
++    raw_crc_reset(s); strm->adler = 0;
++    return Z_OK;
++}
++#endif
++
+ int32_t Z_EXPORT PREFIX(inflateEnd)(PREFIX3(stream) *strm) {
+     if (inflateStateCheck(strm))
+         return Z_STREAM_ERROR;
+diff --git a/inflate.h b/inflate.h
+index a854f606982f352366187a337f7ddab905bcea0a..a457cac6b03f58e91e1950ff797eb49de95e7ca8 100644
+--- a/inflate.h
++++ b/inflate.h
+@@ -82,6 +82,7 @@ typedef enum {
+     Process trailer:
+         CHECK -> LENGTH -> DONE
+  */
++#include "crc32_raw.h"
+ typedef struct inflate_state inflate_state;
+ 
+ /* Struct for memory allocation handling */
+@@ -142,6 +143,7 @@ struct ALIGNED_(64) inflate_state {
+     code codes[ENOUGH];         /* space for code tables */
+ 
+     inflate_allocs *alloc_bufs; /* struct for handling memory allocations */
++    crc32_raw_state ALIGNED_(16) raw_crc; /* opt-in; ordinary format mode unchanged */
+ 
+ #ifdef INFLATE_STRICT
+     unsigned dmax;              /* zlib header max distance (INFLATE_STRICT) */
+diff --git a/test/raw_crc32.c b/test/raw_crc32.c
+new file mode 100644
+index 0000000000000000000000000000000000000000..86513da9fd9d37b1bd182383cf66142eb244dc59
+--- /dev/null
++++ b/test/raw_crc32.c
+@@ -0,0 +1,359 @@
++/* Vendor-level raw inflate CRC32 correctness probe.
++ * Copyright (C) 2026 Teamoffy Pte. Ltd.
++ * For conditions of distribution and use, see copyright notice in zlib.h.
++ *
++ * Standalone test; no timing and no JDK private-state access.
++ * Optional TEST_SIMD uses GNU ld --wrap to count internal fold operations.
++ */
++#ifndef _GNU_SOURCE
++#define _GNU_SOURCE 1
++#endif
++#include <stdio.h>
++#include <stdlib.h>
++#include <stdint.h>
++#include <string.h>
++#include <assert.h>
++#ifdef __unix__
++#include <sys/mman.h>
++#include <unistd.h>
++#endif
++#include "zlib-ng.h"
++#define REQUIRE(c) do { if (!(c)) { fprintf(stderr,"FAIL line %d: %s\n",__LINE__,#c); abort(); } } while (0)
++static unsigned cases, last_positive_reads;
++#ifdef TEST_SIMD
++static unsigned long fold_finals,fold_updates,fold_copies;
++#endif
++static uint32_t crc_ref(const uint8_t *p,size_t n) {
++    uint32_t crc=~0U;
++    while(n--) {crc^=*p++;for(int j=0;j<8;j++)crc=(crc>>1)^((0U-(crc&1))&0xedb88320U);}
++    return ~crc;
++}
++static uint32_t adler_ref(const uint8_t *p,size_t n) {
++    uint32_t a=1,b=0;while(n--){a=(a+*p++)%65521;b=(b+a)%65521;}return (b<<16)|a;
++}
++typedef struct {uint8_t *p;size_t n;int wrap;} Enc;
++static Enc encode(const uint8_t *p,size_t n,int wrap,const uint8_t *dict,size_t dn) {
++    zng_stream z={0};Enc e={malloc(n*2+4096),0,wrap};REQUIRE(e.p);
++    REQUIRE(zng_deflateInit2(&z,6,Z_DEFLATED,wrap,8,Z_DEFAULT_STRATEGY)==Z_OK);
++    if(dict)REQUIRE(zng_deflateSetDictionary(&z,dict,(unsigned)dn)==Z_OK);
++    z.next_in=p;z.avail_in=(unsigned)n;z.next_out=e.p;z.avail_out=(unsigned)(n*2+4096);
++    REQUIRE(zng_deflate(&z,Z_FINISH)==Z_STREAM_END);e.n=(size_t)z.total_out;
++    REQUIRE(zng_deflateEnd(&z)==Z_OK);memset(e.p+e.n,0xa6,13);return e;
++}
++static int drive(zng_stream *z,Enc e,const uint8_t *p,size_t n,int crc,size_t is,size_t os,int flush,int truncated) {
++    uint8_t *buf=malloc(os+32);REQUIRE(buf);size_t feed=0,got=0;int status=Z_OK;
++    size_t provided=e.n+(truncated?-1:13);unsigned steps=0;last_positive_reads=0;
++#ifdef TEST_SIMD
++    unsigned long initial_finals=fold_finals;
++    unsigned long initial_updates=fold_updates+fold_copies;
++#endif
++    do {
++        if(z->avail_in==0 && feed<provided) {size_t k=provided-feed;if(k>is)k=is;z->next_in=e.p+feed;z->avail_in=(unsigned)k;feed+=k;}
++        memset(buf,0xc9,os+32);z->next_out=buf;z->avail_out=(unsigned)os;
++        unsigned old=z->avail_in;status=zng_inflate(z,flush);size_t made=os-z->avail_out;
++        REQUIRE(got+made<=n);REQUIRE(!memcmp(buf,p+got,made));got+=made;if(made)last_positive_reads++;
++        for(size_t k=os;k<os+32;k++)REQUIRE(buf[k]==0xc9);
++        if(crc && status!=Z_STREAM_END)REQUIRE(z->adler==0);
++        REQUIRE(status==Z_OK || status==Z_BUF_ERROR || status==Z_STREAM_END);
++        if(status==Z_STREAM_END)break;
++        if(feed==provided && z->avail_in==0 && made==0)break;
++        REQUIRE(old!=z->avail_in || made || feed<provided || (z->data_type & 384));
++        REQUIRE(++steps<4000000);
++    } while(1);
++    if(truncated)REQUIRE(status!=Z_STREAM_END);
++    else {
++        REQUIRE(status==Z_STREAM_END);REQUIRE(got==n);REQUIRE(z->total_out==n);REQUIRE(z->total_in==e.n);
++        if(crc || e.wrap==31)REQUIRE(z->adler==crc_ref(p,n));
++        else if(e.wrap==15)REQUIRE(z->adler==adler_ref(p,n));
++#ifdef TEST_SIMD
++        unsigned long completed_finals=fold_finals;
++        if(!crc)REQUIRE(completed_finals==initial_finals && fold_updates+fold_copies==initial_updates);
++        if(crc) {
++            REQUIRE(completed_finals-initial_finals<=1);
++            if(fold_updates+fold_copies!=initial_updates)
++                REQUIRE(completed_finals==initial_finals+1);
++        }
++#endif
++        unsigned in=z->avail_in;const uint8_t *next=z->next_in;uint32_t check=z->adler;
++        z->next_out=buf;z->avail_out=(unsigned)os;REQUIRE(zng_inflate(z,Z_NO_FLUSH)==Z_STREAM_END);
++        REQUIRE(z->avail_in==in && z->next_in==next && z->adler==check);
++#ifdef TEST_SIMD
++        REQUIRE(fold_finals==completed_finals);
++#endif
++    }
++    free(buf);cases++;return status;
++}
++static size_t requested,allocations;
++static void *alloc_track(void *v,unsigned n,unsigned s){(void)v;requested+=(size_t)n*s;allocations++;return calloc(n,s);}
++static void free_track(void *v,void *p){(void)v;free(p);}
++#ifdef TEST_SIMD
++#define Z_INTERNAL
++#include "crc32_raw.h"
++extern void crc32_raw_copy_pclmulqdq(crc32_raw_state *,uint8_t *,const uint8_t *,size_t);
++extern void crc32_raw_update_pclmulqdq(crc32_raw_state *,const uint8_t *,size_t);
++extern uint32_t crc32_raw_final_pclmulqdq(crc32_raw_state *);
++extern void crc32_raw_copy_avx2(crc32_raw_state *,uint8_t *,const uint8_t *,size_t);
++extern void crc32_raw_update_avx2(crc32_raw_state *,const uint8_t *,size_t);
++extern void crc32_raw_copy_avx512(crc32_raw_state *,uint8_t *,const uint8_t *,size_t);
++extern void crc32_raw_update_avx512(crc32_raw_state *,const uint8_t *,size_t);
++extern uint32_t __real_crc32_raw_final_pclmulqdq(crc32_raw_state *);
++uint32_t __wrap_crc32_raw_final_pclmulqdq(crc32_raw_state *s){fold_finals++;return __real_crc32_raw_final_pclmulqdq(s);}
++#define WRAP_COPY(suffix) \
++extern void __real_crc32_raw_copy_##suffix(crc32_raw_state*,uint8_t*,const uint8_t*,size_t); \
++void __wrap_crc32_raw_copy_##suffix(crc32_raw_state *s,uint8_t *d,const uint8_t *p,size_t n){fold_copies++;__real_crc32_raw_copy_##suffix(s,d,p,n);}
++#define WRAP_UPDATE(suffix) \
++extern void __real_crc32_raw_update_##suffix(crc32_raw_state*,const uint8_t*,size_t); \
++void __wrap_crc32_raw_update_##suffix(crc32_raw_state *s,const uint8_t *p,size_t n){fold_updates++;__real_crc32_raw_update_##suffix(s,p,n);}
++WRAP_COPY(pclmulqdq) WRAP_COPY(avx2) WRAP_COPY(avx512)
++WRAP_UPDATE(pclmulqdq) WRAP_UPDATE(avx2) WRAP_UPDATE(avx512)
++typedef void (*Copy)(crc32_raw_state*,uint8_t*,const uint8_t*,size_t);
++typedef void (*Update)(crc32_raw_state*,const uint8_t*,size_t);
++static void fold_backend(const char *name,Copy copy,Update update) {
++    uint8_t src[65583],dst[65583];
++    for(size_t i=0;i<sizeof(src);i++)src[i]=(uint8_t)(i*17+i/23);
++    size_t sizes[]={0,1,15,16,17,31,32,63,64,65,127,255,256,511,512,513,4096,32769,65483};
++    size_t chunks[]={1,3,15,16,17,31,63,64,65,511,512,8192};
++    unsigned total=0;
++    for(unsigned l=0;l<sizeof(sizes)/sizeof(*sizes);l++)for(unsigned j=0;j<sizeof(chunks)/sizeof(*chunks);j++)for(unsigned align=0;align<32;align++) {
++        crc32_raw_state s __attribute__((aligned(16)));memset(&s,0,sizeof(s));uint32_t seed=0x9db42487;memcpy(s.fold,&seed,4);
++        size_t n=sizes[l],off=0;memset(dst,0x65,sizeof(dst));
++        copy(&s,dst+align,src+align,0);
++        while(off<n){size_t k=n-off;if(k>chunks[j])k=chunks[j];copy(&s,dst+align+off,src+align+off,k);off+=k;}
++        REQUIRE(!memcmp(src+align,dst+align,n));REQUIRE(dst[align+n]==0x65);
++        REQUIRE(crc32_raw_final_pclmulqdq(&s)==crc_ref(src+align,n));
++        REQUIRE(crc32_raw_final_pclmulqdq(&s)==crc_ref(src+align,n));
++        memset(&s,0,sizeof(s));memcpy(s.fold,&seed,4);off=0;
++        while(off<n){size_t k=n-off;if(k>chunks[j])k=chunks[j];update(&s,src+align+off,k);off+=k;}
++        REQUIRE(crc32_raw_final_pclmulqdq(&s)==crc_ref(src+align,n));total++;
++    }
++    printf("fold %s: %u fragmentation/alignment cases passed\n",name,total);
++    unsigned independent=0;
++    size_t short_sizes[]={0,1,15,16,17,31,32,63,64,65,127,255,511,512,513};
++    for(unsigned l=0;l<sizeof(short_sizes)/sizeof(*short_sizes);l++)for(unsigned sa=0;sa<32;sa++) {
++        size_t n=short_sizes[l];uint32_t wanted=crc_ref(src+sa,n);
++        for(unsigned da=0;da<32;da++) {
++            crc32_raw_state s __attribute__((aligned(16)));memset(&s,0,sizeof(s));uint32_t seed=0x9db42487;memcpy(s.fold,&seed,4);
++            memset(dst,0x65,da+n+32);size_t first=n<17?n:17;
++            copy(&s,dst+da,src+sa,first);
++            copy(&s,dst+da+first,src+sa+first,n-first);
++            REQUIRE(!memcmp(src+sa,dst+da,n));REQUIRE(crc32_raw_final_pclmulqdq(&s)==wanted);
++            for(unsigned j=0;j<da;j++)REQUIRE(dst[j]==0x65);
++            for(size_t j=da+n;j<da+n+32;j++)REQUIRE(dst[j]==0x65);
++            independent++;
++        }
++    }
++    printf("fold %s: %u independent source/destination alignment cases passed\n",name,independent);
++#ifdef __unix__
++    long page=sysconf(_SC_PAGESIZE);REQUIRE(page>=4096);
++    uint8_t *gs=mmap(NULL,(size_t)page*3,PROT_NONE,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);
++    uint8_t *gd=mmap(NULL,(size_t)page*3,PROT_NONE,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);
++    REQUIRE(gs!=MAP_FAILED && gd!=MAP_FAILED);
++    REQUIRE(mprotect(gs+page,(size_t)page,PROT_READ|PROT_WRITE)==0);
++    REQUIRE(mprotect(gd+page,(size_t)page,PROT_READ|PROT_WRITE)==0);
++    for(long i=0;i<page;i++)gs[page+i]=(uint8_t)(i*13+i/7);
++    REQUIRE(mprotect(gs+page,(size_t)page,PROT_READ)==0);
++    size_t guarded_sizes[]={0,1,2,3,7,15,16,17,31,32,63,64,65,127,255,511,512,513,4096};
++    for(unsigned l=0;l<sizeof(guarded_sizes)/sizeof(*guarded_sizes);l++) {
++        size_t n=guarded_sizes[l];const uint8_t *p=gs+page*2-n;uint8_t *d=gd+page*2-n;
++        crc32_raw_state s __attribute__((aligned(16)));memset(&s,0,sizeof(s));uint32_t seed=0x9db42487;memcpy(s.fold,&seed,4);
++        copy(&s,d,p,n);REQUIRE(!memcmp(d,p,n));REQUIRE(crc32_raw_final_pclmulqdq(&s)==crc_ref(p,n));
++        memset(&s,0,sizeof(s));memcpy(s.fold,&seed,4);
++        update(&s,p,n);REQUIRE(crc32_raw_final_pclmulqdq(&s)==crc_ref(p,n));
++    }
++    REQUIRE(munmap(gs,(size_t)page*3)==0 && munmap(gd,(size_t)page*3)==0);
++    printf("fold %s: %zu guarded input/output sizes passed\n",name,sizeof(guarded_sizes)/sizeof(*guarded_sizes));
++#endif
++}
++#endif
++static void finish_prefix(zng_stream *z,const uint8_t *p,size_t n,size_t got) {
++    uint8_t out[257];int status;
++    do {
++        z->next_out=out;z->avail_out=sizeof(out);status=zng_inflate(z,Z_NO_FLUSH);
++        size_t made=sizeof(out)-z->avail_out;
++        REQUIRE(got+made<=n && !memcmp(out,p+got,made));got+=made;
++        REQUIRE(status==Z_OK || status==Z_STREAM_END);
++    } while(status!=Z_STREAM_END);
++    REQUIRE(got==n && z->total_out==n && z->adler==crc_ref(p,n));cases++;
++}
++static void lifecycle_edges(const uint8_t *plain) {
++    Enc e=encode(plain,64,-15,NULL,0);uint8_t out[64];
++    int flushes[]={Z_NO_FLUSH,Z_FINISH,Z_BLOCK,Z_TREES};
++    for(unsigned j=0;j<sizeof(flushes)/sizeof(*flushes);j++)for(int enabled=0;enabled<2;enabled++) {
++        zng_stream z={0};REQUIRE(zng_inflateInit2(&z,-15)==Z_OK);
++        if(enabled)REQUIRE(zng_inflateEnableRawCRC32(&z)==Z_OK);
++        for(unsigned k=0;k<3;k++) {
++            z.next_in=e.p;z.avail_in=0;z.next_out=out;z.avail_out=k==1?0:sizeof(out);
++            REQUIRE(zng_inflate(&z,flushes[j])==Z_BUF_ERROR);
++            REQUIRE(z.total_in==0 && z.total_out==0);
++            if(enabled)REQUIRE(z.adler==0);
++        }
++        /* Zero input can advance HEAD; rejection must leave an enabled CRC intact. */
++        REQUIRE(zng_inflateEnableRawCRC32(&z)==Z_STREAM_ERROR);
++        zng_stream clone={0};REQUIRE(zng_inflateCopy(&clone,&z)==Z_OK);
++        drive(&z,e,plain,64,enabled,3,17,Z_NO_FLUSH,0);
++        REQUIRE(zng_inflateEnd(&z)==Z_OK);
++        drive(&clone,e,plain,64,enabled,17,31,Z_NO_FLUSH,0);
++        REQUIRE(zng_inflateEnd(&clone)==Z_OK);
++    }
++    for(unsigned n=0;n<2;n++) {
++        Enc cold=encode(plain,n?64:0,-15,NULL,0);zng_stream z={0},clone={0};
++        REQUIRE(zng_inflateInit2(&z,-15)==Z_OK);REQUIRE(zng_inflateEnableRawCRC32(&z)==Z_OK);
++        REQUIRE(zng_inflateCopy(&clone,&z)==Z_OK);
++        drive(&z,cold,plain,n?64:0,1,1,1,Z_NO_FLUSH,0);REQUIRE(zng_inflateEnd(&z)==Z_OK);
++        drive(&clone,cold,plain,n?64:0,1,3,17,Z_FINISH,0);
++        zng_stream done={0};REQUIRE(zng_inflateCopy(&done,&clone)==Z_OK);uint32_t crc=clone.adler;
++        REQUIRE(zng_inflateReset(&clone)==Z_OK);clone.avail_in=0;
++        drive(&clone,cold,plain,n?64:0,1,7,31,Z_NO_FLUSH,0);REQUIRE(zng_inflateEnd(&clone)==Z_OK);
++#ifdef TEST_SIMD
++        unsigned long done_finals=fold_finals;
++#endif
++        for(unsigned k=0;k<3;k++) {
++            done.next_out=out;done.avail_out=sizeof(out);uint32_t ai=done.avail_in;const uint8_t *ni=done.next_in;
++            REQUIRE(zng_inflate(&done,Z_NO_FLUSH)==Z_STREAM_END);
++            REQUIRE(done.adler==crc && done.next_in==ni && done.avail_in==ai);
++        }
++#ifdef TEST_SIMD
++        REQUIRE(fold_finals==done_finals);
++#endif
++        REQUIRE(zng_inflateResetKeep(&done)==Z_OK);done.avail_in=0;
++        drive(&done,cold,plain,n?64:0,1,17,31,Z_NO_FLUSH,0);REQUIRE(zng_inflateEnd(&done)==Z_OK);free(cold.p);
++    }
++    /* A cold copy can opt in without changing the source's ordinary raw mode. */
++    zng_stream plain_z={0},opted={0};REQUIRE(zng_inflateInit2(&plain_z,-15)==Z_OK);
++    REQUIRE(zng_inflateCopy(&opted,&plain_z)==Z_OK);REQUIRE(zng_inflateEnableRawCRC32(&opted)==Z_OK);
++    drive(&plain_z,e,plain,64,0,3,17,Z_NO_FLUSH,0);REQUIRE(zng_inflateEnd(&plain_z)==Z_OK);
++    drive(&opted,e,plain,64,1,7,31,Z_NO_FLUSH,0);REQUIRE(zng_inflateEnd(&opted)==Z_OK);free(e.p);
++
++    e=encode(plain,65483,-15,NULL,0);
++    for(unsigned phase=0;phase<3;phase++) {
++        zng_stream z={0};REQUIRE(zng_inflateInit2(&z,-15)==Z_OK);REQUIRE(zng_inflateEnableRawCRC32(&z)==Z_OK);
++        if(phase==1) {
++            z.next_in=e.p;z.avail_in=(unsigned)e.n;z.next_out=out;z.avail_out=17;
++            REQUIRE(zng_inflate(&z,Z_NO_FLUSH)==Z_OK && z.total_out==17);
++        } else if(phase==2)drive(&z,e,plain,65483,1,512,257,Z_NO_FLUSH,0);
++        int bad_bits[]={7,-7,48};
++        for(unsigned k=0;k<sizeof(bad_bits)/sizeof(*bad_bits);k++) {
++            zng_stream before=z;REQUIRE(zng_inflateReset2(&z,bad_bits[k])==Z_STREAM_ERROR);
++            REQUIRE(z.next_in==before.next_in && z.avail_in==before.avail_in);
++            REQUIRE(z.next_out==before.next_out && z.avail_out==before.avail_out);
++            REQUIRE(z.total_in==before.total_in && z.total_out==before.total_out && z.adler==before.adler);
++        }
++        if(phase==0)drive(&z,e,plain,65483,1,17,257,Z_NO_FLUSH,0);
++        else if(phase==1)finish_prefix(&z,plain,65483,17);
++        else {z.next_out=out;z.avail_out=sizeof(out);REQUIRE(zng_inflate(&z,Z_NO_FLUSH)==Z_STREAM_END && z.adler==crc_ref(plain,65483));}
++        REQUIRE(zng_inflateReset(&z)==Z_OK);z.avail_in=0;
++        drive(&z,e,plain,65483,1,512,257,Z_NO_FLUSH,0);REQUIRE(zng_inflateEnd(&z)==Z_OK);
++    }
++    free(e.p);
++    e=encode(plain,65483,-15,plain+32,8192);zng_stream dict={0};
++    REQUIRE(zng_inflateInit2(&dict,-15)==Z_OK);REQUIRE(zng_inflateSetDictionary(&dict,plain+32,8192)==Z_OK);
++    REQUIRE(zng_inflateEnableRawCRC32(&dict)==Z_OK);drive(&dict,e,plain,65483,1,17,257,Z_NO_FLUSH,0);
++    REQUIRE(zng_inflateEnd(&dict)==Z_OK);free(e.p);
++    puts("lifecycle edges: zero progress, cold/completed copy, independent opt-in, failed Reset2 and cold dictionary passed");
++}
++static uint8_t *load(const char *path,size_t *n) {
++    FILE *f=fopen(path,"rb");REQUIRE(f);REQUIRE(fseek(f,0,SEEK_END)==0);long size=ftell(f);REQUIRE(size>=0);rewind(f);
++    uint8_t *p=malloc((size_t)size+13);REQUIRE(p);REQUIRE(fread(p,1,(size_t)size,f)==(size_t)size);REQUIRE(fclose(f)==0);memset(p+size,0xa6,13);*n=(size_t)size;return p;
++}
++int main(int argc,char **argv) {
++#ifdef TEST_SIMD
++    if(__builtin_cpu_supports("pclmul") && __builtin_cpu_supports("sse4.1"))fold_backend("pclmul",crc32_raw_copy_pclmulqdq,crc32_raw_update_pclmulqdq);
++    if(__builtin_cpu_supports("pclmul") && __builtin_cpu_supports("sse4.1") && __builtin_cpu_supports("avx2") && __builtin_cpu_supports("vpclmulqdq"))fold_backend("vpclmul-avx2",crc32_raw_copy_avx2,crc32_raw_update_avx2);
++    if(__builtin_cpu_supports("pclmul") && __builtin_cpu_supports("sse4.1") && __builtin_cpu_supports("avx512f") && __builtin_cpu_supports("avx512dq") && __builtin_cpu_supports("avx512bw") && __builtin_cpu_supports("avx512vl") && __builtin_cpu_supports("vpclmulqdq"))fold_backend("vpclmul-avx512",crc32_raw_copy_avx512,crc32_raw_update_avx512);
++#endif
++    uint8_t *plain=malloc(200001);REQUIRE(plain);uint32_t random=123;
++    size_t sizes[]={0,1,15,16,17,63,64,65,511,512,513,32767,32768,32769,65483,129153,200000};
++    size_t chunks[][2]={{1,1},{3,17},{17,257},{512,512},{512,8192},{32768,65536},{65536,200001}};
++    for(int pattern=0;pattern<2;pattern++) {
++        for(size_t j=0;j<200001;j++){random^=random<<13;random^=random>>17;random^=random<<5;plain[j]=(uint8_t)(pattern?j%23:random);}
++        for(unsigned l=0;l<sizeof(sizes)/sizeof(*sizes);l++) {
++            size_t n=sizes[l];Enc e=encode(plain,n,-15,NULL,0);
++            for(unsigned j=0;j<sizeof(chunks)/sizeof(*chunks);j++)for(int finish=0;finish<2;finish++) {
++                size_t is=chunks[j][0],os=chunks[j][1];if(n>1024 && is==1){is=7;os=31;}
++                zng_stream z={0};REQUIRE(zng_inflateInit2(&z,-15)==Z_OK);REQUIRE(zng_inflateEnableRawCRC32(&z)==Z_OK);
++                drive(&z,e,plain,n,1,is,os,finish?Z_FINISH:Z_NO_FLUSH,0);
++                REQUIRE(zng_inflateReset(&z)==Z_OK);REQUIRE(z.adler==0);z.avail_in=0;
++                drive(&z,e,plain,n,1,is,os,Z_NO_FLUSH,0);
++                REQUIRE(zng_inflateResetKeep(&z)==Z_OK);REQUIRE(z.adler==0);z.avail_in=0;
++                drive(&z,e,plain,n,1,is,os,Z_NO_FLUSH,0);REQUIRE(zng_inflateEnd(&z)==Z_OK);
++            }
++            if(n>0){zng_stream z={0};REQUIRE(zng_inflateInit2(&z,-15)==Z_OK);REQUIRE(zng_inflateEnableRawCRC32(&z)==Z_OK);drive(&z,e,plain,n,1,7,257,Z_NO_FLUSH,1);REQUIRE(zng_inflateEnd(&z)==Z_OK);}
++            free(e.p);
++            for(int w=0;w<3;w++) {int wb=w==0?-15:w==1?15:31;Enc d=encode(plain,n,wb,NULL,0);zng_stream z={0};REQUIRE(zng_inflateInit2(&z,wb)==Z_OK);if(w)REQUIRE(zng_inflateEnableRawCRC32(&z)==Z_STREAM_ERROR);drive(&z,d,plain,n,0,17,511,Z_NO_FLUSH,0);REQUIRE(zng_inflateEnd(&z)==Z_OK);free(d.p);}
++        }
++    }
++    /* Explicit empty/intermediate blocks and all supported inflate flush modes. */
++    uint8_t blocks[]={0,0,0,255,255,0,5,0,250,255,'h','e','l','l','o',3,0};
++    uint8_t wrapped_blocks[sizeof(blocks)+13];memcpy(wrapped_blocks,blocks,sizeof(blocks));memset(wrapped_blocks+sizeof(blocks),0xa6,13);
++    Enc be={wrapped_blocks,sizeof(blocks),-15};int flushes[]={Z_NO_FLUSH,Z_PARTIAL_FLUSH,Z_SYNC_FLUSH,Z_BLOCK,Z_TREES,Z_FINISH};
++    for(unsigned i=0;i<sizeof(flushes)/sizeof(*flushes);i++)for(unsigned j=1;j<=17;j+=8){zng_stream w={0};REQUIRE(zng_inflateInit2(&w,-15)==Z_OK);REQUIRE(zng_inflateEnableRawCRC32(&w)==Z_OK);drive(&w,be,(const uint8_t*)"hello",5,1,j,j,flushes[i],0);REQUIRE(zng_inflateEnd(&w)==Z_OK);}
++    /* Small window wraps and output larger than the history window. */
++    for(int wb=9;wb<=15;wb+=2)for(unsigned j=0;j<3;j++) {
++        Enc a=encode(plain,200000,-wb,NULL,0);zng_stream w={0};REQUIRE(zng_inflateInit2(&w,-wb)==Z_OK);REQUIRE(zng_inflateEnableRawCRC32(&w)==Z_OK);
++        drive(&w,a,plain,200000,1,512,j==0?511:j==1?8192:200001,j==2?Z_FINISH:Z_NO_FLUSH,0);REQUIRE(zng_inflateEnd(&w)==Z_OK);free(a.p);
++    }
++    /* Reset2 disables the extension; dictionaries are history, not payload CRC. */
++    Enc e=encode(plain,65483,-15,plain+32,8192);zng_stream z={0};
++    z.zalloc=alloc_track;z.zfree=free_track;REQUIRE(zng_inflateInit2(&z,-15)==Z_OK);size_t a=allocations,bytes=requested;
++    REQUIRE(zng_inflateEnableRawCRC32(&z)==Z_OK);REQUIRE(allocations==a);
++    REQUIRE(zng_inflateSetDictionary(&z,plain+32,8192)==Z_OK);drive(&z,e,plain,65483,1,7,31,Z_NO_FLUSH,0);
++    REQUIRE(zng_inflateReset2(&z,-15)==Z_OK);uint32_t old=z.adler;REQUIRE(zng_inflateSetDictionary(&z,plain+32,8192)==Z_OK);z.avail_in=0;
++    drive(&z,e,plain,65483,0,7,31,Z_NO_FLUSH,0);REQUIRE(z.adler==old);REQUIRE(allocations==a);REQUIRE(zng_inflateEnd(&z)==Z_OK);free(e.p);
++    printf("inflate allocator: %zu calls, %zu requested bytes; enable/reset/dictionary allocate none\n",a,bytes);
++    /* Invalid payload rejects normally, reset recovers, and activation is cold-only. */
++    uint8_t bad[]={7};z=(zng_stream){0};REQUIRE(zng_inflateInit2(&z,-15)==Z_OK);REQUIRE(zng_inflateEnableRawCRC32(&z)==Z_OK);
++    uint8_t out[128];z.next_in=bad;z.avail_in=1;z.next_out=out;z.avail_out=sizeof(out);REQUIRE(zng_inflate(&z,Z_NO_FLUSH)==Z_DATA_ERROR);
++    REQUIRE(zng_inflateEnableRawCRC32(&z)==Z_STREAM_ERROR);REQUIRE(zng_inflateReset(&z)==Z_OK);z.avail_in=0;e=encode(plain,64,-15,NULL,0);drive(&z,e,plain,64,1,512,128,Z_NO_FLUSH,0);REQUIRE(zng_inflateEnd(&z)==Z_OK);free(e.p);
++    REQUIRE(zng_inflateEnableRawCRC32(NULL)==Z_STREAM_ERROR);
++    for(int wb=15;wb<=31;wb+=16){e=encode(plain,65483,wb,NULL,0);e.p[e.n-(wb==31?8:4)]^=1;z=(zng_stream){0};REQUIRE(zng_inflateInit2(&z,wb)==Z_OK);z.next_in=e.p;z.avail_in=(unsigned)e.n;uint8_t *tmp=malloc(70000);z.next_out=tmp;z.avail_out=70000;REQUIRE(zng_inflate(&z,Z_FINISH)==Z_DATA_ERROR);REQUIRE(zng_inflateEnd(&z)==Z_OK);free(tmp);free(e.p);}
++    /* Real gzip members: the caller skips each header and owns each trailer. */
++    size_t lens[]={0,64,65483};Enc members[3];size_t total=7;
++    for(unsigned m=0;m<3;m++){members[m]=encode(plain,lens[m],31,NULL,0);REQUIRE(members[m].p[3]==0);total+=members[m].n;}
++    uint8_t *joined=malloc(total);size_t pos=0;
++    for(unsigned m=0;m<3;m++){memcpy(joined+pos,members[m].p,members[m].n);pos+=members[m].n;}
++    memset(joined+pos,0xa6,7);z=(zng_stream){0};REQUIRE(zng_inflateInit2(&z,-15)==Z_OK);REQUIRE(zng_inflateEnableRawCRC32(&z)==Z_OK);
++    z.next_in=joined+10;z.avail_in=(unsigned)(total-10);
++    for(unsigned m=0;m<3;m++) {
++        size_t got=0;int status;
++        do{z.next_out=out;z.avail_out=sizeof(out);status=zng_inflate(&z,Z_NO_FLUSH);size_t k=sizeof(out)-z.avail_out;REQUIRE(got+k<=lens[m]);REQUIRE(!memcmp(out,plain+got,k));got+=k;REQUIRE(status==Z_OK || status==Z_STREAM_END);}while(status!=Z_STREAM_END);
++        REQUIRE(got==lens[m]);REQUIRE(z.total_in==members[m].n-18);REQUIRE(z.adler==crc_ref(plain,lens[m]));
++        const uint8_t *t=z.next_in;uint32_t check=(uint32_t)t[0]|((uint32_t)t[1]<<8)|((uint32_t)t[2]<<16)|((uint32_t)t[3]<<24);REQUIRE(check==z.adler);
++        uint32_t size=(uint32_t)t[4]|((uint32_t)t[5]<<8)|((uint32_t)t[6]<<16)|((uint32_t)t[7]<<24);REQUIRE(size==lens[m]);
++        z.next_in+=8;z.avail_in-=8;
++        if(m!=2){z.next_in+=10;z.avail_in-=10;REQUIRE(zng_inflateReset(&z)==Z_OK);}
++        cases++;free(members[m].p);
++    }
++    REQUIRE(z.avail_in==7 && z.next_in[0]==0xa6);REQUIRE(zng_inflateEnd(&z)==Z_OK);free(joined);
++    /* Late malformed block retains produced-byte accounting without final CRC. */
++    uint8_t late[]={0,5,0,250,255,'h','e','l','l','o',7};z=(zng_stream){0};REQUIRE(zng_inflateInit2(&z,-15)==Z_OK);REQUIRE(zng_inflateEnableRawCRC32(&z)==Z_OK);
++    z.next_in=late;z.avail_in=sizeof(late);z.next_out=out;z.avail_out=sizeof(out);REQUIRE(zng_inflate(&z,Z_NO_FLUSH)==Z_DATA_ERROR);REQUIRE(z.total_out==5 && !memcmp(out,"hello",5));REQUIRE(z.adler==0);REQUIRE(zng_inflateEnd(&z)==Z_OK);cases++;
++    /* Copy a live folded accumulator and finish both independent streams. */
++    e=encode(plain,65483,-15,NULL,0);z=(zng_stream){0};REQUIRE(zng_inflateInit2(&z,-15)==Z_OK);REQUIRE(zng_inflateEnableRawCRC32(&z)==Z_OK);
++    z.next_in=e.p;z.avail_in=(unsigned)e.n;z.next_out=out;z.avail_out=17;REQUIRE(zng_inflate(&z,Z_NO_FLUSH)==Z_OK);REQUIRE(z.total_out==17 && !memcmp(out,plain,17));
++    zng_stream clone={0};REQUIRE(zng_inflateCopy(&clone,&z)==Z_OK);zng_stream *streams[]={&z,&clone};
++    for(unsigned j=0;j<2;j++){zng_stream *a=streams[j];size_t got=17;int status;
++        do{a->next_out=out;a->avail_out=sizeof(out);status=zng_inflate(a,Z_NO_FLUSH);size_t k=sizeof(out)-a->avail_out;REQUIRE(got+k<=65483 && !memcmp(out,plain+got,k));got+=k;REQUIRE(status==Z_OK || status==Z_STREAM_END);}while(status!=Z_STREAM_END);
++        REQUIRE(got==65483 && a->adler==crc_ref(plain,65483));REQUIRE(zng_inflateEnd(a)==Z_OK);cases++;
++    }free(e.p);
++    lifecycle_edges(plain);
++    if(argc==3) {
++        const char *pnames[]={"json4k","message64k","building-html"};const char *gnames[]={"tiny64.gz","request64k-L1-ng.gz","offline-html-L9-stock.gz"};
++        for(unsigned k=0;k<3;k++) {
++            char path[2048];size_t pn,gn;REQUIRE(snprintf(path,sizeof(path),"%s/inputs/%s",argv[1],pnames[k])<(int)sizeof(path));uint8_t *p=load(path,&pn);if(k==0)pn=64;
++            REQUIRE(snprintf(path,sizeof(path),k==0?"%s/%s":"%s/streams/%s",k==0?argv[2]:argv[1],gnames[k])<(int)sizeof(path));uint8_t *g=load(path,&gn);REQUIRE(gn>=18 && g[3]==0);Enc body={g+10,gn-18,-15};
++            for(unsigned j=0;j<3;j++){size_t cap=j==0?512:j==1?8192:16384;zng_stream w={0};REQUIRE(zng_inflateInit2(&w,-15)==Z_OK);REQUIRE(zng_inflateEnableRawCRC32(&w)==Z_OK);
++#ifdef TEST_SIMD
++                unsigned long before_c=fold_copies,before_u=fold_updates,before_f=fold_finals;
++#endif
++                drive(&w,body,p,pn,1,512,cap,Z_NO_FLUSH,0);
++                printf("fixture %s input512 output%zu: %u positive vendor calls",pnames[k],cap,last_positive_reads);
++#ifdef TEST_SIMD
++                printf(", %lu fold-copy updates, %lu noncopy updates, %lu final reductions",fold_copies-before_c,fold_updates-before_u,fold_finals-before_f);
++                if(fold_copies!=before_c || fold_updates!=before_u)REQUIRE(fold_finals-before_f==1);
++#endif
++                puts("");REQUIRE(zng_inflateEnd(&w)==Z_OK);
++            }free(g);free(p);
++        }
++    }
++    free(plain);printf("PASS %u raw/default/reset/dictionary/error/member/copy cases\n",cases);return 0;
++}
+diff --git a/zlib-ng.h.in b/zlib-ng.h.in
+index dd2bf1944fca8647e12775e255fb3d9cb9e6b4e8..ef693490cef3025167735b99d5b3490714d26e90 100644
+--- a/zlib-ng.h.in
++++ b/zlib-ng.h.in
+@@ -55,7 +55,7 @@ extern "C" {
+ #define ZLIBNG_VER_REVISION 90
+ #define ZLIBNG_VER_STATUS 0         /* 0=devel, 1-E=beta, F=Release (DEPRECATED) */
+ #define ZLIBNG_VER_STATUSH 0x0      /* Hex values: 0=devel, 1-9=beta, A-E=Release Candidate, F=Release */
+-#define ZLIBNG_VER_MODIFIED 0       /* non-zero if modified externally from zlib-ng */
++#define ZLIBNG_VER_MODIFIED 1       /* non-zero if modified externally from zlib-ng */
+ 
+ /*
+     The 'zlib' compression library provides in-memory compression and
+@@ -961,6 +961,14 @@ int32_t zng_inflateCopy(zng_stream *dest, zng_stream *source);
+    destination.
+ */
+ 
++/* Experimental raw CRC32. Enable after init/reset and before the first inflate
++ * call, while the raw stream is in HEAD state. Dictionary setup may precede it.
++ * Reset/ResetKeep retain it and reset the checksum; Reset2 disables it.
++ * adler is zero while decoding and is the final CRC only at STREAM_END.
++ * No header/trailer is parsed and no check value is validated in this mode. */
++Z_EXTERN Z_EXPORT
++int32_t zng_inflateEnableRawCRC32(zng_stream *strm);
++
+ Z_EXTERN Z_EXPORT
+ int32_t zng_inflateReset(zng_stream *strm);
+ /*
+diff --git a/zlib-ng.map.in b/zlib-ng.map.in
+index a6ceeb52056e1cebbb5015e724aa16e6fc33f540..e758d6c1da0d7b6eafac83aae9acf288d50a9f04 100644
+--- a/zlib-ng.map.in
++++ b/zlib-ng.map.in
+@@ -1,6 +1,7 @@
+ ZLIB_NG_2.4.0 {
+   global:
+     @ZLIB_SYMBOL_PREFIX@zng_deflateUsed;
++    @ZLIB_SYMBOL_PREFIX@zng_inflateEnableRawCRC32;
+ };
+ 
+ ZLIB_NG_2.3.4 {
+diff --git a/zlib.h.in b/zlib.h.in
+index 588337b327b6807d8ec3d95de65bbea0fa236908..70695239a22d349d75426a005220cc4a0c40028f 100644
+--- a/zlib.h.in
++++ b/zlib.h.in
+@@ -56,7 +56,7 @@ extern "C" {
+ #define ZLIBNG_VER_REVISION 90
+ #define ZLIBNG_VER_STATUS 0         /* 0=devel, 1-E=beta, F=Release (DEPRECATED) */
+ #define ZLIBNG_VER_STATUSH 0x0      /* Hex values: 0=devel, 1-9=beta, A-E=Release Candidate, F=Release */
+-#define ZLIBNG_VER_MODIFIED 0       /* non-zero if modified externally from zlib-ng */
++#define ZLIBNG_VER_MODIFIED 1       /* non-zero if modified externally from zlib-ng */
+ 
+ #define ZLIB_VERSION "1.3.2.zlib-ng"
+ #define ZLIB_VERNUM 0x132f
+diff --git a/zlib_name_mangling-ng.h.in b/zlib_name_mangling-ng.h.in
+index e2d0dbe0ffaa08f7e219aedb472247d183dc27bb..d143fd42dabf3faa920542a3f404e3d0ca68015c 100644
+--- a/zlib_name_mangling-ng.h.in
++++ b/zlib_name_mangling-ng.h.in
+@@ -6,6 +6,15 @@
+ #define ZLIB_NAME_MANGLING_H
+ 
+ /* all linked symbols and init macros */
++/* Experimental persistent raw-inflate CRC helpers. */
++#define crc32_raw_copy_pclmulqdq @ZLIB_SYMBOL_PREFIX@crc32_raw_copy_pclmulqdq
++#define crc32_raw_update_pclmulqdq @ZLIB_SYMBOL_PREFIX@crc32_raw_update_pclmulqdq
++#define crc32_raw_final_pclmulqdq @ZLIB_SYMBOL_PREFIX@crc32_raw_final_pclmulqdq
++#define crc32_raw_copy_avx2 @ZLIB_SYMBOL_PREFIX@crc32_raw_copy_avx2
++#define crc32_raw_update_avx2 @ZLIB_SYMBOL_PREFIX@crc32_raw_update_avx2
++#define crc32_raw_copy_avx512 @ZLIB_SYMBOL_PREFIX@crc32_raw_copy_avx512
++#define crc32_raw_update_avx512 @ZLIB_SYMBOL_PREFIX@crc32_raw_update_avx512
++
+ #define zng__dist_code            @ZLIB_SYMBOL_PREFIX@zng__dist_code
+ #define zng__length_code          @ZLIB_SYMBOL_PREFIX@zng__length_code
+ #define zng__tr_align             @ZLIB_SYMBOL_PREFIX@zng__tr_align
+@@ -102,6 +111,7 @@
+ #define zng_inflateGetDictionary  @ZLIB_SYMBOL_PREFIX@zng_inflateGetDictionary
+ #define zng_inflateGetHeader      @ZLIB_SYMBOL_PREFIX@zng_inflateGetHeader
+ #define zng_inflateInit           @ZLIB_SYMBOL_PREFIX@zng_inflateInit
++#define zng_inflateEnableRawCRC32 @ZLIB_SYMBOL_PREFIX@zng_inflateEnableRawCRC32
+ #define zng_inflateInit2          @ZLIB_SYMBOL_PREFIX@zng_inflateInit2
+ #define zng_inflateInit2_         @ZLIB_SYMBOL_PREFIX@zng_inflateInit2_
+ #define zng_inflateInit_          @ZLIB_SYMBOL_PREFIX@zng_inflateInit_
+diff --git a/zlib_name_mangling.h.in b/zlib_name_mangling.h.in
+index b04e6f301418850b52ae93ba925e8e7e0c77df31..3b21131aeb3d20fc5d93861ac82c74d12c12d45a 100644
+--- a/zlib_name_mangling.h.in
++++ b/zlib_name_mangling.h.in
+@@ -6,6 +6,15 @@
+ #define ZLIB_NAME_MANGLING_H
+ 
+ /* all linked symbols and init macros */
++/* Experimental persistent raw-inflate CRC helpers. */
++#define crc32_raw_copy_pclmulqdq @ZLIB_SYMBOL_PREFIX@crc32_raw_copy_pclmulqdq
++#define crc32_raw_update_pclmulqdq @ZLIB_SYMBOL_PREFIX@crc32_raw_update_pclmulqdq
++#define crc32_raw_final_pclmulqdq @ZLIB_SYMBOL_PREFIX@crc32_raw_final_pclmulqdq
++#define crc32_raw_copy_avx2 @ZLIB_SYMBOL_PREFIX@crc32_raw_copy_avx2
++#define crc32_raw_update_avx2 @ZLIB_SYMBOL_PREFIX@crc32_raw_update_avx2
++#define crc32_raw_copy_avx512 @ZLIB_SYMBOL_PREFIX@crc32_raw_copy_avx512
++#define crc32_raw_update_avx512 @ZLIB_SYMBOL_PREFIX@crc32_raw_update_avx512
++
+ #define _dist_code            @ZLIB_SYMBOL_PREFIX@_dist_code
+ #define _length_code          @ZLIB_SYMBOL_PREFIX@_length_code
+ #define _tr_align             @ZLIB_SYMBOL_PREFIX@_tr_align
