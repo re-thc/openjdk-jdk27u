@@ -2856,6 +2856,7 @@ public final class String
      *          character sequence represented by this object, or
      *          {@code -1} if the character does not occur.
      */
+    @ForceInline
     public int lastIndexOf(int ch) {
         return lastIndexOf(ch, length() - 1);
     }
@@ -2894,6 +2895,7 @@ public final class String
      *          than or equal to {@code fromIndex}, or {@code -1}
      *          if the character does not occur before that point.
      */
+    @ForceInline
     public int lastIndexOf(int ch, int fromIndex) {
         return isLatin1() ? StringLatin1.lastIndexOf(value, ch, fromIndex)
                           : StringUTF16.lastIndexOf(value, ch, fromIndex);
@@ -3043,6 +3045,7 @@ public final class String
      * @return  the index of the last occurrence of the specified substring,
      *          or {@code -1} if there is no such occurrence.
      */
+    @ForceInline
     public int lastIndexOf(String str) {
         return lastIndexOf(str, length());
     }
@@ -3064,6 +3067,7 @@ public final class String
      *          searching backward from the specified index,
      *          or {@code -1} if there is no such occurrence.
      */
+    @ForceInline
     public int lastIndexOf(String str, int fromIndex) {
         return lastIndexOf(value, coder(), length(), str, fromIndex);
     }
@@ -3079,6 +3083,7 @@ public final class String
      * @param   tgtStr      the characters being searched for.
      * @param   fromIndex   the index to begin searching from.
      */
+    @ForceInline
     static int lastIndexOf(byte[] src, byte srcCoder, int srcCount,
                            String tgtStr, int fromIndex) {
         byte[] tgt = tgtStr.value;

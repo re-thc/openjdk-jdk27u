@@ -53,11 +53,19 @@ ifeq ($(call isTargetOs, macosx), true)
   BUILD_LIBJAVA_java_props_macosx.c_CFLAGS := -x objective-c
 endif
 
+ifeq ($(call isCompiler, microsoft), true)
+  # The search kernels need speed optimization; HIGH selects size on MSVC.
+  BUILD_LIBJAVA_StringZillaKernels.c_OPTIMIZATION := HIGHEST
+endif
+
 $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     NAME := java, \
     OPTIMIZATION := HIGH, \
     jdk_util.c_CFLAGS := $(VERSION_CFLAGS), \
     ProcessImpl_md.c_CFLAGS := $(VERSION_CFLAGS), \
+    StringZillaKernels.c_CFLAGS := -I$(TOPDIR)/src/java.base/share/native/libjava/stringzilla, \
+    DISABLED_WARNINGS_gcc_StringZillaKernels.c := unknown-pragmas, \
+    DISABLED_WARNINGS_clang_StringZillaKernels.c := unknown-pragmas, \
     java_props_md.c_CFLAGS := \
         -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"', \
     DISABLED_WARNINGS_gcc_ProcessImpl_md.c := unused-result, \

@@ -113,14 +113,15 @@ jobs:
 
       # Upgrading apt to solve libc6 installation bugs, see JDK-8260460.
       - name: 'Install dependencies'
+        timeout-minutes: 15
         run: |
           # Install dependencies using apt-get
           if [[ '${{ inputs.apt-architecture }}' != '' ]]; then
             sudo dpkg --add-architecture ${{ inputs.apt-architecture }}
           fi
-          sudo apt update
-          sudo apt install --only-upgrade apt
-          sudo apt install \
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get update
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get --assume-yes install --only-upgrade apt
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get --assume-yes install \
             ccache \
             ${{ inputs.apt-extra-packages }}
 

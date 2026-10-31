@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +86,22 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_fmaF,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_math_fmaD,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_ref_reference_get0,                               // implementation of java.lang.ref.Reference.get()
+    stringzilla_findUTF16Latin1,
+    stringzilla_equalsRange,
+    stringzilla_rfindUTF16Latin1,
+    stringzilla_findCharLatin1,
+    stringzilla_findCharUTF16,
+    stringzilla_rfindCharLatin1,
+    stringzilla_rfindCharUTF16,
+    stringzilla_equals,
+    stringzilla_indexOfLatin1,
+    stringzilla_indexOfUTF16,
+    stringzilla_indexOfUTF16Latin1,
+    stringzilla_findLatin1,
+    stringzilla_findUTF16,
+    stringzilla_rfindLatin1,
+    stringzilla_rfindUTF16,
+    stringzilla_scanLatin1,
     java_util_zip_CRC32_update,                                 // implementation of java.util.zip.CRC32.update()
     java_util_zip_CRC32_updateBytes,                            // implementation of java.util.zip.CRC32.updateBytes()
     java_util_zip_CRC32_updateByteBuffer,                       // implementation of java.util.zip.CRC32.updateByteBuffer()

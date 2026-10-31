@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +63,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
+#include "runtime/stringZilla.hpp"
 #include "runtime/stubInfo.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -353,6 +355,8 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, StubRoutines::updateBytesCRC32());
   FUNCTION_CASE(entry, StubRoutines::updateBytesCRC32C());
   FUNCTION_CASE(entry, StubRoutines::vectorizedMismatch());
+  const char* stringzilla_name = StringZilla::name_for_address(entry);
+  if (stringzilla_name != nullptr) return stringzilla_name;
   FUNCTION_CASE(entry, StubRoutines::dexp());
   FUNCTION_CASE(entry, StubRoutines::dlog());
   FUNCTION_CASE(entry, StubRoutines::dlog10());

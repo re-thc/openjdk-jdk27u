@@ -54,5 +54,8 @@ runs:
     - name: 'Configure cache'
       shell: bash
       run: |
+        # Intrinsic registry macros can change without changing preprocessed PCH code.
+        # Hash their definitions explicitly before reusing either PCH or object results.
+        echo "CCACHE_EXTRAFILES=$GITHUB_WORKSPACE/src/hotspot/share/classfile/vmIntrinsics.hpp:$GITHUB_WORKSPACE/src/hotspot/share/classfile/vmSymbols.hpp" >> "$GITHUB_ENV"
         ccache --max-size=384M
         ccache --zero-stats

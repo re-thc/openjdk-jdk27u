@@ -39,6 +39,8 @@ import java.util.stream.StreamSupport;
 import jdk.internal.lang.CaseFolding;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.Preconditions;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -947,11 +949,21 @@ final class StringUTF16 {
     // - Sub-ranges are valid
     // - The `str` sub-range is not empty
     // - The `value` sub-range length is greater than or equal to the `str` sub-range length
+    @ForceInline
     private static int indexOfUnsafe(byte[] value, int valueToIndex, byte[] str, int strToIndex, int valueFromIndex) {
         assert valueFromIndex >= 0;
         assert strToIndex > 0;
         assert strToIndex <= length(str);
         assert (valueToIndex - valueFromIndex) >= strToIndex;
+        if (valueToIndex - valueFromIndex >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED) {
+            int offset = valueFromIndex << 1;
+            int size = (valueToIndex - valueFromIndex) << 1;
+            int result = StringZilla.findUTF16(value, offset, size, str, strToIndex << 1);
+            if (result == StringZilla.FALLBACK) {
+                result = StringZilla.searchLarge(value, offset, size, str, strToIndex << 1, 1, false);
+            }
+            if (result != StringZilla.FALLBACK) return result < 0 ? -1 : valueFromIndex + (result >> 1);
+        }
         char first = getChar(str, 0);
         int max = (valueToIndex - strToIndex);
         for (int i = valueFromIndex; i <= max; i++) {
@@ -1048,11 +1060,27 @@ final class StringUTF16 {
     // - Sub-ranges are valid
     // - The `tgt` sub-range is not empty
     // - The `src` sub-range length is greater than or equal to the `tgt` sub-range length
+    @ForceInline
     private static int indexOfLatin1Unsafe(byte[] src, int srcCount, byte[] tgt, int tgtCount, int fromIndex) {
         assert fromIndex >= 0;
         assert tgtCount > 0;
         assert tgtCount <= tgt.length;
         assert (srcCount - fromIndex) >= tgtCount;
+        if (srcCount - fromIndex >= (StringZilla.MIN_BYTES >> 1)
+                && tgtCount <= StringZilla.MAX_MIXED_NEEDLE && StringZilla.ENABLED) {
+            int offset = fromIndex << 1;
+            int size = (srcCount - fromIndex) << 1;
+            int result = StringZilla.findUTF16Latin1(src, offset, size, tgt, tgtCount);
+            if (result == StringZilla.FALLBACK) {
+                result = StringZilla.searchLarge(src, offset, size, tgt, tgtCount, 2, false);
+            }
+            if (result != StringZilla.FALLBACK) return result < 0 ? -1 : fromIndex + (result >> 1);
+        }
+        return indexOfLatin1Java(src, srcCount, tgt, tgtCount, fromIndex);
+    }
+
+    @DontInline
+    private static int indexOfLatin1Java(byte[] src, int srcCount, byte[] tgt, int tgtCount, int fromIndex) {
         char first = (char)(tgt[0] & 0xff);
         int max = (srcCount - tgtCount);
         for (int i = fromIndex; i <= max; i++) {
@@ -1078,7 +1106,24 @@ final class StringUTF16 {
 
     // vmIntrinsics::_indexOfU_char
     @IntrinsicCandidate
+    @ForceInline
     private static int indexOfChar0(byte[] value, int ch, int fromIndex, int max) {
+        if (fromIndex < max && getChar(value, fromIndex) == ch) {
+            return fromIndex;
+        }
+        fromIndex++;
+        if (max - fromIndex >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED
+                && Character.isValidCodePoint(ch)) {
+            int offset = fromIndex << 1;
+            int size = (max - fromIndex) << 1;
+            int result = StringZilla.findCharUTF16(value, offset, size, ch);
+            if (result == StringZilla.FALLBACK) {
+                result = StringZilla.searchCharLarge(value, offset, size, ch, true, false);
+            }
+            if (result != StringZilla.FALLBACK) {
+                return result < 0 ? -1 : fromIndex + (result >> 1);
+            }
+        }
         for (int i = fromIndex; i < max; i++) {
             if (getChar(value, i) == ch) {
                 return i;
@@ -1091,6 +1136,16 @@ final class StringUTF16 {
      * Handles (rare) calls of indexOf with a supplementary character.
      */
     private static int indexOfSupplementary(byte[] value, int ch, int fromIndex, int max) {
+        if (max - fromIndex >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED
+                && Character.isValidCodePoint(ch)) {
+            int result = StringZilla.findCharUTF16(value, fromIndex << 1, (max - fromIndex) << 1, ch);
+            if (result == StringZilla.FALLBACK) {
+                result = StringZilla.searchCharLarge(value, fromIndex << 1, (max - fromIndex) << 1, ch, true, false);
+            }
+            if (result != StringZilla.FALLBACK) {
+                return result < 0 ? -1 : fromIndex + (result >> 1);
+            }
+        }
         if (Character.isValidCodePoint(ch)) {
             final char hi = Character.highSurrogate(ch);
             final char lo = Character.lowSurrogate(ch);
@@ -1104,8 +1159,30 @@ final class StringUTF16 {
         return -1;
     }
 
-    // srcCoder == UTF16 && tgtCoder == UTF16
     static int lastIndexOf(byte[] src, int srcCount,
+                           byte[] tgt, int tgtCount, int fromIndex) {
+        if (StringZilla.ENABLED && fromIndex + tgtCount >= (StringZilla.MIN_BYTES >> 1)) {
+            int last = tgtCount - 1;
+            if (getChar(src, fromIndex + last) != getChar(tgt, last)) {
+                if (--fromIndex < 0) return -1;
+            } else if (tgtCount == 1) {
+                return fromIndex;
+            } else if (tgtCount <= 16) {
+                // At most 32 bytes, so the first comparison stays cheap.
+                if (ArraysSupport.mismatch(src, fromIndex << 1, tgt, 0, tgtCount << 1) < 0) return fromIndex;
+                if (--fromIndex < 0) return -1;
+            }
+            int end = (fromIndex + tgtCount) << 1;
+            int result = StringZilla.rfindUTF16(src, 0, end, tgt, tgtCount << 1);
+            if (result == StringZilla.FALLBACK) {
+                result = StringZilla.searchLarge(src, 0, end, tgt, tgtCount << 1, 1, true);
+            }
+            if (result != StringZilla.FALLBACK) return result < 0 ? -1 : result >> 1;
+        }
+        return lastIndexOfJava(src, tgt, tgtCount, fromIndex);
+    }
+
+    static int lastIndexOfJava(byte[] src,
                            byte[] tgt, int tgtCount, int fromIndex) {
         assert fromIndex >= 0;
         assert tgtCount > 0;
@@ -1141,6 +1218,19 @@ final class StringUTF16 {
     }
 
     static int lastIndexOf(byte[] value, int ch, int fromIndex) {
+        int length = value.length >> 1;
+        int end = Math.min(length, fromIndex >= length ? length : fromIndex + 1);
+        if (end >= (StringZilla.MIN_BYTES >> 1) && StringZilla.ENABLED
+                && Character.isValidCodePoint(ch)) {
+            // A supplementary match may end one code unit beyond its start bound.
+            int searchEnd = ch >= Character.MIN_SUPPLEMENTARY_CODE_POINT && end < length ? end + 1 : end;
+            int size = searchEnd << 1;
+            int result = StringZilla.rfindCharUTF16(value, 0, size, ch);
+            if (result == StringZilla.FALLBACK) {
+                result = StringZilla.searchCharLarge(value, 0, size, ch, true, true);
+            }
+            if (result != StringZilla.FALLBACK) return result < 0 ? -1 : result >> 1;
+        }
         if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
             // handle most cases here (ch is a BMP code point or a
             // negative value (invalid code point))
@@ -1965,8 +2055,48 @@ final class StringUTF16 {
         }
     }
 
-    // srcCoder == UTF16 && tgtCoder == LATIN1
     static int lastIndexOfLatin1(byte[] src, int srcCount,
+                           byte[] tgt, int tgtCount, int fromIndex) {
+        if (StringZilla.ENABLED && fromIndex + tgtCount >= (StringZilla.MIN_BYTES >> 1)
+                && tgtCount <= StringZilla.MAX_MIXED_NEEDLE) {
+            int last = tgtCount - 1;
+            if (getChar(src, fromIndex + last) != (tgt[last] & 0xff)) {
+                if (--fromIndex < 0) return -1;
+            } else if (tgtCount == 1) {
+                return fromIndex;
+            } else if (tgtCount <= 16) {
+                int i = last - 1;
+                while (i >= 0 && getChar(src, fromIndex + i) == (tgt[i] & 0xff)) i--;
+                if (i < 0) return fromIndex;
+                if (--fromIndex < 0) return -1;
+            }
+            int end = (fromIndex + tgtCount) << 1;
+            int result = StringZilla.rfindUTF16Latin1(src, 0, end, tgt, tgtCount);
+            if (result == StringZilla.FALLBACK) {
+                result = StringZilla.searchLarge(src, 0, end, tgt, tgtCount, 2, true);
+            }
+            if (result != StringZilla.FALLBACK) return result < 0 ? -1 : result >> 1;
+        }
+        if (StringZilla.ENABLED && fromIndex + 1 >= (StringZilla.MIN_BYTES >> 1)
+                && getChar(src, fromIndex + tgtCount - 1) != (tgt[tgtCount - 1] & 0xff)) {
+            // Locate the first candidate using the existing character intrinsic.
+            // After conversion to code units, its relative byte result is also
+            // the candidate start index.
+            int offset = (tgtCount - 1) << 1;
+            int size = (fromIndex + 1) << 1;
+            int result = StringZilla.rfindCharUTF16(src, offset, size, tgt[tgtCount - 1] & 0xff);
+            if (result == StringZilla.FALLBACK) {
+                result = StringZilla.searchCharLarge(src, offset, size, tgt[tgtCount - 1] & 0xff, true, true);
+            }
+            if (result != StringZilla.FALLBACK) {
+                if (result < 0) return -1;
+                fromIndex = result >> 1;
+            }
+        }
+        return lastIndexOfLatin1Java(src, tgt, tgtCount, fromIndex);
+    }
+
+    static int lastIndexOfLatin1Java(byte[] src,
                                         byte[] tgt, int tgtCount, int fromIndex) {
         assert fromIndex >= 0;
         assert tgtCount > 0;
@@ -1990,7 +2120,12 @@ final class StringUTF16 {
             int j = i - 1;
             int start = j - strLastIndex;
             int k = strLastIndex - 1;
-            while (j > start) {
+            // Reject a different first character before walking a repeated suffix.
+            if (k >= 0 && getChar(src, start + 1) != (tgt[0] & 0xff)) {
+                i--;
+                continue startSearchForLastChar;
+            }
+            while (k > 0) {
                 if (getChar(src, j--) != (tgt[k--] & 0xff)) {
                     i--;
                     continue startSearchForLastChar;
