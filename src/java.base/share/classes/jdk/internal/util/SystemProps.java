@@ -42,6 +42,11 @@ public final class SystemProps {
     // no instances
     private SystemProps() {}
 
+    /** Returns whether this JDK was built for Windows, without initializing Locale. */
+    public static boolean isWindows() {
+        return PlatformProps.TARGET_OS_IS_WINDOWS;
+    }
+
     // Custom java.io.tmpdir via command line.
     private static String customTmpdir;
 

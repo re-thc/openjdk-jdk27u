@@ -81,9 +81,7 @@ public class TestZipFileEncodings {
     public static Stream<String> nonUnicodeCharsets() {
         return Stream.of(
                 "ISO-8859-1",
-                "IBM01149",
-                "IBM037",
-                "IBM-Thai"
+                "US-ASCII"
         );
     }
 

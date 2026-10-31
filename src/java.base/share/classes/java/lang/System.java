@@ -65,7 +65,6 @@ import jdk.internal.loader.NativeLibraries;
 import jdk.internal.logger.LoggerFinderLoader.TemporaryLoggerFinder;
 import jdk.internal.misc.Blocker;
 import jdk.internal.misc.CarrierThreadLocal;
-import jdk.internal.util.OperatingSystem;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.ServicesCatalog;
@@ -1811,7 +1810,7 @@ public final class System {
         // Unix paths require a byte encoding. Windows paths use Unicode; its
         // native byte-conversion helpers reject unsupported encodings on use.
         var jnuEncoding = props.getProperty("sun.jnu.encoding");
-        if (!OperatingSystem.isWindows() &&
+        if (!SystemProps.isWindows() &&
                 (jnuEncoding == null || !Charset.isSupported(jnuEncoding))) {
             throw new InternalError("Unsupported native filesystem encoding: "
                     + jnuEncoding + ". Use a UTF-8 locale.");
