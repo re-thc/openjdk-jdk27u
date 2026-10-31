@@ -27,9 +27,11 @@
 
 #include <type_traits>
 
-// The caller reserves the exact text; vendor wide stores need separate scratch.
+// The caller reserves exact text. Use bounded stores when supported; otherwise
+// isolate the vendor wide stores in scratch.
 template <typename Int, bool utf16>
 inline int hotspot_zmij_integer(void* output, int index, Int value) {
+  static_assert(std::is_signed_v<Int>, "The signed adapter requires a signed type");
   using Unsigned = std::make_unsigned_t<Int>;
   if (Unsigned(value) + 9 <= 18) {
     using Char = std::conditional_t<utf16, uint16_t, char>;
@@ -41,6 +43,20 @@ inline int hotspot_zmij_integer(void* output, int index, Int value) {
     }
     return index;
   }
+#if ZMIJ_USE_U64_LANE_CHAIN
+  if constexpr (sizeof(Int) == 8 && !utf16) {
+    // The preceding exact-store fast path covered -9..9. Every remaining
+    // signed long has 2..19 magnitude digits. Keep output bounds exact.
+    bool negative = value < 0;
+    uint64_t magnitude = negative ? -uint64_t(value) : uint64_t(value);
+    int digits = zmij::detail::count_digits(magnitude, zmij::detail::static_data);
+    int start = index - digits - int(negative);
+    char* destination = static_cast<char*>(output) + start;
+    if (negative) *destination++ = '-';
+    zmij::detail::itoa_impl<uint64_t, true>(destination, magnitude, digits);
+    return start;
+  }
+#endif
   char scratch[32] = {};
   char* end = zmij::detail::itoa_signed<Int>(scratch, value);
   int length = int(end - scratch);

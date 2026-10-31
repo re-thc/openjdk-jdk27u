@@ -1185,8 +1185,12 @@ ZMIJ_INLINE auto itoa_u128(char* out, uint128_t value) noexcept -> char* {
 // Writes the decimal representation of unsigned value to out. Minimum buffer
 // sizes: u32 -> 16, u64 -> 20, u128 -> 48 bytes (+1 for the sign in the signed
 // wrappers). Returns one past the last digit.
-template <typename UInt>
-ZMIJ_INLINE auto itoa(char* out, UInt value) noexcept -> char* {
+template <typename UInt, bool bounded = false>
+// bounded is restricted to the u64 lane-chain kernel. The caller supplies the
+// actual decimal digit count of value, not merely a destination capacity.
+ZMIJ_INLINE auto itoa_impl(char* out, UInt value, uint64_t known_digits = 0) noexcept -> char* {
+  static_assert(!bounded || (sizeof(UInt) == 8 && ZMIJ_USE_U64_LANE_CHAIN),
+                "Exact stores require the u64 lane-chain kernel");
 #if ZMIJ_USE_INT128
   // Guarded like the sizeof(Int) > 8 block in itoa_signed: MSVC at /Od keeps
   // the reference to itoa_u128 in the statically-false branch, so the
@@ -1226,7 +1230,10 @@ ZMIJ_INLINE auto itoa(char* out, UInt value) noexcept -> char* {
   // in the high dword, the low dword being the next fraction already in
   // place. The count is consumed only at the end, by the window shuffle
   // and the store offset, so the first product starts from v at once.
-  uint64_t c = count_digits(v, *d);
+  // The exact-output adapter already knows the count needed to locate
+  // the destination start; reuse it rather than loading the count tables twice.
+  assert(!bounded || (known_digits >= 1 && known_digits <= 20));
+  uint64_t c = bounded ? known_digits : count_digits(v, *d);
   uint128_t p1 = uint128_t(v) * d->u64_lane.mul90;
   uint64_t q = uint64_t(p1 >> 90);        // v / 1e8, < 1.85e11
   uint32_t f_b = uint32_t(p1 >> 58) + 1;  // digits 13..20
@@ -1246,9 +1253,97 @@ ZMIJ_INLINE auto itoa(char* out, UInt value) noexcept -> char* {
   // stored over the head's unused bytes at out + (c - 16 or 0), the
   // offset from a byte table by count.
   __m128i window = _mm_loadu_si128(m128ptr(d->u64_lane.window[c]));
-  write_head4(out, g1, c, *d);
-  _mm_storeu_si128(reinterpret_cast<__m128i*>(out + d->u64_lane.body_off[c]),
-                   _mm_shuffle_epi8(ascii, window));
+  if constexpr (bounded) { if (c > 16) write_head4(out, g1, c, *d); }
+  else write_head4(out, g1, c, *d);
+  __m128i ordered = _mm_shuffle_epi8(ascii, window);
+  // Exact stores for short output. Overlapping
+  // stores stay inside [out, out+c); sub-eight-digit cases use smaller widths.
+  if constexpr (bounded) switch (c) {
+    case 1: {
+      *out = char(_mm_cvtsi128_si32(ordered));
+      break;
+    }
+    case 2: {
+      uint16_t low = uint16_t(_mm_cvtsi128_si32(ordered));
+      memcpy(out, &low, 2);
+      break;
+    }
+    case 3: {
+      uint16_t low = uint16_t(_mm_cvtsi128_si32(ordered));
+      memcpy(out, &low, 2);
+      out[2] = char(_mm_extract_epi8(ordered, 2));
+      break;
+    }
+    case 4: {
+      uint32_t low = uint32_t(_mm_cvtsi128_si32(ordered));
+      memcpy(out, &low, 4);
+      break;
+    }
+    case 5: {
+      uint32_t low = uint32_t(_mm_cvtsi128_si32(ordered));
+      memcpy(out, &low, 4);
+      uint32_t tail = uint32_t(_mm_cvtsi128_si32(_mm_srli_si128(ordered, 1)));
+      memcpy(out + 1, &tail, 4);
+      break;
+    }
+    case 6: {
+      uint32_t low = uint32_t(_mm_cvtsi128_si32(ordered));
+      memcpy(out, &low, 4);
+      uint32_t tail = uint32_t(_mm_cvtsi128_si32(_mm_srli_si128(ordered, 2)));
+      memcpy(out + 2, &tail, 4);
+      break;
+    }
+    case 7: {
+      uint32_t low = uint32_t(_mm_cvtsi128_si32(ordered));
+      memcpy(out, &low, 4);
+      uint32_t tail = uint32_t(_mm_cvtsi128_si32(_mm_srli_si128(ordered, 3)));
+      memcpy(out + 3, &tail, 4);
+      break;
+    }
+    case 8: {
+      _mm_storel_epi64(reinterpret_cast<__m128i*>(out), ordered);
+      break;
+    }
+    case 9: {
+      _mm_storel_epi64(reinterpret_cast<__m128i*>(out), ordered);
+      _mm_storel_epi64(reinterpret_cast<__m128i*>(out + 1), _mm_srli_si128(ordered, 1));
+      break;
+    }
+    case 10: {
+      _mm_storel_epi64(reinterpret_cast<__m128i*>(out), ordered);
+      _mm_storel_epi64(reinterpret_cast<__m128i*>(out + 2), _mm_srli_si128(ordered, 2));
+      break;
+    }
+    case 11: {
+      _mm_storel_epi64(reinterpret_cast<__m128i*>(out), ordered);
+      _mm_storel_epi64(reinterpret_cast<__m128i*>(out + 3), _mm_srli_si128(ordered, 3));
+      break;
+    }
+    case 12: {
+      _mm_storel_epi64(reinterpret_cast<__m128i*>(out), ordered);
+      _mm_storel_epi64(reinterpret_cast<__m128i*>(out + 4), _mm_srli_si128(ordered, 4));
+      break;
+    }
+    case 13: {
+      _mm_storel_epi64(reinterpret_cast<__m128i*>(out), ordered);
+      _mm_storel_epi64(reinterpret_cast<__m128i*>(out + 5), _mm_srli_si128(ordered, 5));
+      break;
+    }
+    case 14: {
+      _mm_storel_epi64(reinterpret_cast<__m128i*>(out), ordered);
+      _mm_storel_epi64(reinterpret_cast<__m128i*>(out + 6), _mm_srli_si128(ordered, 6));
+      break;
+    }
+    case 15: {
+      _mm_storel_epi64(reinterpret_cast<__m128i*>(out), ordered);
+      _mm_storel_epi64(reinterpret_cast<__m128i*>(out + 7), _mm_srli_si128(ordered, 7));
+      break;
+    }
+    default:
+      _mm_storeu_si128(reinterpret_cast<__m128i*>(out + d->u64_lane.body_off[c]), ordered);
+  } else {
+    _mm_storeu_si128(reinterpret_cast<__m128i*>(out + d->u64_lane.body_off[c]), ordered);
+  }
   return out + c;
 #elif ZMIJ_USE_SSE || ZMIJ_USE_NEON
   // We peel off the last four digits and always write them at the end,
@@ -1295,6 +1390,11 @@ ZMIJ_INLINE auto itoa(char* out, UInt value) noexcept -> char* {
   copy_bytes(out, buf + 24 - len, 20);
   return out + len;
 #endif  // ZMIJ_USE_U64_LANE_CHAIN
+}
+
+template <typename UInt>
+ZMIJ_INLINE auto itoa(char* out, UInt value) noexcept -> char* {
+  return itoa_impl<UInt, false>(out, value);
 }
 
 // Write the decimal representation of signed value.
