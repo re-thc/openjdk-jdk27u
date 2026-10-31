@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +34,15 @@
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "code/aotCodeCache.hpp"
+#include "commonIntrinsics_x86.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "nativeInst_x86.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/typeArrayKlass.hpp"
+#include "memory/universe.hpp"
+#include "runtime/commonIntrinsics.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -88,6 +93,154 @@ const Register SYNC_header = rax;   // synchronization header
 const Register SHIFT_count = rcx;   // where count for shift operations must be
 
 #define __ _masm->
+
+#ifdef AMD64
+void LIR_Assembler::emit_digest_mb(LIR_OpDigestMB* op) {
+  Label& slow = *op->fallback()->entry();
+  Label done;
+  assert(op->receiver()->as_register() == rdi && op->source()->as_register() == rsi &&
+         op->offset()->as_register() == rdx && op->limit()->as_register() == rcx &&
+         op->tmp()->as_pointer_register() == rbx, "fixed digest operands");
+  __ movslq(rdx, rdx);
+  __ movslq(rcx, rcx);
+  __ testptr(rdi, rdi);
+  __ jcc(Assembler::zero, slow);
+  __ cmpl(rcx, rdx);
+  __ jcc(Assembler::less, slow);
+  __ movl(rbx, Address(rdi, CommonIntrinsics::digest_block_size_offset));
+  __ movl(rax, rcx);
+  __ subl(rax, rdx);
+  __ movl(r8, CommonIntrinsics::max_leaf_elements);
+  __ subl(r8, rbx);
+  __ cmpl(rax, r8);
+  __ jcc(Assembler::greater, slow);
+  __ load_klass(rax, rdi, rscratch2);
+  InstanceKlass** classes[] = { &CommonIntrinsics::md5_klass, &CommonIntrinsics::sha1_klass,
+                              &CommonIntrinsics::sha256_klass, &CommonIntrinsics::sha512_klass, &CommonIntrinsics::sha3_klass };
+  int* offsets[] = { &CommonIntrinsics::md5_state_offset, &CommonIntrinsics::sha1_state_offset,
+                   &CommonIntrinsics::sha256_state_offset, &CommonIntrinsics::sha512_state_offset, &CommonIntrinsics::sha3_state_offset };
+  address entries[] = { StubRoutines::md5_implCompressMB(), StubRoutines::sha1_implCompressMB(), StubRoutines::sha256_implCompressMB(),
+                        StubRoutines::sha512_implCompressMB(), StubRoutines::sha3_implCompressMB() };
+  for (int i = 0; i < 5; i++) {
+    Label next, matches;
+    __ lea(rscratch1, ExternalAddress(reinterpret_cast<address>(classes[i])));
+    __ movptr(r8, Address(rscratch1, 0));
+    __ testptr(r8, r8);
+    __ jcc(Assembler::zero, next);
+    __ check_klass_subtype_fast_path(rax, r8, r9, &matches, &next, &next);
+    __ bind(matches);
+    __ lea(rscratch1, ExternalAddress(reinterpret_cast<address>(offsets[i])));
+    __ movl(rscratch1, Address(rscratch1, 0));
+    __ testl(rscratch1, rscratch1);
+    __ jcc(Assembler::negative, slow);
+    __ lea(rscratch1, Address(rdi, rscratch1, Address::times_1));
+    __ load_heap_oop(r8, Address(rscratch1, 0), rscratch2);
+#ifdef _WIN64
+    __ movl(rax, rdx);
+    if (i == 4) {
+      __ movptr(Address(rsp, frame::arg_reg_save_area_bytes), rcx);
+    } else {
+      __ movl(r9, rcx);
+    }
+    __ lea(rdx, Address(r8, arrayOopDesc::base_offset_in_bytes(i >= 3 ? T_LONG : T_INT)));
+    __ lea(rcx, Address(rsi, rax, Address::times_1, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+    if (i == 4) {
+      __ movptr(r8, rbx);
+      __ movptr(r9, rax);
+    } else {
+      __ movptr(r8, rax);
+    }
+#else
+    __ lea(rdi, Address(rsi, rdx, Address::times_1, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+    __ lea(rsi, Address(r8, arrayOopDesc::base_offset_in_bytes(i >= 3 ? T_LONG : T_INT)));
+    if (i == 4) {
+      __ movl(rax, rdx);
+      __ movl(r8, rcx);
+      __ movptr(rdx, rbx);
+      __ movptr(rcx, rax);
+    }
+#endif
+    __ call(RuntimeAddress(entries[i]));
+    __ post_call_nop();
+    __ jmp(done);
+    __ bind(next);
+  }
+  __ jmp(slow);
+  __ bind(done);
+}
+
+void LIR_Assembler::emit_hash_code(LIR_OpHashCode* op) {
+  Label& slow = *op->fallback()->entry();
+  Label done;
+  assert(op->array()->as_register() == rax && op->offset()->as_register() == rdi &&
+         op->length()->as_register() == rsi && op->initial()->as_register() == rdx &&
+         op->type()->as_register() == rcx, "fixed hash operands");
+  __ movslq(rdi, rdi);
+  __ testptr(rax, rax);
+  __ jcc(Assembler::zero, slow);
+  __ testl(rdi, rdi);
+  __ jcc(Assembler::negative, slow);
+  __ testl(rsi, rsi);
+  __ jcc(Assembler::negative, slow);
+  __ cmpl(rsi, CommonIntrinsics::max_hash_elements);
+  __ jcc(Assembler::greater, slow);
+  const BasicType tags[] = { T_BOOLEAN, T_BYTE, T_SHORT, T_CHAR, T_CHAR, T_INT };
+  const BasicType arrays[] = { T_BYTE, T_BYTE, T_SHORT, T_CHAR, T_BYTE, T_INT };
+  const address entries[] = { CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_unsigned_bytes), CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_bytes),
+                              CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_shorts), CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_chars),
+                              CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_chars), CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_ints) };
+  for (int i = 0; i < 6; i++) {
+    Label next;
+    int shift = tags[i] == T_INT ? 2 : (tags[i] == T_SHORT || tags[i] == T_CHAR) ? 1 : 0;
+    __ cmpl(rcx, tags[i]);
+    __ jcc(Assembler::notEqual, next);
+    __ load_klass(rscratch1, rax, rscratch2);
+    __ mov_metadata(rscratch2, Universe::typeArrayKlass(arrays[i]));
+    __ cmpptr(rscratch1, rscratch2);
+    __ jcc(Assembler::notEqual, next);
+    __ movl(r8, Address(rax, arrayOopDesc::length_offset_in_bytes()));
+    if (tags[i] == T_CHAR && arrays[i] == T_BYTE) __ shrl(r8, 1);
+    __ cmpl(rdi, r8);
+    __ jcc(Assembler::greater, slow);
+    __ subl(r8, rdi);
+    __ cmpl(rsi, r8);
+    __ jcc(Assembler::greater, slow);
+    __ lea(rax, Address(rax, rdi, static_cast<Address::ScaleFactor>(shift), arrayOopDesc::base_offset_in_bytes(arrays[i])));
+#ifdef _WIN64
+    __ movl(r8, rdx);
+    __ movl(rdx, rsi);
+    __ movptr(rcx, rax);
+#else
+    __ movptr(rdi, rax);
+#endif
+    __ call(RuntimeAddress(entries[i]));
+    __ post_call_nop();
+    __ jmp(done);
+    __ bind(next);
+  }
+  __ jmp(slow);
+  __ bind(done);
+}
+
+#endif
+
+#ifdef AMD64
+void LIR_Assembler::common_scalar_op(LIR_Op2* op) {
+  LIR_OpCommonScalar* scalar = static_cast<LIR_OpCommonScalar*>(op);
+  vmIntrinsics::ID id = vmIntrinsics::ID_from(scalar->intrinsic_id());
+  // lir_common_scalar requires registers for every operand in LinearScan.
+  assert(op->in_opr1()->is_cpu_register() && op->result_opr()->is_cpu_register(), "register operands");
+  assert(!op->in_opr2()->is_valid() || op->in_opr2()->is_cpu_register(), "register right operand");
+  Register src = op->in_opr1()->as_pointer_register();
+  Register rhs = op->in_opr2()->is_valid() ? op->in_opr2()->as_pointer_register() : noreg;
+  Register dst = op->result_opr()->as_pointer_register();
+  Register tmp1 = op->tmp1_opr()->is_valid() ? op->tmp1_opr()->as_pointer_register() : noreg;
+  Register tmp2 = op->tmp2_opr()->is_valid() ? op->tmp2_opr()->as_pointer_register() : noreg;
+  Label* slow = scalar->fallback() != nullptr ? scalar->fallback()->entry() : nullptr;
+  common_scalar_intrinsic(_masm, id, dst, src, rhs, tmp1, tmp2, slow);
+}
+#endif
+
 
 static void select_different_registers(Register preserve,
                                        Register extra,

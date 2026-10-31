@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +29,7 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciInstance.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
@@ -547,6 +549,49 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     }
 
 
+    case lir_common_scalar: {
+      LIR_OpCommonScalar* scalar = static_cast<LIR_OpCommonScalar*>(op);
+      LIR_Op2* op2 = scalar;
+      do_input(op2->_opr1);
+#ifdef AMD64
+      // One-operand multiply and unsigned divide overwrite their fixed RAX
+      // input even when the result is allocated in a different register.
+      if (op2->_opr1->is_fixed_cpu()) do_temp(op2->_opr1);
+#endif
+      if (op2->_opr2->is_valid()) do_input(op2->_opr2);
+#if defined(AMD64) || defined(AARCH64)
+      vmIntrinsics::ID id = vmIntrinsics::ID_from(scalar->intrinsic_id());
+      bool keep_inputs = false;
+#ifdef AMD64
+      keep_inputs = id == vmIntrinsics::_addExactI || id == vmIntrinsics::_addExactL ||
+                    id == vmIntrinsics::_subtractExactI || id == vmIntrinsics::_subtractExactL ||
+                    id == vmIntrinsics::_multiplyExactI || id == vmIntrinsics::_multiplyExactL;
+#endif
+#ifdef AARCH64
+      keep_inputs = id == vmIntrinsics::_remainderUnsigned_i || id == vmIntrinsics::_remainderUnsigned_l ||
+                    id == vmIntrinsics::_multiplyExactL;
+#endif
+      // These instruction sequences read their inputs after writing a scratch
+      // register. Keep dead inputs from being reused for that scratch register
+      // or for an early output, as for the platform's other division lowering.
+      if (keep_inputs) {
+        do_temp(op2->_opr1);
+        do_temp(op2->_opr2);
+      }
+#endif
+      if (op2->_tmp1->is_valid()) do_temp(op2->_tmp1);
+      if (op2->_tmp2->is_valid()) do_temp(op2->_tmp2);
+      if (op2->_tmp3->is_valid()) do_temp(op2->_tmp3);
+      if (scalar->fallback() != nullptr) {
+        do_stub(scalar->fallback());
+      } else if (op2->_info != nullptr) {
+        do_info(op2->_info);
+      }
+      do_output(op2->_result);
+      break;
+    }
+
+
 // LIR_Op2
     case lir_cmp:
     case lir_cmp_l2i:
@@ -737,6 +782,33 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
 
 
 // LIR_OpArrayCopy
+    case lir_digest_mb: {
+      LIR_OpDigestMB* bulk = static_cast<LIR_OpDigestMB*>(op);
+      do_input(bulk->_receiver); do_temp(bulk->_receiver);
+      do_input(bulk->_source); do_temp(bulk->_source);
+      do_input(bulk->_offset); do_temp(bulk->_offset);
+      do_input(bulk->_limit); do_temp(bulk->_limit);
+      if (bulk->_tmp->is_valid()) do_temp(bulk->_tmp);
+      do_stub(bulk->_fallback);
+      do_output(bulk->_result);
+      do_call();
+      break;
+    }
+
+    case lir_hash_code: {
+      LIR_OpHashCode* bulk = static_cast<LIR_OpHashCode*>(op);
+      do_input(bulk->_array); do_temp(bulk->_array);
+      do_input(bulk->_offset); do_temp(bulk->_offset);
+      do_input(bulk->_length); do_temp(bulk->_length);
+      do_input(bulk->_initial); do_temp(bulk->_initial);
+      do_input(bulk->_type); do_temp(bulk->_type);
+      if (bulk->_tmp->is_valid()) do_temp(bulk->_tmp);
+      do_stub(bulk->_fallback);
+      do_output(bulk->_result);
+      do_call();
+      break;
+    }
+
     case lir_arraycopy: {
       assert(op->as_OpArrayCopy() != nullptr, "must be");
       LIR_OpArrayCopy* opArrayCopy = (LIR_OpArrayCopy*)op;
@@ -972,6 +1044,16 @@ void LIR_OpRTCall::emit_code(LIR_Assembler* masm) {
 
 void LIR_OpLabel::emit_code(LIR_Assembler* masm) {
   masm->emit_opLabel(this);
+}
+
+void LIR_OpDigestMB::emit_code(LIR_Assembler* masm) {
+  masm->emit_digest_mb(this);
+  masm->append_code_stub(fallback());
+}
+
+void LIR_OpHashCode::emit_code(LIR_Assembler* masm) {
+  masm->emit_hash_code(this);
+  masm->append_code_stub(fallback());
 }
 
 void LIR_OpArrayCopy::emit_code(LIR_Assembler* masm) {
@@ -1703,6 +1785,7 @@ const char * LIR_Op::name() const {
      case lir_monaddr:               s = "mon_addr";      break;
      // LIR_Op2
      case lir_cmp:                   s = "cmp";           break;
+     case lir_common_scalar:         s = "common_scalar"; break;
      case lir_cmp_l2i:               s = "cmp_l2i";       break;
      case lir_ucmp_fd2i:             s = "ucomp_fd2i";    break;
      case lir_cmp_fd2i:              s = "comp_fd2i";     break;
@@ -1733,6 +1816,8 @@ const char * LIR_Op::name() const {
      case lir_icvirtual_call:        s = "icvirtual";     break;
      case lir_dynamic_call:          s = "dynamic";       break;
      // LIR_OpArrayCopy
+     case lir_digest_mb:             s = "digest_mb";     break;
+     case lir_hash_code:             s = "hash_code";     break;
      case lir_arraycopy:             s = "arraycopy";     break;
      // LIR_OpUpdateCRC32
      case lir_updatecrc32:           s = "updatecrc32";   break;
@@ -1779,6 +1864,23 @@ void LIR_OpLabel::print_instr(outputStream* out) const {
 }
 
 // LIR_OpArrayCopy
+void LIR_OpDigestMB::print_instr(outputStream* out) const {
+  receiver()->print(out); out->print(" ");
+  source()->print(out); out->print(" ");
+  offset()->print(out); out->print(" ");
+  limit()->print(out); out->print(" ");
+  result_opr()->print(out);
+}
+
+void LIR_OpHashCode::print_instr(outputStream* out) const {
+  array()->print(out); out->print(" ");
+  offset()->print(out); out->print(" ");
+  length()->print(out); out->print(" ");
+  initial()->print(out); out->print(" ");
+  type()->print(out); out->print(" ");
+  result_opr()->print(out);
+}
+
 void LIR_OpArrayCopy::print_instr(outputStream* out) const {
   src()->print(out);     out->print(" ");
   src_pos()->print(out); out->print(" ");

@@ -2,6 +2,7 @@
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright 2026 Arm Limited and/or its affiliates.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +25,8 @@
  *
  */
 
-#include "asm/macroAssembler.inline.hpp"
 #include "asm/assembler.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_LIRAssembler.hpp"
@@ -36,10 +37,14 @@
 #include "ci/ciInstance.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
+#include "commonIntrinsics_aarch64.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/typeArrayKlass.hpp"
+#include "memory/universe.hpp"
+#include "runtime/commonIntrinsics.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -59,6 +64,117 @@ const Register SYNC_header = r0;   // synchronization header
 const Register SHIFT_count = r0;   // where count for shift operations must be
 
 #define __ _masm->
+
+void LIR_Assembler::emit_digest_mb(LIR_OpDigestMB* op) {
+  Label& slow = *op->fallback()->entry();
+  Label done;
+  assert(op->receiver()->as_register() == r0 && op->source()->as_register() == r1 &&
+         op->offset()->as_register() == r2 && op->limit()->as_register() == r3, "fixed digest operands");
+  __ sxtw(r2, r2);
+  __ sxtw(r3, r3);
+  __ cbz(r0, slow);
+  __ cmpw(r3, r2);
+  __ br(Assembler::LT, slow);
+  __ ldrw(r10, Address(r0, CommonIntrinsics::digest_block_size_offset));
+  __ subw(r11, r3, r2);
+  __ mov(r13, CommonIntrinsics::max_leaf_elements);
+  __ subw(r13, r13, r10);
+  __ cmpw(r11, r13);
+  __ br(Assembler::GT, slow);
+  __ load_klass(r14, r0);
+  InstanceKlass** classes[] = { &CommonIntrinsics::md5_klass, &CommonIntrinsics::sha1_klass,
+                              &CommonIntrinsics::sha256_klass, &CommonIntrinsics::sha512_klass, &CommonIntrinsics::sha3_klass };
+  int* offsets[] = { &CommonIntrinsics::md5_state_offset, &CommonIntrinsics::sha1_state_offset,
+                   &CommonIntrinsics::sha256_state_offset, &CommonIntrinsics::sha512_state_offset, &CommonIntrinsics::sha3_state_offset };
+  address entries[] = { StubRoutines::md5_implCompressMB(), StubRoutines::sha1_implCompressMB(), StubRoutines::sha256_implCompressMB(),
+                        StubRoutines::sha512_implCompressMB(), StubRoutines::sha3_implCompressMB() };
+  for (int i = 0; i < 5; i++) {
+    Label next, matches;
+    __ lea(rscratch1, ExternalAddress(reinterpret_cast<address>(classes[i])));
+    __ ldar(r13, rscratch1);
+    __ cbz(r13, next);
+    __ check_klass_subtype_fast_path(r14, r13, r15, &matches, &next, &next);
+    __ bind(matches);
+    __ lea(rscratch1, ExternalAddress(reinterpret_cast<address>(offsets[i])));
+    __ ldrw(rscratch1, Address(rscratch1, 0));
+    __ tbnz(rscratch1, 31, slow);
+    __ add(r15, r0, rscratch1);
+    __ load_heap_oop(r11, Address(r15, 0), rscratch1, rscratch2);
+    __ add(r0, r1, r2);
+    __ add(r0, r0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ add(r1, r11, arrayOopDesc::base_offset_in_bytes(i >= 3 ? T_LONG : T_INT));
+    if (i == 4) {
+      __ mov(r4, r3);
+      __ mov(r3, r2);
+      __ mov(r2, r10);
+    }
+    __ far_call(RuntimeAddress(entries[i]));
+    __ post_call_nop();
+    __ b(done);
+    __ bind(next);
+  }
+  __ b(slow);
+  __ bind(done);
+}
+
+void LIR_Assembler::emit_hash_code(LIR_OpHashCode* op) {
+  Label& slow = *op->fallback()->entry();
+  Label done;
+  assert(op->array()->as_register() == r0 && op->offset()->as_register() == r1 &&
+         op->length()->as_register() == r2 && op->initial()->as_register() == r3 &&
+         op->type()->as_register() == r4, "fixed hash operands");
+  __ sxtw(r1, r1);
+  __ cbz(r0, slow);
+  __ tbnz(r1, 31, slow);
+  __ tbnz(r2, 31, slow);
+  __ cmpw(r2, CommonIntrinsics::max_hash_elements);
+  __ br(Assembler::GT, slow);
+  const BasicType tags[] = { T_BOOLEAN, T_BYTE, T_SHORT, T_CHAR, T_CHAR, T_INT };
+  const BasicType arrays[] = { T_BYTE, T_BYTE, T_SHORT, T_CHAR, T_BYTE, T_INT };
+  const address entries[] = { CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_unsigned_bytes), CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_bytes),
+                              CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_shorts), CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_chars),
+                              CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_chars), CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_ints) };
+  for (int i = 0; i < 6; i++) {
+    Label next;
+    int shift = tags[i] == T_INT ? 2 : (tags[i] == T_SHORT || tags[i] == T_CHAR) ? 1 : 0;
+    __ cmpw(r4, tags[i]);
+    __ br(Assembler::NE, next);
+    __ load_klass(rscratch1, r0);
+    __ mov_metadata(rscratch2, Universe::typeArrayKlass(arrays[i]));
+    __ cmp(rscratch1, rscratch2);
+    __ br(Assembler::NE, next);
+    __ ldrw(r10, Address(r0, arrayOopDesc::length_offset_in_bytes()));
+    if (tags[i] == T_CHAR && arrays[i] == T_BYTE) __ lsrw(r10, r10, 1);
+    __ cmpw(r1, r10);
+    __ br(Assembler::GT, slow);
+    __ subw(r10, r10, r1);
+    __ cmpw(r2, r10);
+    __ br(Assembler::GT, slow);
+    __ add(r0, r0, r1, Assembler::LSL, shift);
+    __ add(r0, r0, arrayOopDesc::base_offset_in_bytes(arrays[i]));
+    __ movw(r1, r2);
+    __ movw(r2, r3);
+    __ lea(rscratch1, RuntimeAddress(entries[i]));
+    __ blr(rscratch1);
+    __ post_call_nop();
+    __ b(done);
+    __ bind(next);
+  }
+  __ b(slow);
+  __ bind(done);
+}
+
+void LIR_Assembler::common_scalar_op(LIR_Op2* op) {
+  LIR_OpCommonScalar* scalar = static_cast<LIR_OpCommonScalar*>(op);
+  vmIntrinsics::ID id = vmIntrinsics::ID_from(scalar->intrinsic_id());
+  Register src = op->in_opr1()->as_pointer_register();
+  Register rhs = op->in_opr2()->is_valid() ? op->in_opr2()->as_pointer_register() : noreg;
+  Register dst = op->result_opr()->as_pointer_register();
+  Register tmp1 = op->tmp1_opr()->is_valid() ? op->tmp1_opr()->as_pointer_register() : noreg;
+  Register tmp2 = op->tmp2_opr()->is_valid() ? op->tmp2_opr()->as_pointer_register() : noreg;
+  Label* slow = scalar->fallback() != nullptr ? scalar->fallback()->entry() : nullptr;
+  common_scalar_intrinsic(_masm, id, dst, src, rhs, tmp1, tmp2, op->tmp3_opr()->is_valid() ? op->tmp3_opr()->as_double_reg() : v0, slow);
+}
 
 
 static void select_different_registers(Register preserve,

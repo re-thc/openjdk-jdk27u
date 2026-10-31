@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +40,7 @@
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/methodCounters.hpp"
+#include "runtime/commonIntrinsics.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
@@ -1700,6 +1702,14 @@ void LIRGenerator::access_load_at(DecoratorSet decorators, BasicType type,
   }
 }
 
+void LIRGenerator::access_load_at(DecoratorSet decorators, BasicType type,
+                                  LIR_Opr base, LIR_Opr offset, LIR_Opr result) {
+  assert((decorators & (ON_UNKNOWN_OOP_REF | ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) == 0,
+         "known strong field");
+  LIRAccess access(this, decorators | ACCESS_READ, base, offset, type);
+  _barrier_set->load_at(access, result);
+}
+
 void LIRGenerator::access_load(DecoratorSet decorators, BasicType type,
                                LIR_Opr addr, LIR_Opr result) {
   decorators |= ACCESS_READ;
@@ -2830,7 +2840,571 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
 
 
 
+void LIRGenerator::do_CommonScalarIntrinsic(Intrinsic* x) {
+  vmIntrinsics::ID id = x->id();
+  bool wide = CommonIntrinsics::scalar_is_wide(id);
+  bool binary = CommonIntrinsics::is_binary_scalar(id);
+  // state_for may emit code for pending expression-stack values. Materialize
+  // those before loading fixed registers needed by multiply and divide.
+  CodeEmitInfo* info = nullptr;
+  CodeStub* fallback = nullptr;
+  if (CommonIntrinsics::can_fallback(id)) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+    fallback = new PredicateFailedStub(info, true);
+  }
+  LIRItem left(x->argument_at(0), this);
+  left.load_item();
+  LIR_Opr right = LIR_OprFact::illegalOpr;
+  LIR_Opr tmp1 = LIR_OprFact::illegalOpr;
+  LIR_Opr tmp2 = LIR_OprFact::illegalOpr;
+  LIR_Opr vtmp = LIR_OprFact::illegalOpr;
+#ifdef AMD64
+  bool fixed = id == vmIntrinsics::_multiplyHigh || id == vmIntrinsics::_unsignedMultiplyHigh ||
+          id == vmIntrinsics::_divideUnsigned_i || id == vmIntrinsics::_divideUnsigned_l ||
+          id == vmIntrinsics::_remainderUnsigned_i || id == vmIntrinsics::_remainderUnsigned_l;
+#endif
+  if (binary) {
+    LIRItem item(x->argument_at(1), this);
+#ifdef AMD64
+    if (fixed) item.load_item_force(wide ? FrameMap::as_long_opr(rcx) : FrameMap::rcx_opr);
+    else
+#endif
+      item.load_item();
+    right = item.result();
+  }
+#ifdef AMD64
+  if (fixed) {
+    // Values use virtual registers until allocation; pinning the right
+    // operand first cannot overwrite a physical left operand.
+    assert(left.result()->is_virtual(), "unallocated left operand");
+    left.load_item_force(wide ? FrameMap::long0_opr : FrameMap::rax_opr);
+    tmp1 = wide ? FrameMap::as_long_opr(rdx) : FrameMap::rdx_opr;
+  } else if (id == vmIntrinsics::_reverse_i || id == vmIntrinsics::_reverse_l ||
+             id == vmIntrinsics::_iabs || id == vmIntrinsics::_labs ||
+             id == vmIntrinsics::_compareUnsigned_i || id == vmIntrinsics::_compareUnsigned_l ||
+             (binary && CommonIntrinsics::can_fallback(id))) {
+    tmp1 = new_register(T_LONG);
+    if (id == vmIntrinsics::_reverse_l) tmp2 = new_register(T_LONG);
+  }
+#endif
+#ifdef AARCH64
+  if (id == vmIntrinsics::_numberOfTrailingZeros_i || id == vmIntrinsics::_numberOfTrailingZeros_l ||
+      id == vmIntrinsics::_bitCount_i || id == vmIntrinsics::_bitCount_l ||
+      id == vmIntrinsics::_compareUnsigned_i || id == vmIntrinsics::_compareUnsigned_l ||
+      id == vmIntrinsics::_multiplyExactI || id == vmIntrinsics::_multiplyExactL ||
+      id == vmIntrinsics::_remainderUnsigned_i || id == vmIntrinsics::_remainderUnsigned_l) {
+    tmp1 = new_register(T_LONG);
+  }
+  if (id == vmIntrinsics::_bitCount_i || id == vmIntrinsics::_bitCount_l) {
+    vtmp = new_register(T_DOUBLE);
+  }
+#endif
+  __ append(new LIR_OpCommonScalar(vmIntrinsics::as_int(id), left.result(), right,
+                                  rlock_result(x), tmp1, tmp2, vtmp, info, fallback));
+}
+
+void LIRGenerator::do_BigIntegerIntrinsic(Intrinsic* x) {
+  CodeEmitInfo* info = state_for(x, x->state_before());
+  info->set_force_reexecute();
+  LIR_OprList values(x->number_of_arguments());
+  for (int i = 0; i < x->number_of_arguments(); i++) {
+    LIRItem item(x->argument_at(i), this);
+    item.load_item();
+    values.append(item.result());
+  }
+  auto guard = [&](LIR_Condition condition, LIR_Opr left, LIR_Opr right) {
+    __ cmp(condition, left, right);
+    __ branch(condition, new PredicateFailedStub(info, true));
+  };
+  auto bounded = [&](LIR_Opr length, int limit) {
+    guard(lir_cond_lessEqual, length, LIR_OprFact::intConst(0));
+    guard(lir_cond_greater, length, LIR_OprFact::intConst(limit));
+  };
+
+
+  vmIntrinsics::ID id = x->id();
+  address entry = nullptr;
+  int output = -1;
+  switch (id) {
+    case vmIntrinsics::_multiplyToLen: {
+      bounded(values.at(1), CommonIntrinsics::max_quadratic_limbs);
+      bounded(values.at(3), CommonIntrinsics::max_quadratic_limbs);
+      guard(lir_cond_equal, values.at(0), values.at(4));
+      guard(lir_cond_equal, values.at(2), values.at(4));
+      output = 4;
+      entry = StubRoutines::multiplyToLen();
+      break;
+    }
+    case vmIntrinsics::_squareToLen:
+      bounded(values.at(1), CommonIntrinsics::max_quadratic_limbs);
+      guard(lir_cond_equal, values.at(0), values.at(2));
+      output = 2;
+      entry = StubRoutines::squareToLen();
+      break;
+    case vmIntrinsics::_mulAdd: {
+      bounded(values.at(3), CommonIntrinsics::max_leaf_elements);
+      LIR_Opr offset = new_register(T_INT);
+      __ move(LIR_OprFact::address(generate_address(values.at(0), arrayOopDesc::length_offset_in_bytes(), T_INT)), offset);
+      __ sub(offset, values.at(2), offset);
+      values.at_put(2, offset);
+      entry = StubRoutines::mulAdd();
+      break;
+    }
+    case vmIntrinsics::_montgomeryMultiply:
+    case vmIntrinsics::_montgomerySquare: {
+      bool multiply = id == vmIntrinsics::_montgomeryMultiply;
+      int length_index = multiply ? 3 : 2;
+      output = multiply ? 5 : 4;
+      bounded(values.at(length_index), CommonIntrinsics::max_montgomery_limbs);
+      for (int i = 0; i < length_index; i++) {
+        guard(lir_cond_equal, values.at(i), values.at(output));
+      }
+      entry = multiply ? StubRoutines::montgomeryMultiply() : StubRoutines::montgomerySquare();
+      break;
+    }
+    case vmIntrinsics::_bigIntegerLeftShiftWorker:
+    case vmIntrinsics::_bigIntegerRightShiftWorker: {
+      bool left = id == vmIntrinsics::_bigIntegerLeftShiftWorker;
+      bounded(values.at(4), CommonIntrinsics::max_leaf_elements);
+      bounded(values.at(3), 31);
+      guard(lir_cond_less, values.at(2), LIR_OprFact::intConst(0));
+      if (!left) guard(lir_cond_greater, values.at(2), LIR_OprFact::intConst(1));
+      LabelObj* disjoint = new LabelObj();
+      __ cmp(lir_cond_notEqual, values.at(0), values.at(1));
+      __ branch(lir_cond_notEqual, disjoint->label());
+      guard(lir_cond_notEqual, values.at(2), LIR_OprFact::intConst(left ? 0 : 1));
+      __ branch_destination(disjoint->label());
+      entry = left ? StubRoutines::bigIntegerLeftShift() : StubRoutines::bigIntegerRightShift();
+      break;
+    }
+    default: ShouldNotReachHere();
+  }
+
+  BasicTypeList signature(values.length());
+  LIR_OprList args(values.length());
+  for (int i = 0; i < values.length(); i++) {
+    LIR_Opr value = values.at(i);
+    BasicType type = as_BasicType(x->argument_at(i)->type());
+    if (type == T_OBJECT) {
+      LIR_Opr base = new_register(T_ADDRESS);
+      __ leal(LIR_OprFact::address(generate_address(value, arrayOopDesc::base_offset_in_bytes(T_INT), T_INT)), base);
+      value = base;
+      type = T_ADDRESS;
+    } else if (type == T_INT && id != vmIntrinsics::_montgomeryMultiply &&
+               id != vmIntrinsics::_montgomerySquare) {
+      LIR_Opr word = new_register(T_LONG);
+      __ convert(Bytecodes::_i2l, value, word);
+      if (id == vmIntrinsics::_mulAdd && i == 4) {
+        LIR_Opr mask = new_register(T_LONG);
+        __ move(LIR_OprFact::longConst(0xffffffffLL), mask);
+        __ logical_and(word, mask, word);
+      }
+      value = word;
+      type = T_LONG;
+    }
+    signature.append(type);
+    args.append(value);
+  }
+  // Generated stubs consume full words; SharedRuntime Montgomery entries take jint lengths.
+  ValueType* result_type = voidType;
+  if (id == vmIntrinsics::_mulAdd) result_type = intType;
+  LIR_Opr result = call_runtime(&signature, &args, entry, result_type, nullptr);
+  if (output >= 0) {
+    __ move(values.at(output), rlock_result(x));
+  } else if (id == vmIntrinsics::_mulAdd) {
+    __ move(result, rlock_result(x));
+  } else {
+    set_no_result(x);
+  }
+}
+
+void LIRGenerator::do_CryptoIntrinsic(Intrinsic* x) {
+  CodeEmitInfo* info = state_for(x, x->state_before());
+  info->set_force_reexecute();
+  LIR_OprList values(x->number_of_arguments());
+  for (int i = 0; i < x->number_of_arguments(); i++) {
+    LIRItem item(x->argument_at(i), this);
+    item.load_item();
+    values.append(item.result());
+  }
+  auto guard = [&](LIR_Condition condition, LIR_Opr left, LIR_Opr right) {
+    __ cmp(condition, left, right);
+    __ branch(condition, new PredicateFailedStub(info, true));
+  };
+  auto field = [&](LIR_Opr object, int offset, BasicType type = T_OBJECT) {
+    LIR_Opr result = new_register(type);
+    access_load_at(IN_HEAP, type, object, LIR_OprFact::intConst(offset), result);
+    return result;
+  };
+  auto aes_key = [&](LIR_Opr mode, bool decrypting) {
+    LIR_Opr cipher = field(mode, CommonIntrinsics::embedded_cipher_offset);
+    guard(lir_cond_equal, cipher, LIR_OprFact::oopConst(nullptr));
+    LIR_Opr klass = new_register(T_METADATA);
+    load_klass(cipher, klass, nullptr);
+    ciKlass* aes = compilation()->env()->Object_klass()->find_klass(
+        ciSymbol::make("com/sun/crypto/provider/AES_Crypt"));
+    LIR_Opr expected = new_register(T_METADATA);
+    __ metadata2reg(aes->constant_encoding(), expected);
+    guard(lir_cond_notEqual, klass, expected);
+    return field(cipher, decrypting ? CommonIntrinsics::aes_decrypt_key_offset
+                                    : CommonIntrinsics::aes_encrypt_key_offset);
+  };
+  auto bounded = [&](LIR_Opr length) {
+    guard(lir_cond_lessEqual, length, LIR_OprFact::intConst(0));
+    guard(lir_cond_greater, length, LIR_OprFact::intConst(CommonIntrinsics::max_leaf_elements));
+  };
+  auto same_position = [&](int src, int src_offset, int dst, int dst_offset) {
+    LabelObj* disjoint = new LabelObj();
+    __ cmp(lir_cond_notEqual, values.at(src), values.at(dst));
+    __ branch(lir_cond_notEqual, disjoint->label());
+    guard(lir_cond_notEqual, values.at(src_offset), values.at(dst_offset));
+    __ branch_destination(disjoint->label());
+  };
+
+  vmIntrinsics::ID id = x->id();
+  bool gcm = id == vmIntrinsics::_galoisCounterMode_AESCrypt;
+  if (!gcm && x->needs_null_check()) {
+    guard(lir_cond_equal, values.at(0), LIR_OprFact::oopConst(nullptr));
+  }
+  LIR_Opr key = LIR_OprFact::illegalOpr;
+  LIR_Opr state = LIR_OprFact::illegalOpr;
+  LIR_Opr counter = LIR_OprFact::illegalOpr;
+  LIR_Opr encrypted = LIR_OprFact::illegalOpr;
+  LIR_Opr htable = LIR_OprFact::illegalOpr;
+  LIR_Opr rate = LIR_OprFact::illegalOpr;
+  address entry = nullptr;
+  bool block = id == vmIntrinsics::_aescrypt_encryptBlock || id == vmIntrinsics::_aescrypt_decryptBlock;
+  bool ecb = id == vmIntrinsics::_electronicCodeBook_encryptAESCrypt || id == vmIntrinsics::_electronicCodeBook_decryptAESCrypt;
+  bool cbc = id == vmIntrinsics::_cipherBlockChaining_encryptAESCrypt || id == vmIntrinsics::_cipherBlockChaining_decryptAESCrypt;
+  bool ctr = id == vmIntrinsics::_counterMode_AESCrypt;
+  bool decrypting = id == vmIntrinsics::_aescrypt_decryptBlock ||
+                    id == vmIntrinsics::_electronicCodeBook_decryptAESCrypt ||
+                    id == vmIntrinsics::_cipherBlockChaining_decryptAESCrypt;
+  if (block) {
+    key = field(values.at(0), decrypting ? CommonIntrinsics::aes_decrypt_key_offset
+                                       : CommonIntrinsics::aes_encrypt_key_offset);
+    entry = decrypting ? StubRoutines::aescrypt_decryptBlock() : StubRoutines::aescrypt_encryptBlock();
+  } else if (ecb || cbc || ctr) {
+    bounded(values.at(3));
+    if (cbc && decrypting) {
+      guard(lir_cond_equal, values.at(1), values.at(4));
+    } else {
+      same_position(1, 2, 4, 5);
+    }
+    key = aes_key(values.at(0), decrypting);
+    if (cbc) {
+      state = field(values.at(0), CommonIntrinsics::cbc_r_offset);
+      entry = decrypting ? StubRoutines::cipherBlockChaining_decryptAESCrypt()
+                         : StubRoutines::cipherBlockChaining_encryptAESCrypt();
+    } else if (ctr) {
+      counter = field(values.at(0), CommonIntrinsics::ctr_counter_offset);
+      encrypted = field(values.at(0), CommonIntrinsics::ctr_encrypted_offset);
+      entry = StubRoutines::counterMode_AESCrypt();
+    } else {
+      entry = decrypting ? StubRoutines::electronicCodeBook_decryptAESCrypt()
+                         : StubRoutines::electronicCodeBook_encryptAESCrypt();
+    }
+  } else if (gcm) {
+    bounded(values.at(2));
+    guard(lir_cond_equal, values.at(0), values.at(5));
+    key = aes_key(values.at(7), false);
+    counter = field(values.at(7), CommonIntrinsics::ctr_counter_offset);
+    state = field(values.at(8), CommonIntrinsics::ghash_state_offset);
+    htable = field(values.at(8), CommonIntrinsics::ghash_key_offset);
+    entry = StubRoutines::galoisCounterMode_AESCrypt();
+  } else {
+    int offset = -1;
+    switch (id) {
+      case vmIntrinsics::_md5_implCompress: offset = CommonIntrinsics::md5_state_offset; entry = StubRoutines::md5_implCompress(); break;
+      case vmIntrinsics::_sha_implCompress: offset = CommonIntrinsics::sha1_state_offset; entry = StubRoutines::sha1_implCompress(); break;
+      case vmIntrinsics::_sha2_implCompress: offset = CommonIntrinsics::sha256_state_offset; entry = StubRoutines::sha256_implCompress(); break;
+      case vmIntrinsics::_sha5_implCompress: offset = CommonIntrinsics::sha512_state_offset; entry = StubRoutines::sha512_implCompress(); break;
+      case vmIntrinsics::_sha3_implCompress:
+        offset = CommonIntrinsics::sha3_state_offset; entry = StubRoutines::sha3_implCompress();
+        rate = field(values.at(0), CommonIntrinsics::digest_block_size_offset, T_INT);
+        break;
+      default: ShouldNotReachHere();
+    }
+    state = field(values.at(0), offset);
+  }
+
+  // Finish all barriered heap loads before deriving any raw address.
+  BasicTypeList signature(8);
+  LIR_OprList args(8);
+  auto pointer = [&](LIR_Opr object, BasicType element_type, LIR_Opr offset = LIR_OprFact::illegalOpr) {
+    LIR_Opr index = offset;
+    if (offset->is_valid()) {
+      index = new_register(T_LONG);
+      __ convert(Bytecodes::_i2l, offset, index);
+    }
+    LIR_Opr result = new_register(T_ADDRESS);
+    LIR_Address* address = offset->is_valid()
+        ? generate_address(object, index, 0, arrayOopDesc::base_offset_in_bytes(element_type), element_type)
+        : generate_address(object, arrayOopDesc::base_offset_in_bytes(element_type), element_type);
+    __ leal(LIR_OprFact::address(address), result);
+    signature.append(T_ADDRESS);
+    args.append(result);
+  };
+  auto word = [&](LIR_Opr value) {
+    LIR_Opr result = new_register(T_LONG);
+    __ convert(Bytecodes::_i2l, value, result);
+    signature.append(T_LONG);
+    args.append(result);
+  };
+  if (gcm) {
+    pointer(values.at(0), T_BYTE, values.at(1));
+    word(values.at(2));
+    pointer(values.at(3), T_BYTE, values.at(4));
+    pointer(values.at(5), T_BYTE, values.at(6));
+    pointer(key, T_INT);
+    pointer(state, T_LONG);
+    pointer(htable, T_LONG);
+    pointer(counter, T_BYTE);
+  } else if (block || ecb || cbc || ctr) {
+    pointer(values.at(1), T_BYTE, values.at(2));
+    pointer(values.at(block ? 3 : 4), T_BYTE, values.at(block ? 4 : 5));
+    pointer(key, T_INT);
+    if (cbc) pointer(state, T_BYTE);
+    if (ctr) pointer(counter, T_BYTE);
+    if (!block) word(values.at(3));
+    if (ctr) {
+      pointer(encrypted, T_BYTE);
+      LIR_Opr used = new_register(T_ADDRESS);
+      __ leal(LIR_OprFact::address(generate_address(values.at(0), CommonIntrinsics::ctr_used_offset, T_INT)), used);
+      signature.append(T_ADDRESS);
+      args.append(used);
+    }
+  } else {
+    pointer(values.at(1), T_BYTE, values.at(2));
+    pointer(state, id == vmIntrinsics::_sha5_implCompress || id == vmIntrinsics::_sha3_implCompress ? T_LONG : T_INT);
+    if (rate->is_valid()) word(rate);
+  }
+  bool returns_int = ecb || cbc || ctr || gcm;
+  ValueType* result_type = voidType;
+  if (returns_int) result_type = intType;
+  LIR_Opr result = call_runtime(&signature, &args, entry, result_type, nullptr);
+  if (returns_int) {
+    __ move(result, rlock_result(x));
+  } else {
+    set_no_result(x);
+  }
+}
+
+void LIRGenerator::do_ArrayIntrinsic(Intrinsic* x) {
+  CodeEmitInfo* info = state_for(x, x->state_before());
+  info->set_force_reexecute();
+  LIR_OprList values(x->number_of_arguments());
+  for (int i = 0; i < x->number_of_arguments(); i++) {
+    LIRItem item(x->argument_at(i), this);
+    item.load_item();
+    values.append(item.result());
+  }
+  auto guard = [&](LIR_Condition condition, LIR_Opr left, LIR_Opr right) {
+    __ cmp(condition, left, right);
+    __ branch(condition, new PredicateFailedStub(info, true));
+  };
+  auto bounded = [&](LIR_Opr count, int maximum) {
+    guard(lir_cond_lessEqual, count, LIR_OprFact::intConst(0));
+    guard(lir_cond_greater, count, LIR_OprFact::intConst(maximum));
+  };
+  auto length = [&](int index) {
+    LIR_Opr result = new_register(T_INT);
+    __ move(LIR_OprFact::address(generate_address(values.at(index), arrayOopDesc::length_offset_in_bytes(), T_INT)), result);
+    return result;
+  };
+  BasicTypeList signature(5);
+  LIR_OprList args(5);
+  auto pointer = [&](int index, BasicType type, int offset = -1) {
+    LIR_Opr result = new_register(T_ADDRESS);
+    LIR_Address* address;
+    if (offset >= 0) {
+      LIR_Opr displacement = new_register(T_LONG);
+      __ convert(Bytecodes::_i2l, values.at(offset), displacement);
+      address = generate_address(values.at(index), displacement, 0, arrayOopDesc::base_offset_in_bytes(type), type);
+    } else {
+      address = generate_address(values.at(index), arrayOopDesc::base_offset_in_bytes(type), type);
+    }
+    __ leal(LIR_OprFact::address(address), result);
+    signature.append(T_ADDRESS);
+    args.append(result);
+  };
+  auto word = [&](LIR_Opr value) {
+    LIR_Opr result = new_register(T_LONG);
+    __ convert(Bytecodes::_i2l, value, result);
+    signature.append(T_LONG);
+    args.append(result);
+  };
+  vmIntrinsics::ID id = x->id();
+  address entry = nullptr;
+  bool returns_int = true;
+  if (x->has_receiver() && x->needs_null_check()) {
+    guard(lir_cond_equal, values.at(0), LIR_OprFact::oopConst(nullptr));
+  }
+  switch (id) {
+    case vmIntrinsics::_ghash_processBlocks:
+      bounded(values.at(2), CommonIntrinsics::max_leaf_elements / 16);
+      pointer(3, T_LONG); pointer(4, T_LONG); pointer(0, T_BYTE, 1); word(values.at(2));
+      entry = StubRoutines::ghash_processBlocks(); returns_int = false;
+      break;
+    case vmIntrinsics::_chacha20Block:
+      pointer(0, T_INT); pointer(1, T_BYTE);
+      entry = StubRoutines::chacha20Block();
+      break;
+    case vmIntrinsics::_poly1305_processBlocks:
+      guard(lir_cond_greater, values.at(3), LIR_OprFact::intConst(CommonIntrinsics::max_leaf_elements));
+      pointer(1, T_BYTE, 2); word(values.at(3)); pointer(4, T_LONG); pointer(5, T_LONG);
+      entry = StubRoutines::poly1305_processBlocks(); returns_int = false;
+      break;
+    case vmIntrinsics::_intpoly_montgomeryMult_P256:
+      pointer(1, T_LONG); pointer(2, T_LONG); pointer(3, T_LONG);
+      entry = StubRoutines::intpoly_montgomeryMult_P256(); returns_int = false;
+      break;
+    case vmIntrinsics::_intpoly_assign: {
+      LIR_Opr count = length(1);
+      guard(lir_cond_greater, count, LIR_OprFact::intConst(CommonIntrinsics::max_leaf_elements));
+      word(values.at(0)); pointer(1, T_LONG); pointer(2, T_LONG); word(count);
+      entry = StubRoutines::intpoly_assign(); returns_int = false;
+      break;
+    }
+    case vmIntrinsics::_double_keccak:
+    case vmIntrinsics::_quad_keccak: {
+      int count = id == vmIntrinsics::_double_keccak ? 2 : 4;
+      for (int i = 0; i < count; i++) {
+        for (int j = 0; j < i; j++) guard(lir_cond_equal, values.at(i), values.at(j));
+      }
+      for (int i = 0; i < count; i++) pointer(i, T_LONG);
+      entry = count == 2 ? StubRoutines::double_keccak() : StubRoutines::quad_keccak();
+      break;
+    }
+    case vmIntrinsics::_kyberNtt:
+    case vmIntrinsics::_kyberInverseNtt:
+      pointer(0, T_SHORT); pointer(1, T_SHORT);
+      entry = id == vmIntrinsics::_kyberNtt ? StubRoutines::kyberNtt() : StubRoutines::kyberInverseNtt();
+      break;
+    case vmIntrinsics::_kyberNttMult:
+    case vmIntrinsics::_kyberAddPoly_3:
+      pointer(0, T_SHORT); pointer(1, T_SHORT); pointer(2, T_SHORT); pointer(3, T_SHORT);
+      entry = id == vmIntrinsics::_kyberNttMult ? StubRoutines::kyberNttMult() : StubRoutines::kyberAddPoly_3();
+      break;
+    case vmIntrinsics::_kyberAddPoly_2:
+      pointer(0, T_SHORT); pointer(1, T_SHORT); pointer(2, T_SHORT);
+      entry = StubRoutines::kyberAddPoly_2();
+      break;
+    case vmIntrinsics::_kyber12To16: {
+      bounded(values.at(3), (CommonIntrinsics::max_leaf_elements / 192) * 128);
+      LIR_Opr odd = new_register(T_INT);
+      logic_op(Bytecodes::_iand, odd, values.at(3), LIR_OprFact::intConst(1));
+      guard(lir_cond_notEqual, odd, LIR_OprFact::intConst(0));
+      pointer(0, T_BYTE); word(values.at(1)); pointer(2, T_SHORT); word(values.at(3));
+      entry = StubRoutines::kyber12To16();
+      break;
+    }
+    case vmIntrinsics::_kyberBarrettReduce:
+      pointer(0, T_SHORT); entry = StubRoutines::kyberBarrettReduce();
+      break;
+    case vmIntrinsics::_dilithiumAlmostNtt:
+    case vmIntrinsics::_dilithiumAlmostInverseNtt:
+      pointer(0, T_INT); pointer(1, T_INT);
+      entry = id == vmIntrinsics::_dilithiumAlmostNtt ? StubRoutines::dilithiumAlmostNtt() : StubRoutines::dilithiumAlmostInverseNtt();
+      break;
+    case vmIntrinsics::_dilithiumNttMult:
+      pointer(0, T_INT); pointer(1, T_INT); pointer(2, T_INT);
+      entry = StubRoutines::dilithiumNttMult();
+      break;
+    case vmIntrinsics::_dilithiumMontMulByConstant:
+      pointer(0, T_INT); word(values.at(1)); entry = StubRoutines::dilithiumMontMulByConstant();
+      break;
+    case vmIntrinsics::_dilithiumDecomposePoly:
+      pointer(0, T_INT); pointer(1, T_INT); pointer(2, T_INT); word(values.at(3)); word(values.at(4));
+      entry = StubRoutines::dilithiumDecomposePoly();
+      break;
+    default: ShouldNotReachHere();
+  }
+  ValueType* result_type = voidType;
+  if (returns_int) result_type = intType;
+  LIR_Opr result = call_runtime(&signature, &args, entry, result_type, nullptr);
+  if (returns_int) {
+    __ move(result, rlock_result(x));
+  } else {
+    set_no_result(x);
+  }
+}
+
+void LIRGenerator::do_DigestIntrinsic(Intrinsic* x) {
+#if defined(AMD64) || defined(AARCH64)
+  CodeEmitInfo* info = state_for(x, x->state_before());
+  info->set_force_reexecute();
+  CodeStub* fallback = new PredicateFailedStub(info, true);
+#ifdef AMD64
+  const Register registers[] = { rdi, rsi, rdx, rcx };
+  LIR_Opr tmp = FrameMap::as_long_opr(rbx);
+#ifdef _WIN64
+  frame_map()->update_reserved_argument_area_size(48);
+#endif
+#else
+  const Register registers[] = { r0, r1, r2, r3 };
+  LIR_Opr tmp = LIR_OprFact::illegalOpr;
+#endif
+  LIR_Opr args[4];
+  for (int i = 0; i < 4; i++) {
+    LIRItem item(x->argument_at(i), this);
+    args[i] = i < 2 ? FrameMap::as_oop_opr(registers[i]) : FrameMap::as_opr(registers[i]);
+    item.load_item_force(args[i]);
+  }
+  LIR_Opr result = result_register_for(intType);
+  __ append(new LIR_OpDigestMB(args[0], args[1], args[2], args[3], result, tmp, info, fallback));
+  __ move(result, rlock_result(x));
+#else
+  ShouldNotReachHere();
+#endif
+}
+
+void LIRGenerator::do_HashIntrinsic(Intrinsic* x) {
+#if defined(AMD64) || defined(AARCH64)
+  CodeEmitInfo* info = state_for(x, x->state_before());
+  info->set_force_reexecute();
+  CodeStub* fallback = new PredicateFailedStub(info, true);
+#ifdef AMD64
+  const Register registers[] = { rax, rdi, rsi, rdx, rcx };
+#ifdef _WIN64
+  frame_map()->update_reserved_argument_area_size(frame::arg_reg_save_area_bytes);
+#endif
+#else
+  const Register registers[] = { r0, r1, r2, r3, r4 };
+#endif
+  LIR_Opr args[5];
+  for (int i = 0; i < 5; i++) {
+    LIRItem item(x->argument_at(i), this);
+    args[i] = i == 0 ? FrameMap::as_oop_opr(registers[i]) : FrameMap::as_opr(registers[i]);
+    item.load_item_force(args[i]);
+  }
+  LIR_Opr result = result_register_for(intType);
+  __ append(new LIR_OpHashCode(args[0], args[1], args[2], args[3], args[4], result,
+                              LIR_OprFact::illegalOpr, info, fallback));
+  __ move(result, rlock_result(x));
+#else
+  ShouldNotReachHere();
+#endif
+}
+
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
+  if (CommonIntrinsics::is_available_for_c1(x->id())) {
+    if (CommonIntrinsics::is_big_integer(x->id())) {
+      do_BigIntegerIntrinsic(x);
+    } else if (CommonIntrinsics::is_array_kernel(x->id())) {
+      do_ArrayIntrinsic(x);
+    } else if (x->id() == vmIntrinsics::_digestBase_implCompressMB) {
+      do_DigestIntrinsic(x);
+    } else if (CommonIntrinsics::is_crypto(x->id())) {
+      do_CryptoIntrinsic(x);
+    } else if (CommonIntrinsics::is_scalar(x->id())) {
+      do_CommonScalarIntrinsic(x);
+    } else {
+      do_HashIntrinsic(x);
+    }
+    return;
+  }
   switch (x->id()) {
   case vmIntrinsics::_intBitsToFloat      :
   case vmIntrinsics::_doubleToRawLongBits :

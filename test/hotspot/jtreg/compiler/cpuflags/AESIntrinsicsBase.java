@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +41,11 @@ public abstract class AESIntrinsicsBase {
     public static final String USE_SSE = "UseSSE";
     public static final String[] USE_DIAGNOSTIC_CMD
             = {"-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintIntrinsics"};
+    // Check C2 intrinsic logging after warming up the Java implementations.
+    // Common interpreter/C1 intrinsics bypass the CBC body and its AES block calls.
     public static final String[] TEST_AES_CMD
             = {"-XX:+IgnoreUnrecognizedVMOptions", "-XX:+PrintFlagsFinal",
+            "-XX:-UseCommonIntrinsics",
             "-Xbatch", "-XX:CompileThresholdScaling=0.01", "-DcheckOutput=true", "-Dmode=CBC",
             AESWorkload.class.getName(), "100", "1000"};
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -940,6 +941,7 @@ enum LIR_Code {
       , lir_branch
       , lir_cond_float_branch
       , lir_cmp
+      , lir_common_scalar
       , lir_cmp_l2i
       , lir_ucmp_fd2i
       , lir_cmp_fd2i
@@ -974,6 +976,10 @@ enum LIR_Code {
       , lir_icvirtual_call
       , lir_dynamic_call
   , end_opJavaCall
+  , begin_opDigestHash
+      , lir_digest_mb
+      , lir_hash_code
+  , end_opDigestHash
   , begin_opArrayCopy
       , lir_arraycopy
   , end_opArrayCopy
@@ -1735,6 +1741,72 @@ class LIR_OpAllocArray : public LIR_Op {
   virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
 };
 
+
+class LIR_OpDigestMB : public LIR_Op {
+  friend class LIR_OpVisitState;
+  LIR_Opr _receiver;
+  LIR_Opr _source;
+  LIR_Opr _offset;
+  LIR_Opr _limit;
+  LIR_Opr _tmp;
+  CodeStub* _fallback;
+ public:
+  LIR_OpDigestMB(LIR_Opr receiver, LIR_Opr source, LIR_Opr offset, LIR_Opr limit,
+                  LIR_Opr result, LIR_Opr tmp, CodeEmitInfo* info, CodeStub* fallback)
+    : LIR_Op(lir_digest_mb, result, info),
+      _receiver(receiver), _source(source), _offset(offset), _limit(limit),
+      _tmp(tmp), _fallback(fallback) {}
+  LIR_Opr receiver() const { return _receiver; }
+  LIR_Opr source() const { return _source; }
+  LIR_Opr offset() const { return _offset; }
+  LIR_Opr limit() const { return _limit; }
+  LIR_Opr tmp() const { return _tmp; }
+  CodeStub* fallback() const { return _fallback; }
+  virtual void emit_code(LIR_Assembler* masm);
+  virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
+};
+
+class LIR_OpHashCode : public LIR_Op {
+  friend class LIR_OpVisitState;
+  LIR_Opr _array;
+  LIR_Opr _offset;
+  LIR_Opr _length;
+  LIR_Opr _initial;
+  LIR_Opr _type;
+  LIR_Opr _tmp;
+  CodeStub* _fallback;
+ public:
+  LIR_OpHashCode(LIR_Opr array, LIR_Opr offset, LIR_Opr length, LIR_Opr initial, LIR_Opr type,
+                  LIR_Opr result, LIR_Opr tmp, CodeEmitInfo* info, CodeStub* fallback)
+    : LIR_Op(lir_hash_code, result, info),
+      _array(array), _offset(offset), _length(length), _initial(initial), _type(type),
+      _tmp(tmp), _fallback(fallback) {}
+  LIR_Opr array() const { return _array; }
+  LIR_Opr offset() const { return _offset; }
+  LIR_Opr length() const { return _length; }
+  LIR_Opr initial() const { return _initial; }
+  LIR_Opr type() const { return _type; }
+  LIR_Opr tmp() const { return _tmp; }
+  CodeStub* fallback() const { return _fallback; }
+  virtual void emit_code(LIR_Assembler* masm);
+  virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
+};
+
+// Scalar operations carry their intrinsic ID separately from their operands.
+class LIR_OpCommonScalar : public LIR_Op2 {
+  int _intrinsic_id;
+  CodeStub* _fallback;
+ public:
+  LIR_OpCommonScalar(int id, LIR_Opr left, LIR_Opr right, LIR_Opr result,
+                    LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr vtmp,
+                    CodeEmitInfo* info, CodeStub* fallback)
+    : LIR_Op2(lir_common_scalar, left, right, result, tmp1, tmp2, vtmp),
+      _intrinsic_id(id), _fallback(fallback) {
+    _info = info;
+  }
+  int intrinsic_id() const { return _intrinsic_id; }
+  CodeStub* fallback() const { return _fallback; }
+};
 
 class LIR_Op3: public LIR_Op {
  friend class LIR_OpVisitState;

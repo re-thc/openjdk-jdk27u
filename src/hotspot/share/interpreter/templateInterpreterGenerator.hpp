@@ -86,6 +86,12 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
 
   // entry point generator
   address generate_method_entry(AbstractInterpreter::MethodKind kind, bool native);
+  address generate_common_intrinsic_entry(vmIntrinsics::ID id);
+  void generate_big_integer_entry(vmIntrinsics::ID id, Label& slow_path);
+  void generate_crypto_entry(vmIntrinsics::ID id, Label& slow_path);
+  void generate_array_entry(vmIntrinsics::ID id, Label& slow_path);
+  void generate_digest_entry(Label& slow_path);
+  void generate_hash_entry(Label& slow_path);
 
   // generate intrinsic method entries
   address generate_intrinsic_entry(AbstractInterpreter::MethodKind kind);
