@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +29,9 @@ package jdk.internal.util;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
@@ -154,6 +157,7 @@ public final class DecimalDigits {
      * @param buf   target buffer, Latin1-encoded
      * @return index of the most significant digit or minus sign, if present
      */
+    @IntrinsicCandidate
     public static int uncheckedGetCharsLatin1(int i, int index, byte[] buf) {
         int q;
         int charPos = index;
@@ -205,6 +209,7 @@ public final class DecimalDigits {
      * @param buf   target buffer, Latin1-encoded
      * @return index of the most significant digit or minus sign, if present
      */
+    @IntrinsicCandidate
     public static int uncheckedGetCharsLatin1(long i, int index, byte[] buf) {
         long q;
         int charPos = index;
@@ -258,6 +263,7 @@ public final class DecimalDigits {
      * @param buf   target buffer, UTF16-coded.
      * @return index of the most significant digit or minus sign, if present
      */
+    @IntrinsicCandidate
     public static int uncheckedGetCharsUTF16(int i, int index, byte[] buf) {
         int q;
         int charPos = index;
@@ -301,6 +307,7 @@ public final class DecimalDigits {
      * @param buf   target buffer, UTF16-coded.
      * @return index of the most significant digit or minus sign, if present
      */
+    @IntrinsicCandidate
     public static int uncheckedGetCharsUTF16(long i, int index, byte[] buf) {
         long q;
         int charPos = index;
@@ -437,11 +444,13 @@ public final class DecimalDigits {
         uncheckedPutCharUTF16(buf, charPos + 1, packed >> 8);
     }
 
+    @ForceInline
     private static void uncheckedPutCharLatin1(byte[] buf, int charPos, int c) {
         assert charPos >= 0 && charPos < buf.length;
         UNSAFE.putByte(buf, ARRAY_BYTE_BASE_OFFSET + charPos, (byte) c);
     }
 
+    @ForceInline
     private static void uncheckedPutCharUTF16(byte[] buf, int charPos, int c) {
         assert charPos >= 0 && charPos < (buf.length >> 1);
         UNSAFE.putCharUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + ((long) charPos << 1), (char) c);

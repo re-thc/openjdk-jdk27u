@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +44,11 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/fastFloat.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/zmij.hpp"
+#include "utilities/zmijInteger.hpp"
 
 #ifdef ASSERT
 #define __ gen()->lir(__FILE__, __LINE__)->
@@ -2828,7 +2832,179 @@ void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
   __ move(reg, result);
 }
 
+void LIRGenerator::do_formatZmij(Intrinsic* x) {
+  if (x->id() == vmIntrinsics::_decimalZmij) {
+    LIRItem bits(x->argument_at(0), this);
+    BasicTypeList signature(1);
+    signature.append(T_LONG);
+    CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+    bits.load_item_force(cc->at(0));
+    LIR_Opr result = result_register_for(x->type());
+    __ call_runtime_leaf(CAST_FROM_FN_PTR(address, Zmij::decimal), getThreadTemp(), result, cc->args());
+    __ move(result, rlock_result(x));
+    return;
+  }
+  bool is_double = x->id() == vmIntrinsics::_putDoubleDecimalLatin1 ||
+                   x->id() == vmIntrinsics::_putDoubleDecimalUTF16;
+  bool utf16 = x->id() == vmIntrinsics::_putFloatDecimalUTF16 ||
+               x->id() == vmIntrinsics::_putDoubleDecimalUTF16;
+  LIRItem output(x->argument_at(0), this);
+  LIRItem index(x->argument_at(1), this);
+  LIRItem value(x->argument_at(2), this);
+  output.load_item();
+  index.load_item();
+  value.load_item();
+  __ null_check(output.result(), state_for(x));
+  LIR_Opr byte_index = index.result();
+  if (utf16) {
+    byte_index = new_register(T_INT);
+    shift_op(Bytecodes::_ishl, byte_index, index.result(), LIR_OprFact::intConst(1), LIR_OprFact::illegalOpr);
+  }
+  LIR_Opr bits = new_register(T_LONG);
+  if (is_double) {
+    __ move(force_to_spill(value.result(), T_LONG), bits);
+  } else {
+    LIR_Opr raw = new_register(T_INT);
+    __ move(force_to_spill(value.result(), T_INT), raw);
+    __ convert(Bytecodes::_i2l, raw, bits);
+  }
+  LIR_Opr data = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(emit_array_address(output.result(), byte_index, T_BYTE)), data);
+  BasicTypeList signature(2);
+  signature.append(T_ADDRESS);
+  signature.append(T_LONG);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(data, cc->at(0));
+  __ move(bits, cc->at(1));
+  address target = is_double
+      ? (utf16 ? CAST_FROM_FN_PTR(address, Zmij::format_double_utf16) : CAST_FROM_FN_PTR(address, Zmij::format_double_latin1))
+      : (utf16 ? CAST_FROM_FN_PTR(address, Zmij::format_float_utf16) : CAST_FROM_FN_PTR(address, Zmij::format_float_latin1));
+  LIR_Opr result = result_register_for(x->type());
+  __ call_runtime_leaf(target, getThreadTemp(), result, cc->args());
+  if (x->id() == vmIntrinsics::_floatToDecimalLatin1) {
+    __ move(result, rlock_result(x));
+  } else {
+    arithmetic_op_int(Bytecodes::_iadd, rlock_result(x), result, index.result(), LIR_OprFact::illegalOpr);
+  }
+}
 
+void LIRGenerator::do_formatZmijInteger(Intrinsic* x) {
+  bool is_long = x->id() == vmIntrinsics::_formatDecimalLongLatin1 ||
+                 x->id() == vmIntrinsics::_formatDecimalLongUTF16;
+  bool utf16 = x->id() == vmIntrinsics::_formatDecimalIntUTF16 ||
+               x->id() == vmIntrinsics::_formatDecimalLongUTF16;
+  LIRItem value(x->argument_at(0), this);
+  LIRItem index(x->argument_at(1), this);
+  LIRItem output(x->argument_at(2), this);
+  value.load_item();
+  index.load_item();
+  output.load_item();
+  __ null_check(output.result(), state_for(x));
+  LIR_Opr data = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(emit_array_address(output.result(), LIR_OprFact::intConst(0), T_BYTE)), data);
+  BasicTypeList signature(3);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  signature.append(is_long ? T_LONG : T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(data, cc->at(0));
+  __ move(index.result(), cc->at(1));
+  __ move(value.result(), cc->at(2));
+  address target = is_long
+      ? (utf16 ? CAST_FROM_FN_PTR(address, ZmijInteger::format_long_utf16) : CAST_FROM_FN_PTR(address, ZmijInteger::format_long_latin1))
+      : (utf16 ? CAST_FROM_FN_PTR(address, ZmijInteger::format_int_utf16) : CAST_FROM_FN_PTR(address, ZmijInteger::format_int_latin1));
+  LIR_Opr result = result_register_for(x->type());
+  __ call_runtime_leaf(target, getThreadTemp(), result, cc->args());
+  __ move(result, rlock_result(x));
+}
+
+void LIRGenerator::do_parseFastFloatInteger(Intrinsic* x) {
+  // GraphBuilder has already routed null strings and nondecimal radices to
+  // an ordinary Java Invoke. This block contains only the native leaf call.
+  LIRItem str(x->argument_at(0), this);
+  str.load_item();
+  LIR_Opr value = new_register(T_OBJECT);
+  access_load_at(IN_HEAP, T_OBJECT, str,
+                 LIR_OprFact::intConst(java_lang_String::value_offset()), value);
+  LIR_Opr coder = new_register(T_INT);
+  access_load_at(IN_HEAP, T_BYTE, str,
+                 LIR_OprFact::intConst(java_lang_String::coder_offset()), coder);
+  LIR_Opr length = new_register(T_INT);
+  __ move(new LIR_Address(value, arrayOopDesc::length_offset_in_bytes(), T_INT), length);
+  LIR_Opr data = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(new LIR_Address(value,
+             arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), data);
+  BasicTypeList signature(3);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  signature.append(T_INT);
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(data, cc->at(0));
+  __ move(length, cc->at(1));
+  __ move(coder, cc->at(2));
+  address entry;
+  switch (x->id()) {
+    case vmIntrinsics::_parseDecimalInt:
+      entry = CAST_FROM_FN_PTR(address, FastFloat::parse_int); break;
+    case vmIntrinsics::_parseDecimalLong:
+      entry = CAST_FROM_FN_PTR(address, FastFloat::parse_long); break;
+    case vmIntrinsics::_parseUnsignedDecimalInt:
+      entry = CAST_FROM_FN_PTR(address, FastFloat::parse_unsigned_int); break;
+    case vmIntrinsics::_parseUnsignedDecimalLong:
+      entry = CAST_FROM_FN_PTR(address, FastFloat::parse_unsigned_long); break;
+    default: ShouldNotReachHere(); entry = nullptr;
+  }
+  LIR_Opr result = result_register_for(x->type());
+  __ call_runtime_leaf(entry, getThreadTemp(), result, cc->args());
+  __ move(result, rlock_result(x));
+}
+
+void LIRGenerator::do_parseFastFloat(Intrinsic* x) {
+  CodeEmitInfo* info = state_for(x);
+  bool digits = x->id() == vmIntrinsics::_parseFastFloatDigits;
+  LIRItem str(x->argument_at(0), this);
+  LIRItem ix(x->argument_at(digits ? 2 : 1), this);
+  str.load_item();
+  __ null_check(str.result(), info);
+  LIR_Opr value = str.result();
+  LIR_Opr coder = LIR_OprFact::illegalOpr;
+  LIR_Opr length = new_register(T_INT);
+  if (digits) {
+    LIRItem count(x->argument_at(1), this);
+    count.load_item();
+    __ move(count.result(), length);
+  } else {
+    value = new_register(T_OBJECT);
+    access_load_at(IN_HEAP, T_OBJECT, str,
+                   LIR_OprFact::intConst(java_lang_String::value_offset()), value);
+    coder = new_register(T_INT);
+    access_load_at(IN_HEAP, T_BYTE, str,
+                   LIR_OprFact::intConst(java_lang_String::coder_offset()), coder);
+    __ move(new LIR_Address(value, arrayOopDesc::length_offset_in_bytes(), T_INT), length);
+  }
+  LIR_Opr data = new_register(T_ADDRESS);
+  __ leal(LIR_OprFact::address(new LIR_Address(value,
+             arrayOopDesc::base_offset_in_bytes(T_BYTE), T_BYTE)), data);
+  BasicTypeList signature(4);
+  signature.append(T_ADDRESS);
+  signature.append(T_INT);
+  signature.append(T_INT);
+  if (!digits) {
+    signature.append(T_INT);
+  }
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  __ move(data, cc->at(0));
+  __ move(length, cc->at(1));
+  if (!digits) {
+    __ move(coder, cc->at(2));
+  }
+  ix.load_item_force(cc->at(digits ? 2 : 3));
+  LIR_Opr result_reg = result_register_for(x->type());
+  address entry = digits ? CAST_FROM_FN_PTR(address, FastFloat::parse_digits)
+                         : CAST_FROM_FN_PTR(address, FastFloat::parse);
+  __ call_runtime_leaf(entry, getThreadTemp(), result_reg, cc->args());
+  __ move(result_reg, rlock_result(x));
+}
 
 void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   switch (x->id()) {
@@ -2931,6 +3107,30 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     do_update_CRC32C(x);
     break;
 
+  case vmIntrinsics::_decimalZmij:
+  case vmIntrinsics::_putFloatDecimalLatin1:
+  case vmIntrinsics::_putFloatDecimalUTF16:
+  case vmIntrinsics::_putDoubleDecimalLatin1:
+  case vmIntrinsics::_putDoubleDecimalUTF16:
+  case vmIntrinsics::_floatToDecimalLatin1:
+    do_formatZmij(x);
+    break;
+  case vmIntrinsics::_formatDecimalIntLatin1:
+  case vmIntrinsics::_formatDecimalIntUTF16:
+  case vmIntrinsics::_formatDecimalLongLatin1:
+  case vmIntrinsics::_formatDecimalLongUTF16:
+    do_formatZmijInteger(x);
+    break;
+  case vmIntrinsics::_parseFastFloatDigits:
+  case vmIntrinsics::_parseFastFloat:
+    do_parseFastFloat(x);
+    break;
+  case vmIntrinsics::_parseDecimalInt:
+  case vmIntrinsics::_parseDecimalLong:
+  case vmIntrinsics::_parseUnsignedDecimalInt:
+  case vmIntrinsics::_parseUnsignedDecimalLong:
+    do_parseFastFloatInteger(x);
+    break;
   case vmIntrinsics::_vectorizedMismatch:
     do_vectorizedMismatch(x);
     break;

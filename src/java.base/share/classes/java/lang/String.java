@@ -1685,6 +1685,7 @@ public final class String
      * @return  the length of the sequence of characters represented by this
      *          object.
      */
+    @ForceInline
     public int length() {
         return value.length >> coder();
     }
@@ -1725,6 +1726,7 @@ public final class String
      *             argument is negative or not less than the length of this
      *             string.
      */
+    @ForceInline
     public char charAt(int index) {
         if (isLatin1()) {
             return StringLatin1.charAt(value, index);

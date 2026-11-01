@@ -967,8 +967,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         byte coder = this.coder;
         int count = this.count;
         byte[] value = ensureCapacitySameCoder(this.value, coder,count + FloatToDecimal.MAX_CHARS);
-        FloatToDecimal toDecimal = isLatin1(coder) ? FloatToDecimal.LATIN1 : FloatToDecimal.UTF16;
-        this.count = toDecimal.putDecimal(value, count, f);
+        this.count = isLatin1(coder)
+                ? FloatToDecimal.putDecimalLatin1(value, count, f)
+                : FloatToDecimal.putDecimalUTF16(value, count, f);
         this.value = value;
         return this;
     }
@@ -989,8 +990,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         byte coder = this.coder;
         int count = this.count;
         byte[] value = ensureCapacitySameCoder(this.value, coder,count + DoubleToDecimal.MAX_CHARS);
-        DoubleToDecimal toDecimal = isLatin1(coder) ? DoubleToDecimal.LATIN1 : DoubleToDecimal.UTF16;
-        this.count = toDecimal.putDecimal(value, count, d);
+        this.count = isLatin1(coder)
+                ? DoubleToDecimal.putDecimalLatin1(value, count, d)
+                : DoubleToDecimal.putDecimalUTF16(value, count, d);
         this.value = value;
         return this;
     }

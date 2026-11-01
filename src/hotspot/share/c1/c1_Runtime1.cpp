@@ -69,6 +69,9 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
+#include "utilities/fastFloat.hpp"
+#include "utilities/zmij.hpp"
+#include "utilities/zmijInteger.hpp"
 
 
 // Implementation of StubAssembler
@@ -322,6 +325,21 @@ const char* Runtime1::name_for_address(address entry) {
 
   FUNCTION_CASE(entry, os::javaTimeMillis);
   FUNCTION_CASE(entry, os::javaTimeNanos);
+  FUNCTION_CASE(entry, FastFloat::parse);
+  FUNCTION_CASE(entry, FastFloat::parse_digits);
+  FUNCTION_CASE(entry, FastFloat::parse_int);
+  FUNCTION_CASE(entry, FastFloat::parse_long);
+  FUNCTION_CASE(entry, FastFloat::parse_unsigned_int);
+  FUNCTION_CASE(entry, FastFloat::parse_unsigned_long);
+  FUNCTION_CASE(entry, Zmij::decimal);
+  FUNCTION_CASE(entry, Zmij::format_float_latin1);
+  FUNCTION_CASE(entry, Zmij::format_float_utf16);
+  FUNCTION_CASE(entry, Zmij::format_double_latin1);
+  FUNCTION_CASE(entry, Zmij::format_double_utf16);
+  FUNCTION_CASE(entry, ZmijInteger::format_int_latin1);
+  FUNCTION_CASE(entry, ZmijInteger::format_int_utf16);
+  FUNCTION_CASE(entry, ZmijInteger::format_long_latin1);
+  FUNCTION_CASE(entry, ZmijInteger::format_long_utf16);
   FUNCTION_CASE(entry, SharedRuntime::OSR_migration_end);
   FUNCTION_CASE(entry, SharedRuntime::d2f);
   FUNCTION_CASE(entry, SharedRuntime::d2i);

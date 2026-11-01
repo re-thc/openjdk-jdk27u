@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +32,8 @@ import static java.lang.Long.*;
 import static java.lang.Math.multiplyHigh;
 import static jdk.internal.math.MathUtils.*;
 
-import sun.nio.cs.ISO_8859_1;
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * This class exposes a method to render a {@code double} as a string.
@@ -155,18 +157,18 @@ public final class DoubleToDecimal extends ToDecimal {
      */
     public static String toString(double v) {
         byte[] str = new byte[MAX_CHARS];
-        int pair = LATIN1.toDecimal(str, 0, v, null);
+        int pair = LATIN1.toDecimal(str, 0, v);
         int type = pair & 0xFF00;
         if (type == NON_SPECIAL) {
             int size = pair & 0xFF;
-            return new String(str, 0, size, ISO_8859_1.INSTANCE);
+            return decimalString(str, size);
         }
         return special(type);
     }
 
     /**
-     * Splits the decimal <i>d</i> described in
-     * {@link Double#toString(double)} in integers <i>f</i> and <i>e</i>
+     * Splits the decimal <i>d</i> selected by {@link Double#toString(double)}
+     * into integers <i>f</i> and <i>e</i>
      * such that <i>d</i> = <i>f</i> 10<sup><i>e</i></sup>.
      *
      * <p>Further, determines integer <i>n</i> such that <i>n</i> = 0 when
@@ -181,9 +183,52 @@ public final class DoubleToDecimal extends ToDecimal {
      * @param v     the finite {@code double} to be split.
      * @param fd    the object that will carry <i>f</i>, <i>e</i>, and <i>n</i>.
      */
+    @ForceInline
     public static void split(double v, FormattedFPDecimal fd) {
-        byte[] str = new byte[MAX_CHARS];
-        LATIN1.toDecimal(str, 0, v, fd);
+        long bits = doubleToRawLongBits(v);
+        if (bits == 0) {
+            return;
+        }
+        if (bits > 128 && bits < 0x7ff0000000000000L) {
+            int bq = (int) (bits >>> 52);
+            int q = bq == 0 ? Q_MIN : bq - 1075;
+            int mq = -q;
+            if (0 < mq && mq < P) {
+                long c = (bits & T_MASK) | C_MIN;
+                long f = c >> mq;
+                if (f << mq == c) {
+                    fd.set(f, 0, decimalDigits(f), true, false);
+                    return;
+                }
+            }
+            long packed = decimal0(bits);
+            if (packed != 0) {
+                boolean irregular = (bits & T_MASK) == 0 && q != Q_MIN;
+                int e = irregular ? flog10threeQuartersPow2(q) : flog10pow2(q);
+                long f = packed & ((1L << 57) - 1);
+                fd.set(f, e, decimalDigits(f), (packed & (1L << 62)) != 0, packed < 0);
+                return;
+            }
+            long c = (bits & T_MASK) | (bq == 0 ? 0 : C_MIN);
+            LATIN1.toDecimal(fd == null ? new byte[MAX_CHARS] : null, 0, q, c, 0, fd);
+            return;
+        }
+        byte[] str = fd != null && bits > 128 ? null : new byte[MAX_CHARS];
+        LATIN1.toDecimalJava(str, 0, v, fd);
+    }
+
+    @ForceInline
+    private static int decimalDigits(long f) {
+        int n = flog10pow2(64 - Long.numberOfLeadingZeros(f));
+        if (f >= pow10(n)) {
+            ++n;
+        }
+        return n;
+    }
+
+    @IntrinsicCandidate
+    private static long decimal0(long bits) {
+        return 0;
     }
 
     /**
@@ -196,10 +241,28 @@ public final class DoubleToDecimal extends ToDecimal {
      * @param index the index into str
      * @param v the {@code double} whose rendering is into str.
      */
+    @ForceInline
     public int putDecimal(byte[] str, int index, double v) {
+        return isLatin1() ? putDecimalLatin1(str, index, v) : putDecimalUTF16(str, index, v);
+    }
+
+    @ForceInline
+    @IntrinsicCandidate
+    public static int putDecimalLatin1(byte[] str, int index, double v) {
+        return LATIN1.putDecimalJava(str, index, v);
+    }
+
+    @ForceInline
+    @IntrinsicCandidate
+    public static int putDecimalUTF16(byte[] str, int index, double v) {
+        return UTF16.putDecimalJava(str, index, v);
+    }
+
+    @ForceInline
+    private int putDecimalJava(byte[] str, int index, double v) {
         assert 0 <= index && index <= length(str) - MAX_CHARS : "Trusted caller missed bounds check";
 
-        int pair = toDecimal(str, index, v, null);
+        int pair = toDecimalJava(str, index, v, null);
         int type = pair & 0xFF00;
         if (type == NON_SPECIAL) {
             return index + (pair & 0xFF);
@@ -216,7 +279,20 @@ public final class DoubleToDecimal extends ToDecimal {
      *     NAN             iff v is NaN
      *     otherwise NON_SPECIAL
      */
-    private int toDecimal(byte[] str, int index, double v, FormattedFPDecimal fd) {
+    @ForceInline
+    private int toDecimal(byte[] str, int index, double v) {
+        long bits = doubleToRawLongBits(v);
+        long magnitude = bits & 0x7fffffffffffffffL;
+        if (magnitude == 0) {
+            return bits == 0 ? PLUS_ZERO : MINUS_ZERO;
+        }
+        if (magnitude >= 0x7ff0000000000000L) {
+            return magnitude != 0x7ff0000000000000L ? NAN : (bits > 0 ? PLUS_INF : MINUS_INF);
+        }
+        return putDecimalLatin1(str, index, v) - index;
+    }
+
+    private int toDecimalJava(byte[] str, int index, double v, FormattedFPDecimal fd) {
         /*
          * For full details see references [2] and [1].
          *

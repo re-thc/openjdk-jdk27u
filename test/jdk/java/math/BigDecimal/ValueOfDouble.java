@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +25,7 @@
 /*
  * @test
  * @bug 8356709
- * @summary Test Double.toString(double)
+ * @summary Test BigDecimal.valueOf(double) precision and scale
  * @run junit ValueOfDouble
  */
 
@@ -48,6 +49,7 @@ public class ValueOfDouble {
         checkValue(-Math.PI);
         checkValue(Double.MAX_VALUE);
         checkValue(Double.MIN_VALUE);
+        checkValue(-Double.MIN_VALUE);
         checkValue(1e-44); // Lots of digits with lots of 9s
 
         for (int prec = 1; prec < DIGITS.length(); prec++) {
