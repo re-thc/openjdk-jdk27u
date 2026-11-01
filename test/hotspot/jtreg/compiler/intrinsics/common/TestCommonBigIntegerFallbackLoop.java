@@ -29,10 +29,9 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox jdk.test.whitebox.code.NMethod
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @compile --patch-module java.base=${test.src} -d patch java/math/BigIntegerLoopTemplate.java java/math/BigIntegerLoopFactory.java
- * @compile --patch-module java.base=${test.classes}/patch TestCommonBigIntegerFallbackLoop.java
- * @run main/othervm --patch-module java.base=${test.classes}/patch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseCommonIntrinsics TestCommonBigIntegerFallbackLoop 1
- * @run main/othervm --patch-module java.base=${test.classes}/patch -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:TieredStopAtLevel=3 -XX:+UseCommonIntrinsics TestCommonBigIntegerFallbackLoop 3
+ * @compile/module=java.base java/math/BigIntegerLoopTemplate.java java/math/BigIntegerLoopFactory.java
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseCommonIntrinsics TestCommonBigIntegerFallbackLoop 1
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:TieredStopAtLevel=3 -XX:+UseCommonIntrinsics TestCommonBigIntegerFallbackLoop 3
  */
 
 import java.lang.invoke.MethodType;

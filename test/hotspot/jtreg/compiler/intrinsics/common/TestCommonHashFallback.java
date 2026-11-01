@@ -23,14 +23,15 @@
 
 /*
  * @test id=level1
- * @summary Bounded C1 hash fallbacks preserve all typed callers and live state
+ * @summary Bounded C1 hash fallbacks preserve typed and dynamic callers and live state
  * @requires vm.compiler1.enabled
  * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
  * @requires vm.opt.final.UseVectorizedHashCodeIntrinsic == true
- * @modules java.base/jdk.internal.util
+ * @modules java.base/jdk.internal.util:+open
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox jdk.test.whitebox.code.NMethod
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile/module=java.base jdk/internal/util/HashPrivateProbe.java
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseCommonIntrinsics -XX:CompileCommand=inline,jdk.internal.util.ArraysSupport::hashCode -XX:CompileCommand=inline,jdk.internal.util.ArraysSupport::hashCodeOfUnsigned -XX:CompileCommand=inline,jdk.internal.util.ArraysSupport::hashCodeOfUTF16 -XX:CompileCommand=dontinline,compiler.intrinsics.common.TestCommonHashFallback::hash* compiler.intrinsics.common.TestCommonHashFallback 1
  */
 
@@ -40,18 +41,21 @@
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @requires os.simpleArch == "x64" | os.simpleArch == "aarch64"
  * @requires vm.opt.final.UseVectorizedHashCodeIntrinsic == true
- * @modules java.base/jdk.internal.util
+ * @modules java.base/jdk.internal.util:+open
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox jdk.test.whitebox.code.NMethod
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @compile/module=java.base jdk/internal/util/HashPrivateProbe.java
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:TieredStopAtLevel=3 -XX:+UseCommonIntrinsics -XX:CompileCommand=inline,jdk.internal.util.ArraysSupport::hashCode -XX:CompileCommand=inline,jdk.internal.util.ArraysSupport::hashCodeOfUnsigned -XX:CompileCommand=inline,jdk.internal.util.ArraysSupport::hashCodeOfUTF16 -XX:CompileCommand=dontinline,compiler.intrinsics.common.TestCommonHashFallback::hash* compiler.intrinsics.common.TestCommonHashFallback 3
  */
 
 package compiler.intrinsics.common;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteOrder;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.HashPrivateProbe;
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.whitebox.code.NMethod;
 
@@ -146,6 +150,52 @@ public class TestCommonHashFallback {
         }
     }
 
+    private static int dynamic(Method method, Object array, int length, int tag) throws Exception {
+        try {
+            return (Integer) method.invoke(null, array, 1, length, SEED, tag);
+        } catch (InvocationTargetException exception) {
+            if (exception.getCause() instanceof RuntimeException cause) throw cause;
+            if (exception.getCause() instanceof Error cause) throw cause;
+            throw exception;
+        }
+    }
+
+    private static void dynamicException(Method method, Object array, int tag,
+                                         Class<? extends RuntimeException> expected) throws Exception {
+        try {
+            dynamic(method, array, SMALL, tag);
+            throw new AssertionError("expected " + expected.getName());
+        } catch (RuntimeException exception) {
+            if (exception.getClass() != expected) throw exception;
+        }
+    }
+
+    private static void checkDynamic(int level) throws Exception {
+        // The generated caller uses an ordinary invokestatic, without a method-handle adapter.
+        Method method = HashPrivateProbe.make().getDeclaredMethod("call", Object.class,
+                int.class, int.class, int.class, int.class);
+        method.setAccessible(true);
+        WB.testSetDontInlineMethod(method, true);
+        for (int i = 0; i < 3000; i++) sink = dynamic(method, INTS, SMALL, 10);
+        int id = compile(method, level);
+        int traps = WB.getMethodTrapCount(method, "intrinsic");
+        Object[] arrays = {INTS, SHORTS, CHARS, BYTES, BYTES, UTF16};
+        int[] tags = {10, 9, 5, 8, 4, 5};
+        for (int kind = 0; kind < arrays.length; kind++) {
+            for (int length : new int[] {SMALL, LARGE, SMALL}) {
+                equal(dynamic(method, arrays[kind], length, tags[kind]), expected(kind, length));
+                stable(method, id);
+                equal(WB.getMethodTrapCount(method, "intrinsic"), traps);
+            }
+        }
+        dynamicException(method, null, 10, NullPointerException.class);
+        dynamicException(method, INTS, 8, ClassCastException.class);
+        dynamicException(method, INTS, 99, IllegalArgumentException.class);
+        stable(method, id);
+        equal(WB.getMethodTrapCount(method, "intrinsic"), traps);
+        System.out.println("Dynamic hash fallbacks preserve C1 level " + level);
+    }
+
     public static void main(String[] args) throws Exception {
         int level = Integer.parseInt(args[0]);
         boolean little = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
@@ -199,6 +249,7 @@ public class TestCommonHashFallback {
         equal(witness.count, ++count);
         equal(sink, keep ^ witness.data[0]);
         stable(live, liveId);
+        checkDynamic(level);
         System.out.println("Typed hash fallbacks preserve C1 level " + level);
     }
 }
