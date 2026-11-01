@@ -57,7 +57,7 @@ inline int hotspot_zmij_integer(void* output, int index, Int value) {
     return start;
   }
 #endif
-  char scratch[32] = {};
+  char scratch[32];
   char* end = zmij::detail::itoa_signed<Int>(scratch, value);
   int length = int(end - scratch);
   int start = index - length;
