@@ -81,7 +81,9 @@ public class BasicJStackTest {
         Charset cs = StandardCharsets.UTF_8;
         Thread.currentThread().setName(marker);
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jstack");
-        launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-XX:+UsePerfData"));
+        launcher.addVMArgs(System.getProperty("test.stream.encoding") == null
+                ? Utils.getFilteredTestJavaOpts("-XX:+UsePerfData")
+                : Utils.getFilteredTestJavaOpts("-XX:+UsePerfData", "^-Dstdout\\.encoding="));
         launcher.addVMArg("-XX:+UsePerfData");
         launcher.addVMArg("-Dfile.encoding=" + cs);
         launcher.addVMArg("-Dsun.stdout.encoding=" + cs);

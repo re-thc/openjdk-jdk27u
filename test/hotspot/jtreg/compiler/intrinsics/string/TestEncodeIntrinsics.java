@@ -53,7 +53,6 @@ public class TestEncodeIntrinsics {
         test("ISO-8859-1", false);
         test("UTF-8", true);
         test("US-ASCII", true);
-        test("CESU-8", true);
     }
 
     private static void test(String csn, boolean asciiOnly) {

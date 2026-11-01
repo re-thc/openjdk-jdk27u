@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @ignore Shift_JIS and related codecs are outside this distribution's built-in charset profile
  * @bug 8008386
  * @summary (cs) Unmappable leading should be decoded to replacement.
  *          Tests for Shift_JIS and MS932 decoding

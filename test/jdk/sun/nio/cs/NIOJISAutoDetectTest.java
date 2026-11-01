@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 4831163 5053096 5056440 8022224
  * @summary NIO charset basic verification of JISAutodetect decoder
  * @modules jdk.charsets

@@ -23,12 +23,15 @@
 
 /**
  * @test
+ * @library /test/lib
  * @summary child process should not hang even if parent process has closed System.out/err
  * @bug 8366736
  * @run main/othervm InheritIOClosed close dontclose
  * @run main/othervm InheritIOClosed dontclose close
  * @run main/othervm InheritIOClosed close close
  */
+
+import jdk.test.lib.process.ProcessTools;
 
 import java.nio.file.Path;
 
@@ -48,13 +51,15 @@ public class InheritIOClosed {
                 System.err.close();
             }
 
-            ProcessBuilder pb = new ProcessBuilder().inheritIO()
-                .command(JAVA_EXE.toString(),
-                         "-cp",
-                         System.getProperty("java.class.path"),
-                         InheritIOClosed.class.getName());
+            ProcessBuilder pb = new ProcessBuilder(JAVA_EXE.toString()).inheritIO();
+            pb.command().addAll(ProcessTools.testStreamOptions(""));
+            pb.command().addAll(java.util.List.of("-cp",
+                    System.getProperty("java.class.path"), InheritIOClosed.class.getName()));
             Process process = pb.start();
-            process.waitFor();
+            int status = process.waitFor();
+            if (status != 0) {
+                throw new AssertionError("Child exited with status " + status);
+            }
 
             System.out.println("Done");
         } else {

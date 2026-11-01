@@ -56,13 +56,13 @@ public class ZipCoding {
     public static Stream<Arguments> charsetsAndNames() {
         // Arguments are: Write charset, read charset, entry name, comment
         return Stream.of(
-                // MS code page 932 for the Japanese language
-                Arguments.of("MS932", "MS932",
+                // UTF-16BE with Japanese characters
+                Arguments.of("UTF-16BE", "UTF-16BE",
                         "\u4e00\u4e01",
                         "\uff67\uff68\uff69\uff6a\uff6b\uff6c"),
 
-                // Code page for the IBM PC
-                Arguments.of("ibm437", "ibm437",
+                // Latin-1 with German umlauts
+                Arguments.of("ISO-8859-1", "ISO-8859-1",
                         "\u00e4\u00fc",
                         "German Umlaut \u00fc in comment"),
 
@@ -84,8 +84,8 @@ public class ZipCoding {
                 // ZipOutputStream sets the 'Language encoding flag' when writing using UTF-8
                 // UTF-8 should be used for decoding, regardless of the opening charset
 
-                // UTF-8 with Japanese characters, opened with MS932
-                Arguments.of("utf-8", "MS932",
+                // UTF-8 with Japanese characters, opened with UTF-16BE
+                Arguments.of("utf-8", "UTF-16BE",
                         "\u4e00\u4e01",
                         "\uff67\uff68\uff69\uff6a\uff6b\uff6c"),
 
@@ -93,8 +93,8 @@ public class ZipCoding {
                 Arguments.of("utf-8", "iso-8859-1",
                         "\u00e4\u00fc",
                         "German Umlaut \u00fc in comment"),
-                // UTF-8 with surrogate pairs, opened with MS932
-                Arguments.of("utf-8", "MS932",
+                // UTF-8 with surrogate pairs, opened with UTF-16BE
+                Arguments.of("utf-8", "UTF-16BE",
                         "Surrogate\ud801\udc01",
                         "Surrogates \ud800\udc00 in comment")
         );

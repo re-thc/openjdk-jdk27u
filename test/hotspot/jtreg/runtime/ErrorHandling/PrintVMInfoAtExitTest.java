@@ -53,7 +53,9 @@ public class PrintVMInfoAtExitTest {
     OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
     output_detail.shouldContain("# JRE version:");
     output_detail.shouldContain("--  S U M M A R Y --");
-    output_detail.shouldContain("Command Line: -Xmx64M -Xms64M -XX:-CreateCoredumpOnCrash -XX:+UnlockDiagnosticVMOptions -XX:+PrintVMInfoAtExit -XX:NativeMemoryTracking=summary -XX:CompressedClassSpaceSize=256m");
+    String streamOptions = String.join(" ", ProcessTools.testStreamOptions(""));
+    String prefix = streamOptions.isEmpty() ? "" : streamOptions + " ";
+    output_detail.shouldContain("Command Line: " + prefix + "-Xmx64M -Xms64M -XX:-CreateCoredumpOnCrash -XX:+UnlockDiagnosticVMOptions -XX:+PrintVMInfoAtExit -XX:NativeMemoryTracking=summary -XX:CompressedClassSpaceSize=256m");
     output_detail.shouldContain("Native Memory Tracking:");
     // Make sure the heap summary is present.
     output_detail.shouldMatch("Java Heap \\(reserved=[0-9]+KB, committed=" + committed_kb + "KB\\)");

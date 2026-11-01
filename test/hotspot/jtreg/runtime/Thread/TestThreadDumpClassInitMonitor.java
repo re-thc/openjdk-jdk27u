@@ -32,6 +32,7 @@
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
 
@@ -114,6 +115,7 @@ public class TestThreadDumpClassInitMonitor {
             // Now run jstack
             try {
                 ProcessBuilder pb = new ProcessBuilder(JSTACK, DISABLE_STREAMING_OUTPUT, PID);
+                ProcessTools.configureTestToolStreams(pb);
                 OutputAnalyzer output = new OutputAnalyzer(pb.start());
                 output.shouldHaveExitValue(0);
                 stackDump = output.asLines();

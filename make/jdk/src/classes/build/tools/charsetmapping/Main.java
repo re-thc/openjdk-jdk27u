@@ -26,10 +26,12 @@
 package build.tools.charsetmapping;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Scanner;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Scanner;
+import java.util.Set;
 
 public class Main {
 
@@ -52,6 +54,15 @@ public class Main {
         if (isStandard || isExtended) {
             LinkedHashMap<String, Charset> charsets = getCharsets(
                 new File(args[SRC_DIR], args[CHARSETS]));
+            Set<String> profile = new java.util.HashSet<>(Files.readAllLines(
+                new File(args[SRC_DIR], "modern-profile").toPath()));
+            profile.removeIf(s -> s.isBlank() || s.startsWith("#"));
+            Set<String> missing = new java.util.HashSet<>(profile);
+            charsets.values().forEach(cs -> missing.remove(cs.csName));
+            if (!missing.isEmpty()) {
+                throw new IllegalArgumentException("Unknown charset profile entries: " + missing);
+            }
+            charsets.values().removeIf(cs -> !profile.contains(cs.csName));
             String[] osStdcs = getOSStdCSList(new File(args[SRC_DIR], args[OS]));
             boolean hasBig5_HKSCS = false;
             boolean hasMS950_HKSCS = false;
@@ -59,9 +70,8 @@ public class Main {
             boolean hasEUC_TW = false;
             for (String name : osStdcs) {
                 Charset cs = charsets.get(name);
-                if (cs != null) {
-                    cs.pkgName = "sun.nio.cs";
-                }
+                if (cs == null) continue;
+                cs.pkgName = "sun.nio.cs";
                 if (name.equals("Big5_HKSCS")) {
                     hasBig5_HKSCS = true;
                 } else if (name.equals("MS950_HKSCS")) {
@@ -103,14 +113,16 @@ public class Main {
 
             // HKSCSMapping(2008).java goes std if one of Big5_HKSCS MS950_HKSCS
             // is in std
-            if (isStandard && (hasBig5_HKSCS || hasMS950_HKSCS) ||
-                isExtended && !(hasBig5_HKSCS  || hasMS950_HKSCS)) {
+            if ((charsets.containsKey("Big5_HKSCS") || charsets.containsKey("MS950_HKSCS")) &&
+                (isStandard && (hasBig5_HKSCS || hasMS950_HKSCS) ||
+                 isExtended && !(hasBig5_HKSCS || hasMS950_HKSCS))) {
                 HKSCS.genClass2008(args[SRC_DIR], args[DST_DIR],
                                    isStandard ? "sun.nio.cs" : "sun.nio.cs.ext",
                                    new File(args[COPYRIGHT_SRC], "HKSCS.java"));
             }
             // HKSCS_XPMapping.java goes together with MS950XP_HKSCS
-            if (isStandard && hasMS950_HKSCS_XP || isExtended && !hasMS950_HKSCS_XP) {
+            if (charsets.containsKey("MS950_HKSCS_XP") &&
+                (isStandard && hasMS950_HKSCS_XP || isExtended && !hasMS950_HKSCS_XP)) {
                 HKSCS.genClassXP(args[SRC_DIR], args[DST_DIR],
                                  isStandard ? "sun.nio.cs" : "sun.nio.cs.ext",
                                  new File(args[COPYRIGHT_SRC], "HKSCS.java"));
@@ -118,7 +130,7 @@ public class Main {
             if (isStandard && hasEUC_TW) {
                 EUC_TW.genClass("sun.nio.cs", args);
             }
-            if (!isStandard && !hasEUC_TW) {
+            if (!isStandard && !hasEUC_TW && charsets.containsKey("EUC_TW")) {
                 EUC_TW.genClass("sun.nio.cs.ext", args);
             }
         } else if ("sjis0213".equals(args[TYPE])) {

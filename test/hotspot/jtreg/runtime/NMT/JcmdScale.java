@@ -43,42 +43,52 @@ public class JcmdScale {
     String pid = Long.toString(ProcessTools.getProcessId());
 
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "scale=1"});
+    ProcessTools.configureTestToolStreams(pb);
     output = new OutputAnalyzer(pb.start());
     output.shouldContain(", committed=");
 
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "scale=b"});
+    ProcessTools.configureTestToolStreams(pb);
     output = new OutputAnalyzer(pb.start());
     output.shouldContain(", committed=");
 
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "scale=KB"});
+    ProcessTools.configureTestToolStreams(pb);
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("KB, committed=");
 
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "scale=MB"});
+    ProcessTools.configureTestToolStreams(pb);
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("MB, committed=");
 
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "scale=GB"});
+    ProcessTools.configureTestToolStreams(pb);
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("GB, committed=");
 
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "scale=apa"});
+    ProcessTools.configureTestToolStreams(pb);
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("Incorrect scale value: apa");
 
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary", "scale=GB"});
+    ProcessTools.configureTestToolStreams(pb);
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("GB, committed=");
 
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary", "scale=apa"});
+    ProcessTools.configureTestToolStreams(pb);
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("Incorrect scale value: apa");
 
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary", "scale="});
+    ProcessTools.configureTestToolStreams(pb);
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("Incorrect scale value:");
 
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary", "scale"});
+    ProcessTools.configureTestToolStreams(pb);
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("Incorrect scale value: (null)");
   }

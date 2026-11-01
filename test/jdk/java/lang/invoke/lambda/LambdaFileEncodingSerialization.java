@@ -72,6 +72,8 @@ public class LambdaFileEncodingSerialization {
 
         List<String> argList = new ArrayList<String>();
         argList.add(prog);
+        String prefix = prog.endsWith("javac") || prog.endsWith("javac.exe") ? "-J" : "";
+        argList.addAll(ProcessTools.testStreamOptions(prefix));
         argList.addAll(Arrays.asList(options.split(" ")));
         argList.add(file);
 

@@ -56,6 +56,7 @@ public class MallocSiteHashOverflow {
 
         // Verify that current tracking level is "detail"
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "statistics"});
+        ProcessTools.configureTestToolStreams(pb);
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Native Memory Tracking Statistics");
 
@@ -73,6 +74,7 @@ public class MallocSiteHashOverflow {
             if (i == entries) {
                 // Verify that tracking has been downgraded
                 pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "statistics"});
+                ProcessTools.configureTestToolStreams(pb);
                 output = new OutputAnalyzer(pb.start());
                 output.shouldContain("Tracking level has been downgraded due to lack of resources");
             }

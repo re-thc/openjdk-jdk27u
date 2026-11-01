@@ -267,9 +267,9 @@ public class PropertiesTest {
 
         // Store(Writer)/Load(Reader)
         baos = new ByteArrayOutputStream();
-        props.store(new OutputStreamWriter(baos, "EUC_JP"), "A test");
+        props.store(new OutputStreamWriter(baos, "UTF-8"), "A test");
         newProps = new Properties();
-        newProps.load(getReader(baos.toByteArray(), "EUC_JP"));
+        newProps.load(getReader(baos.toByteArray(), "UTF-8"));
         check(newProps, props);
 
         report("SaveEncoding");

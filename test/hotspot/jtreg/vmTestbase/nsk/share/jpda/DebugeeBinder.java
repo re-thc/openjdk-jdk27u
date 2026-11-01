@@ -24,6 +24,7 @@
 package nsk.share.jpda;
 
 import nsk.share.*;
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.*;
 import java.lang.ref.Cleaner;
@@ -214,7 +215,17 @@ public class DebugeeBinder extends Log.Logger {
      */
     public Process launchProcess(String cmdLine) throws IOException {
         String env[] = makeProcessEnvironment();
-        return Runtime.getRuntime().exec(cmdLine, env);
+        if (System.getProperty("test.stream.encoding") == null) {
+            return Runtime.getRuntime().exec(cmdLine, env);
+        }
+        // Runtime.exec(String) splits on whitespace, with no shell quoting.
+        StringTokenizer tokens = new StringTokenizer(cmdLine);
+        List<String> args = new ArrayList<>();
+        while (tokens.hasMoreTokens()) args.add(tokens.nextToken());
+        if (!args.isEmpty() && args.get(0).equals(argumentHandler.getLaunchExecPath())) {
+            configureJavaStreams(args);
+        }
+        return Runtime.getRuntime().exec(args.toArray(new String[0]), env);
     }
 
     /**
@@ -224,7 +235,42 @@ public class DebugeeBinder extends Log.Logger {
      */
     public Process launchProcess(String[] args) throws IOException {
         String env[] = makeProcessEnvironment();
-        return Runtime.getRuntime().exec(args, env);
+        List<String> command = new ArrayList<>(Arrays.asList(args));
+        if (!command.isEmpty() && command.get(0).equals(argumentHandler.getLaunchExecPath())) {
+            configureJavaStreams(command);
+        }
+        return Runtime.getRuntime().exec(command.toArray(new String[0]), env);
+    }
+
+    /** Add stream defaults ahead of explicit VM options; leave explicit settings intact. */
+    protected static void configureJavaStreams(List<String> command) {
+        List<String> defaults = new ArrayList<>(ProcessTools.testStreamOptions(""));
+        for (String stream : List.of("stdin", "stdout", "stderr")) {
+            String option = "-D" + stream + ".encoding";
+            String legacy = "-Dsun." + stream + ".encoding";
+            if (hasVmOption(command, option) || (!stream.equals("stdin") && hasVmOption(command, legacy))) {
+                defaults.removeIf(value -> value.startsWith(option + "="));
+            }
+        }
+        if (hasVmOption(command, "-Dtest.stream.encoding")) {
+            defaults.removeIf(value -> value.startsWith("-Dtest.stream.encoding="));
+        }
+        command.addAll(1, defaults);
+    }
+
+    private static boolean hasVmOption(List<String> command, String property) {
+        Set<String> withArgument = Set.of("-cp", "-classpath", "--class-path", "-p",
+                "--module-path", "--upgrade-module-path", "--add-modules", "--limit-modules",
+                "--add-exports", "--add-opens", "--add-reads", "--patch-module",
+                "--enable-native-access", "--source");
+        for (int i = 1; i < command.size(); i++) {
+            String arg = command.get(i);
+            if (arg.equals(property) || arg.startsWith(property + "=")) return true;
+            if (arg.equals("-jar") || arg.equals("-m") || arg.equals("--module") ||
+                    arg.startsWith("--module=") || arg.startsWith("@") || !arg.startsWith("-")) break;
+            if (withArgument.contains(arg)) i++;
+        }
+        return false;
     }
 
     /**
@@ -301,6 +347,8 @@ public class DebugeeBinder extends Log.Logger {
                 args.add(st.nextToken());
             }
         }
+
+        configureJavaStreams(args);
 
 
         String classPath = System.getProperty("test.class.path");

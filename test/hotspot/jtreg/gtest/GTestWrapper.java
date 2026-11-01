@@ -83,6 +83,18 @@ public class GTestWrapper {
         command.add("-jdk");
         command.add(Utils.TEST_JDK);
         command.add("-Xmx200m");
+        // gtestLauncher embeds a JVM and writes to the configured test pipes.
+        // Put the defaults first so individual tests can override them.
+        List<String> streamOptions = new ArrayList<>(ProcessTools.testStreamOptions(""));
+        for (String arg : args) {
+            for (String stream : List.of("stdout", "stderr")) {
+                String legacy = "-Dsun." + stream + ".encoding";
+                if (arg.equals(legacy) || arg.startsWith(legacy + "=")) {
+                    streamOptions.removeIf(opt -> opt.startsWith("-D" + stream + ".encoding="));
+                }
+            }
+        }
+        command.addAll(streamOptions);
         command.add("--gtest_output=xml:" + resultFile);
         command.add("--gtest_catch_exceptions=0");
         for (String a : args) {

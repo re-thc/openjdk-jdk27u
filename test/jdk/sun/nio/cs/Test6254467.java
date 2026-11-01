@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 6254467
  * @summary Checks if Charset.forName() accepts legal IANA alias names
  *          for charset IBM037.

@@ -24,7 +24,9 @@
 /* @test
  * @bug 6227608
  * @summary Test proper handling of flush()
- * @modules jdk.charsets
+ * @library /test/lib
+ * @build jdk.test.lib.charset.StatefulTestCharset
+ * @run main Flush
  * @author Martin Buchholz
  */
 
@@ -32,6 +34,7 @@ import java.util.*;
 import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
+import jdk.test.lib.charset.StatefulTestCharset;
 
 public class Flush {
     private static byte[] contents(ByteBuffer bb) {
@@ -48,14 +51,12 @@ public class Flush {
     }
 
     private static void realMain(String[] args) throws Throwable {
-        // A japanese character should decode as a 3-byte
-        // switch-to-japanese escape sequence, followed by a 2-byte
-        // encoding of the char itself, followed by a 3-byte return to
-        // ASCII escape sequence.
+        // A synthetic stateful encoder writes five bytes for the character
+        // and emits a three-byte trailer only during flush.
         char[] jis0208 = {'\u3001'};
         CharBuffer cb = CharBuffer.wrap(jis0208);
         ByteBuffer bb = ByteBuffer.allocate(6);
-        CharsetEncoder enc = Charset.forName("ISO-2022-JP").newEncoder();
+        CharsetEncoder enc = new StatefulTestCharset().newEncoder();
 
         check(enc.encode(cb, bb, true).isUnderflow());
 

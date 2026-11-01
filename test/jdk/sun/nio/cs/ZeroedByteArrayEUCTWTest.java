@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 4522270
    @summary Ensure that a zeroed byte array produces a valid String when EUC-TW  decoded
 

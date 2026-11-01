@@ -190,6 +190,7 @@ public class TestInlineUnloaded {
             "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining",
             "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly,*TestNull::run",
             Launcher.class.getName(), testCaseName);
+        pb.command().addAll(1, ProcessTools.testStreamOptions(""));
 
         System.out.println("Command line: [" + pb.command() + "]");
 

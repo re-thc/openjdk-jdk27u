@@ -21,6 +21,8 @@
  * questions.
  */
 
+import jdk.test.lib.process.ProcessTools;
+
 import com.sun.management.OperatingSystemMXBean;
 import java.io.File;
 import java.io.InputStream;
@@ -235,12 +237,17 @@ private static volatile int commandSeq = 0;         // Command sequence number
     static final String classpath =
             System.getProperty("java.class.path");
 
-    static final List<String> javaChildArgs =
-            Arrays.asList(javaExe,
-                    "-XX:+DisplayVMOutputToStderr",
-                    "-Dtest.jdk=" + javaHome,
-                    "-classpath", absolutifyPath(classpath),
-                    "JavaChild");
+    static final List<String> javaChildArgs = prepareJavaChildArgs();
+
+    private static List<String> prepareJavaChildArgs() {
+        List<String> args = new ArrayList<>();
+        args.add(javaExe);
+        args.addAll(ProcessTools.testStreamOptions(""));
+        args.addAll(List.of("-XX:+DisplayVMOutputToStderr",
+                "-Dtest.jdk=" + javaHome, "-classpath",
+                absolutifyPath(classpath), "JavaChild"));
+        return args;
+    }
 
     // Will hold the complete list of arguments which was given to Processbuilder.command()
     private List<String> allArgs;

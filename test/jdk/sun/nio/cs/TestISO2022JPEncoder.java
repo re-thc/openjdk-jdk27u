@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 4251646
  * @summary Make sure buffer boundary convert works
  * @modules jdk.charsets

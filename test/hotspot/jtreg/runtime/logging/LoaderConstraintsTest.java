@@ -79,7 +79,13 @@ public class LoaderConstraintsTest {
         pb = exec("-Xlog:class+loader+constraints=info");
         out = new OutputAnalyzer(pb.start());
         out.shouldHaveExitValue(0);
-        out.stdoutShouldMatch("\\[class,loader,constraints\\] adding new constraint for name: java/lang/String, loader\\[0\\]: 'ClassUnloadCommonClassLoader' @[\\da-f]+, loader\\[1\\]: 'bootstrap'");
+        if (out.getStdout().contains("extending constraint for name java/lang/String by adding loader: 'ClassUnloadCommonClassLoader'")) {
+            // The platform loader can establish the bootstrap constraint first.
+            out.stdoutShouldMatch("\\[class,loader,constraints\\] adding new constraint for name: java/lang/String, loader\\[0\\]: 'platform', loader\\[1\\]: 'bootstrap'");
+            out.stdoutShouldMatch("\\[class,loader,constraints\\] extending constraint for name java/lang/String by adding loader: 'ClassUnloadCommonClassLoader' @[\\da-f]+");
+        } else {
+            out.stdoutShouldMatch("\\[class,loader,constraints\\] adding new constraint for name: java/lang/String, loader\\[0\\]: 'ClassUnloadCommonClassLoader' @[\\da-f]+, loader\\[1\\]: 'bootstrap'");
+        }
 
         // -Xlog:class+loader+constraints=off
         pb = exec("-Xlog:class+loader+constraints=off");

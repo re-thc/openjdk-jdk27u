@@ -45,6 +45,12 @@ EXCLUDE_FILES += \
 # data files and shouldn't go in the product
 EXCLUDE_FILES += sun/text/resources/BreakIteratorRules.java
 
+# Legacy charset sources are kept in the tree but are not part of this image.
+EXCLUDE_FILES += sun/nio/cs/CESU_8.java sun/nio/cs/GB18030.java \
+    sun/nio/cs/HKSCS.java sun/nio/cs/CharsetMapping.java \
+    sun/nio/cs/DelegatableDecoder.java sun/nio/cs/DoubleByte.java \
+    sun/nio/cs/SingleByte.java sun/nio/cs/StringUTF16.java
+
 ifeq ($(call isTargetOs, macosx aix), false)
   EXCLUDE_FILES += sun/nio/fs/PollingWatchService.java
 endif

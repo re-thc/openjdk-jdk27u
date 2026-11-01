@@ -22,11 +22,14 @@
  */
 
 /* @test
+ * @library /test/lib
  * @bug 4794652
  * @summary Ensure that a command argument that contains a space and a final
  *          backslash is handled correctly
  * @requires vm.flagless
  */
+
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.*;
 import java.util.*;
@@ -51,9 +54,10 @@ public class ArgWithSpaceAndFinalBackslash {
             return;
         }
 
-        String[] cmd = new String[5];
+        String[] cmd = new String[5 + ProcessTools.testStreamOptions("").size()];
         int i = 0;
         cmd[i++] = getJavaCommand();
+        for (String option : ProcessTools.testStreamOptions("")) cmd[i++] = option;
         cmd[i++] = "-cp";
         String cp = System.getProperty("test.classes");
         if (cp == null)

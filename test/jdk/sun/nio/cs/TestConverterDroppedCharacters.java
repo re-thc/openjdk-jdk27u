@@ -36,16 +36,11 @@ public class TestConverterDroppedCharacters {
         throws java.io.IOException, java.io.UnsupportedEncodingException,
                java.io.FileNotFoundException
     {
-        /* Try misc. encodings, many are broken. */
-        tryEncoding("Big5");
-        tryEncoding("CNS11643");
-        tryEncoding("Cp1006");
-        tryEncoding("Cp1381");
-        tryEncoding("Cp33722");
-        tryEncoding("GB2312");
-        tryEncoding("KSC5601");
-        tryEncoding("SJIS");
+        // Exercise the retained profile's encoders across the buffer boundary.
         tryEncoding("UTF8");
+        tryEncoding("ISO-8859-1");
+        tryEncoding("UTF-16LE");
+        tryEncoding("UTF-32");
     }
 
     static void tryEncoding(String encoding)

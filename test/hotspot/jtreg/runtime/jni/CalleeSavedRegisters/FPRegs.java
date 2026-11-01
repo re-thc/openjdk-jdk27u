@@ -35,6 +35,7 @@
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,6 +50,7 @@ public class FPRegs {
         System.out.println("Launcher = " + launcher + (Files.exists(launcher) ? " (exists)" : " (not exists)"));
         Path jvmLib = findJVM();
         ProcessBuilder pb = new ProcessBuilder(launcher.toString(), jvmLib.toString());
+        ProcessTools.configureNativeTestStreams(pb);
         // bin as working directory to let Windows load dll
         pb.directory(jvmLib.getParent().getParent().toFile());
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());

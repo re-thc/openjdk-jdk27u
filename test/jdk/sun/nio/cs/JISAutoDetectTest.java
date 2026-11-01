@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 4087261 4184592
  * @summary Make sure to determine Japanese text encoding as correctly
  * as possible.

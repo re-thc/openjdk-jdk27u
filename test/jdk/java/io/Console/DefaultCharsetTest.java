@@ -54,7 +54,7 @@ public class DefaultCharsetTest {
             "'" + expect + "' not found. Test ignored.");
     }
     @ParameterizedTest
-    @ValueSource(strings = {"UTF-8", "ISO-8859-1", "US-ASCII", "foo", ""})
+    @ValueSource(strings = {"UTF-8", "ISO-8859-1", "US-ASCII"})
     void testDefaultCharset(String stdoutEncoding) throws Exception {
         // invoking "expect" command
         OutputAnalyzer oa = ProcessTools.executeProcess(
@@ -69,7 +69,39 @@ public class DefaultCharsetTest {
         oa.shouldHaveExitValue(0);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"foo", ""})
+    void testUnsupportedCharset(String stdoutEncoding) throws Exception {
+        ProcessTools.executeProcess("expect", "-n", TEST_SRC + "/defaultCharset.exp",
+                TEST_CLASSES, TEST_JDK + "/bin/java", "-Dstdout.encoding=" + stdoutEncoding,
+                getClass().getName())
+                .shouldNotHaveExitValue(0)
+                .shouldContain("Unsupported stdout.encoding:");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"java.base", "jdk.internal.le"})
+    void testRepeatedUnsupportedStdin(String provider) throws Exception {
+        OutputAnalyzer result = ProcessTools.executeProcess("expect", "-n", TEST_SRC + "/consoleRetry.exp",
+                TEST_CLASSES, TEST_JDK + "/bin/java", provider, getClass().getName());
+        result.shouldHaveExitValue(0);
+        if (result.getOutput().lines().filter(line -> line.contains("rejected windows-1252")).count() != 2) {
+            throw new AssertionError("Expected two explicit charset failures: " + result.getOutput());
+        }
+    }
+
     public static void main(String... args) {
+        if (args.length > 0 && args[0].equals("retry")) {
+            for (int i = 0; i < 2; i++) {
+                try {
+                    System.console();
+                    throw new AssertionError("Unsupported stdin encoding was accepted");
+                } catch (java.nio.charset.UnsupportedCharsetException expected) {
+                    System.out.println("rejected " + expected.getCharsetName());
+                }
+            }
+            return;
+        }
         var stdoutEncoding = System.getProperty("stdout.encoding");
         var sysoutCharset = System.out.charset();
         var consoleCharset = System.console().charset();

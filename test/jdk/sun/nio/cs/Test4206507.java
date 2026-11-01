@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
    @bug 4206507
    @summary verify that we can obtain and use a converter for encoding
     ISO8859-9 in the Turkish locale.

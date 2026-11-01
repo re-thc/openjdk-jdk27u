@@ -23,6 +23,7 @@
 
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 6803681
  * @summary Test IBM1364
  * @modules jdk.charsets

@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
    @bug 4121376
    @summary Verify that EUC_JP 0x8FA2B7 maps to \uFF5E
  */

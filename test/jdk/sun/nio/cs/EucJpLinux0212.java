@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 6350021
  * @summary Consistency checks when input buffer contains JISX0212 characters
  * @author Martin Buchholz

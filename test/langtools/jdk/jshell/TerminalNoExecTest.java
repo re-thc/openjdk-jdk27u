@@ -75,11 +75,13 @@ public class TerminalNoExecTest {
             }
 
             ToolBox tb = new ToolBox();
+            var command = new java.util.ArrayList<String>();
+            command.add(tb.getJDKTool("java").toString());
+            command.addAll(tb.testStreamOptions(""));
+            command.addAll(java.util.List.of("-classpath", System.getProperty("java.class.path"),
+                                             TerminalNoExecTest.class.getName(), "run-test"));
             Process target =
-                new ProcessBuilder(tb.getJDKTool("java").toString(),
-                                   "-classpath", System.getProperty("java.class.path"),
-                                   TerminalNoExecTest.class.getName(),
-                                   "run-test")
+                new ProcessBuilder(command)
                         .redirectError(ProcessBuilder.Redirect.INHERIT)
                         .redirectOutput(ProcessBuilder.Redirect.INHERIT)
                         .redirectInput(testScript.toFile())

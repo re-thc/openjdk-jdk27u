@@ -74,6 +74,22 @@ public class ReaderWriterTest {
     @Test
     void testCaseNativeEncoding() throws IOException {
         String nativeEncoding = System.getProperty("native.encoding");
+        if (!Charset.isSupported(nativeEncoding)) {
+            ProcessBuilder unsupported = ProcessTools.createLimitedTestJavaProcessBuilder(
+                    "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "ReaderWriterTest$ChildWithCharset");
+            Process p = unsupported.start();
+            try {
+                assertThrows(UnsupportedCharsetException.class, p::outputWriter);
+                assertThrows(UnsupportedCharsetException.class, p::inputReader);
+                assertThrows(UnsupportedCharsetException.class, p::errorReader);
+                assertNotNull(p.outputWriter(StandardCharsets.UTF_8));
+                assertNotNull(p.inputReader(StandardCharsets.UTF_8));
+                assertNotNull(p.errorReader(StandardCharsets.UTF_8));
+            } finally {
+                p.destroyForcibly();
+            }
+            return;
+        }
         Charset cs = Charset.forName(nativeEncoding);
         System.out.println("Native.encoding Charset: " + cs);
 
@@ -100,8 +116,9 @@ public class ReaderWriterTest {
     @Test
     void testRedirects() throws IOException {
         String nativeEncoding = System.getProperty("native.encoding");
-        Charset cs = Charset.forName(nativeEncoding);
-        System.out.println("Native.encoding Charset: " + cs);
+        boolean supported = Charset.isSupported(nativeEncoding);
+        Charset cs = supported ? Charset.forName(nativeEncoding) : StandardCharsets.UTF_8;
+        System.out.println("Charset: " + cs);
 
         Path inPath = Path.of("InFile.tmp");
         BufferedWriter inWriter = Files.newBufferedWriter(inPath);
@@ -116,7 +133,8 @@ public class ReaderWriterTest {
             // 2: redirectErrorStream(true); no redirect of errorOutput
             // 3: redirectErrorStream(true); redirect of errorOutput to a file
 
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("ReaderWriterTest$ChildWithCharset");
+            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                    "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "ReaderWriterTest$ChildWithCharset");
             pb.redirectInput(inPath.toFile());
             pb.redirectOutput(outPath.toFile());
             if (errType == 1 || errType == 3) {
@@ -127,19 +145,19 @@ public class ReaderWriterTest {
             }
             try (Process p = pb.start()) {
                 // Output has been redirected to a null stream; success is IOException on the write
-                BufferedWriter wr = p.outputWriter();
+                BufferedWriter wr = supported ? p.outputWriter() : p.outputWriter(cs);
                 assertThrows(IOException.class, () -> {
                     wr.write("X");
                     wr.flush();
                 });
 
                 // InputReader should be empty; and at EOF
-                BufferedReader inputReader = p.inputReader();
+                BufferedReader inputReader = supported ? p.inputReader() : p.inputReader(cs);
                 int ch = inputReader.read();
                 assertEquals(-1, ch, "inputReader not at EOF: ch: " + (char) ch);
 
                 // InputReader should be empty; and at EOF
-                BufferedReader errorReader = p.errorReader();
+                BufferedReader errorReader = supported ? p.errorReader() : p.errorReader(cs);
                 ch = errorReader.read();
                 assertEquals(-1, ch, "errorReader not at EOF: ch: " + (char) ch);
 
@@ -210,7 +228,7 @@ public class ReaderWriterTest {
     void testNullCharsets()  throws IOException {
         // Launch a child; its behavior is not interesting and is ignored
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "ReaderWriterTest$ChildWithCharset");
+                "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "ReaderWriterTest$ChildWithCharset");
 
         try (Process p = pb.start()) {
             assertThrows(NullPointerException.class, () -> writeTestChars(p.outputWriter(null)));
@@ -226,15 +244,15 @@ public class ReaderWriterTest {
     @Test
     void testIllegalArgCharsets()  throws IOException {
         String nativeEncoding = System.getProperty("native.encoding");
-        Charset cs = Charset.forName(nativeEncoding);
-        System.out.println("Native.encoding Charset: " + cs);
+        Charset cs = Charset.isSupported(nativeEncoding) ? Charset.forName(nativeEncoding) : StandardCharsets.UTF_8;
+        System.out.println("Charset: " + cs);
         Charset otherCharset = cs.equals(StandardCharsets.UTF_8)
                 ? StandardCharsets.ISO_8859_1
                 : StandardCharsets.UTF_8;
 
         // Launch a child; its behavior is not interesting and is ignored
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "ReaderWriterTest$ChildWithCharset");
+                "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "ReaderWriterTest$ChildWithCharset");
 
         Process p = pb.start();
         try {

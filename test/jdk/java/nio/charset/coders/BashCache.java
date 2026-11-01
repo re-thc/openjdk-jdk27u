@@ -41,7 +41,7 @@ public class BashCache {
         = new Charset[] {
             Charset.forName("US-ASCII"),
             Charset.forName("UTF-8"),
-            Charset.forName("CP1252"),
+            Charset.forName("ISO-8859-1"),
             Charset.forName("UTF-16BE") };
 
     private static volatile boolean failed = false;
@@ -52,7 +52,7 @@ public class BashCache {
 
         public void run() {
             for (int i = 0; i < TRIALS; i++) {
-                Charset cs = charsets[rnd.nextInt(4)];
+                Charset cs = charsets[rnd.nextInt(charsets.length)];
                 try {
                     if (rnd.nextBoolean()) {
                         cs.encode("hi mom");

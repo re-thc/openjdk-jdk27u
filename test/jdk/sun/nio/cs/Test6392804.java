@@ -23,6 +23,7 @@
 
 /*
    @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
    @bug 6392804
    @summary Decoder fails to detect decoding error
 */

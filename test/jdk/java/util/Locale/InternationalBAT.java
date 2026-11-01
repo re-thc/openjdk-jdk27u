@@ -27,7 +27,6 @@
  * most important locale data and character converters exist and are
  * minimally functional.
  * @modules jdk.localedata
- *          jdk.charsets
  * @run main InternationalBAT
  */
 
@@ -36,6 +35,7 @@ import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Set;
 import java.util.TimeZone;
 
 public class InternationalBAT {
@@ -232,8 +232,14 @@ public class InternationalBAT {
     private static boolean testRequiredEncodings() {
         boolean pass = true;
 
+        Set<String> profileEncodings = Set.of("UTF8", "ISO8859_1");
+        Set<String> tested = new java.util.HashSet<>();
         for (int i = 0; i < requiredEncodings.length; i++) {
             String encoding = requiredEncodings[i];
+            if (!profileEncodings.contains(encoding)) {
+                continue;
+            }
+            tested.add(encoding);
             Locale sampleLocale = sampleLocales[i];
             try {
                 int index = 0;
@@ -258,6 +264,9 @@ public class InternationalBAT {
                 System.out.println("Encoding not available: " + encoding);
                 pass = false;
             }
+        }
+        if (!tested.equals(profileEncodings)) {
+            throw new AssertionError("Missing retained encoding samples: " + tested);
         }
         return pass;
     }

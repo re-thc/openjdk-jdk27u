@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
    @bug 5016049
    @summary ensure euc-jp-linux charset decoder recovery for unmappable input
  */

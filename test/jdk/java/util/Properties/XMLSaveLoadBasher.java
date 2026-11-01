@@ -51,7 +51,7 @@ public class XMLSaveLoadBasher {
         testSaveLoad("UTF-8", "test save");
         testSaveLoad("UTF-8", null);
         testSaveLoad("ISO-8859-1", "test save");
-        testSaveLoad("KOI8-R", "test save");
+        testSaveLoad("UTF-16", "test save");
     }
 
     private static void testSaveLoad(String encoding, String comment)

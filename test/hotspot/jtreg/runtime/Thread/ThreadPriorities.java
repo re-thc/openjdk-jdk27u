@@ -77,6 +77,7 @@ public class ThreadPriorities {
                 // jstack output may be lengthy, disable streaming output to avoid deadlocks
                 "-J-Djdk.attach.allowStreamingOutput=false",
                 String.valueOf(ProcessTools.getProcessId()));
+        ProcessTools.configureTestToolStreams(pb);
 
         String[] output = new OutputAnalyzer(pb.start()).getOutput().split("\\R");
 

@@ -26,23 +26,21 @@
  * @bug 8286287 8288589
  * @summary Tests for *OrThrow() shared secret methods.
  * @run testng OrThrowTest
- * @modules jdk.charsets
  */
 
 import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.HexFormat;
 import static java.nio.charset.StandardCharsets.UTF_16;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 import org.testng.annotations.Test;
 
 @Test
 public class OrThrowTest {
     private final static byte[] MALFORMED_UTF16 = {(byte)0x00, (byte)0x20, (byte)0x00};
-    private final static String MALFORMED_WINDOWS_1252 = "\u0080\u041e";
-    private final static Charset WINDOWS_1252 = Charset.forName("windows-1252");
+    private final static String UNMAPPABLE_LATIN1 = "\u0080\u041e";
 
     /**
      * Verifies {@code uncheckedNewStringOrThrow()} throws a {@link CharacterCodingException}.
@@ -74,7 +72,7 @@ public class OrThrowTest {
     public void uncheckedGetBytesOrThrowTest() throws IOException {
         var f = Files.createTempFile(null, null);
         try {
-            Files.writeString(f, MALFORMED_WINDOWS_1252, WINDOWS_1252);
+            Files.writeString(f, UNMAPPABLE_LATIN1, ISO_8859_1);
             throw new RuntimeException("Exception should be thrown");
         } catch (CharacterCodingException cce) {
             // success

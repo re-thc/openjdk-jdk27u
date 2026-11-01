@@ -31,7 +31,6 @@ import jdk.internal.util.StaticProperty;
 import java.io.*;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.Charset;
-import java.nio.charset.UnsupportedCharsetException;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -387,8 +386,8 @@ public abstract class Process implements Closeable {
      *
      * <p>This method delegates to {@link #inputReader(Charset)} using the
      * {@link Charset} named by the {@code native.encoding} system property.
-     * If the {@code native.encoding} is not a valid charset name or not supported
-     * the {@link Charset#defaultCharset()} is used.
+     * If the native encoding is not supported, use the overload that takes an
+     * explicit charset matching the process's byte stream.
      *
      * <p>The reader should be {@linkplain BufferedReader#close closed}
      * when it is no longer needed.
@@ -401,8 +400,8 @@ public abstract class Process implements Closeable {
      * buffer contents are unpredictable.
      *
      * @return a {@link BufferedReader BufferedReader} using the
-     *          {@code native.encoding} if supported, otherwise, the
-     *          {@link Charset#defaultCharset()}
+     *          {@code native.encoding}
+     * @throws java.nio.charset.UnsupportedCharsetException if the native encoding is unsupported
      * @since 17
      */
     public final BufferedReader inputReader() {
@@ -477,8 +476,8 @@ public abstract class Process implements Closeable {
      *
      * <p>This method delegates to {@link #errorReader(Charset)} using the
      * {@link Charset} named by the {@code native.encoding} system property.
-     * If the {@code native.encoding} is not a valid charset name or not supported
-     * the {@link Charset#defaultCharset()} is used.
+     * If the native encoding is not supported, use the overload that takes an
+     * explicit charset matching the process's byte stream.
      *
      * <p>The error reader should be {@linkplain BufferedReader#close closed}
      * when it is no longer needed.
@@ -491,8 +490,8 @@ public abstract class Process implements Closeable {
      * buffer contents are unpredictable.
      *
      * @return a {@link BufferedReader BufferedReader} using the
-     *          {@code native.encoding} if supported, otherwise, the
-     *          {@link Charset#defaultCharset()}
+     *          {@code native.encoding}
+     * @throws java.nio.charset.UnsupportedCharsetException if the native encoding is unsupported
      * @since 17
      */
     public final BufferedReader errorReader() {
@@ -563,14 +562,15 @@ public abstract class Process implements Closeable {
      *
      * <p>This method delegates to {@link #outputWriter(Charset)} using the
      * {@link Charset} named by the {@code native.encoding} system property.
-     * If the {@code native.encoding} is not a valid charset name or not supported
-     * the {@link Charset#defaultCharset()} is used.
+     * If the native encoding is not supported, use the overload that takes an
+     * explicit charset matching the process's byte stream.
      *
      * <p>The output writer should be {@linkplain BufferedWriter#close closed}
      * when it is no longer needed.
      *
      * @return a {@code BufferedWriter} to the standard input of the process using the charset
      *          for the {@code native.encoding} system property
+     * @throws java.nio.charset.UnsupportedCharsetException if the native encoding is unsupported
      * @since 17
      */
     public final BufferedWriter outputWriter() {
@@ -1163,22 +1163,8 @@ public abstract class Process implements Closeable {
      * A nested class to delay looking up the Charset for the native encoding.
      */
     private static class CharsetHolder {
-        private static final Charset nativeCharset;
-        static {
-            Charset cs;
-            try {
-                cs = Charset.forName(StaticProperty.nativeEncoding());
-            } catch (UnsupportedCharsetException uce) {
-                cs = Charset.defaultCharset();
-            }
-            nativeCharset = cs;
-        }
-
-        /**
-         * Charset for the native encoding or {@link Charset#defaultCharset().
-         */
         static Charset nativeCharset() {
-            return nativeCharset;
+            return Charset.forName(StaticProperty.nativeEncoding());
         }
     }
 }

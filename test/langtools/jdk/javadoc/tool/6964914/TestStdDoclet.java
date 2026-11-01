@@ -54,6 +54,12 @@ public class TestStdDoclet {
         String thisClassName = TestStdDoclet.class.getName();
         List<String> cmdArgs = new ArrayList<>();
         cmdArgs.add(javadoc.getPath());
+        String encoding = System.getProperty("test.stream.encoding");
+        if (encoding != null) {
+            for (String stream : List.of("stdin", "stdout", "stderr")) {
+                cmdArgs.add("-J-D" + stream + ".encoding=" + encoding);
+            }
+        }
         cmdArgs.addAll(Arrays.asList(
                 "-J-Duser.language=en",
                 "-J-Duser.country=US",

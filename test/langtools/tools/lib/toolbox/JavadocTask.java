@@ -354,6 +354,7 @@ public class JavadocTask extends AbstractTask<JavadocTask> {
         List<String> args = new ArrayList<>();
         Path javadoc = toolBox.getJDKTool("javadoc");
         args.add(javadoc.toString());
+        args.addAll(toolBox.testStreamOptions("-J", getAllArgs()));
         if (includeStandardOptions) {
             args.addAll(toolBox.split(System.getProperty("test.tool.vm.opts"), " +"));
         }

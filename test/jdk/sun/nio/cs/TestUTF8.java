@@ -583,8 +583,5 @@ public class TestUTF8 {
         check4ByteSurrs("UTF-8");
         checkMalformed("UTF-8", malformed);
         checkUnderOverflow("UTF-8");
-        checkRoundtrip("CESU-8");
-        check6ByteSurrs("CESU-8");
-        checkMalformed("CESU-8", malformed_cesu8);
     }
 }

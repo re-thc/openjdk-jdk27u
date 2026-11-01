@@ -43,6 +43,7 @@ public class SummaryDiffThreadCount {
         String pid = Long.toString(ProcessTools.getProcessId());
 
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "baseline=true"});
+        ProcessTools.configureTestToolStreams(pb);
         pb.start().waitFor();
 
         output = new OutputAnalyzer(pb.start());
@@ -57,6 +58,7 @@ public class SummaryDiffThreadCount {
 
         // Running "jcmd <pid> VM.native_memory summary.diff" and checking for five new threads reported.
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary.diff"});
+        ProcessTools.configureTestToolStreams(pb);
         output = new OutputAnalyzer(pb.start());
 
         // Trailing '+' is needed to check that NMT now reports that now we have more threads than it

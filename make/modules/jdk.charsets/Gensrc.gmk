@@ -43,11 +43,26 @@ CHARSET_EXTENDED_JAVA_DIR := $(MODULE_SRC)/share/classes/sun/nio/cs/ext
 CHARSET_STANDARD_OS := stdcs-$(OPENJDK_TARGET_OS)
 
 $(CHARSET_DONE_CS)-extcs: $(CHARSET_DATA_DIR)/charsets \
+    $(CHARSET_DATA_DIR)/modern-profile \
     $(wildcard $(CHARSET_DATA_DIR)/$(CHARSET_STANDARD_OS)) \
     $(CHARSET_TEMPLATES) $(CHARSET_EXTENDED_JAVA_TEMPLATES) \
     $(BUILD_TOOLS_JDK)
 	$(call LogInfo, Generating jdk.charsets extcs)
 	$(call MakeDir, $(@D))
+	@if [ -f '$(JDK_OUTPUTDIR)/modules/jdk.charsets/sun/nio/cs/ext/sjis0213.dat' ] || \
+	    [ -f '$(CHARSET_GENSRC_JAVA_DIR_CS)/sjis0213.dat' ]; then \
+	  echo 'Legacy charset build output found; run make clean before building the modern profile.' >&2; exit 1; \
+	fi
+	@for f in '$(JDK_OUTPUTDIR)/modules/jdk.charsets/sun/nio/cs/ext/'*.class; do \
+	  [ -f "$$f" ] || continue; \
+	  case "$${f##*/}" in AbstractCharsetProvider*.class|ExtendedCharsets*.class) ;; \
+	    *) echo "Legacy charset output $$f found; run make clean." >&2; exit 1;; esac; \
+	done
+	@for f in '$(@D)'/*.java; do \
+	  [ -f "$$f" ] || continue; \
+	  case "$${f##*/}" in ExtendedCharsets.java) ;; \
+	    *) echo 'Legacy generated charset sources found; run make clean.' >&2; exit 1;; esac; \
+	done
 	$(TOOL_CHARSETMAPPING) $(CHARSET_DATA_DIR) $(CHARSET_GENSRC_JAVA_DIR_CS) \
 	    extcs charsets  $(CHARSET_STANDARD_OS) \
 	    $(CHARSET_EXTENDED_JAVA_TEMPLATES) \
@@ -78,9 +93,6 @@ $(CHARSET_GENSRC_JAVA_DIR_CS)/sjis0213.dat: $(CHARSET_DATA_DIR)/sjis0213.map \
 
 TARGETS += \
     $(CHARSET_DONE_CS)-extcs \
-    $(CHARSET_DONE_CS)-hkscs \
-    $(CHARSET_DONE_CS)-euctw \
-    $(CHARSET_GENSRC_JAVA_DIR_CS)/sjis0213.dat \
     #
 
 ################################################################################

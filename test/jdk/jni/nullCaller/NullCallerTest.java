@@ -87,6 +87,7 @@ public class NullCallerTest {
         compileTestModule();
 
         ProcessBuilder pb = ProcessTools.createNativeTestProcessBuilder("NullCallerTest");
+        ProcessTools.configureNativeTestStreams(pb);
         System.out.println("Launching: " + pb.command() + " shared library path: " +
                                pb.environment().get(Platform.sharedLibraryPathVariableName()));
         ProcessTools.executeProcess(pb).shouldHaveExitValue(0);

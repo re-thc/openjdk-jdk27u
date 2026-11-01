@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
    @bug 4896454
    @summary Check GB18030 surrogate encoding/decoding handling
  */

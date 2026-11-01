@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import jdk.test.lib.process.ProcessTools;
 
 /**
  * Starts a new process to execute a command.
@@ -99,10 +101,32 @@ public class ExecDriver {
                 System.arraycopy(oldArgs, 1, args, 1 + testJavaOpts.length, oldArgs.length - 1);
             }
         }
-        String command = Arrays.toString(args);
+        ProcessBuilder pb = new ProcessBuilder(args);
+        // --java and --launcher already pass test.vm.opts and test.java.opts.
+        // --cmd also runs JDK tools to compile or create test fixtures.
+        if (type.equals("--cmd") && isJdkTool(args[0])) {
+            String name = Paths.get(args[0]).getFileName().toString();
+            if (name.equalsIgnoreCase("java") || name.equalsIgnoreCase("java.exe")) {
+                List<String> defaults = new ArrayList<>(ProcessTools.testStreamOptions(""));
+                for (String stream : List.of("stdin", "stdout", "stderr")) {
+                    String option = "-D" + stream + ".encoding";
+                    String legacy = "-Dsun." + stream + ".encoding";
+                    if (hasVmOption(pb.command(), option) ||
+                            (!stream.equals("stdin") && hasVmOption(pb.command(), legacy))) {
+                        defaults.removeIf(arg -> arg.startsWith(option + "="));
+                    }
+                }
+                if (hasVmOption(pb.command(), "-Dtest.stream.encoding")) {
+                    defaults.removeIf(arg -> arg.startsWith("-Dtest.stream.encoding="));
+                }
+                pb.command().addAll(1, defaults);
+            } else {
+                ProcessTools.configureTestToolStreams(pb);
+            }
+        }
+        String command = pb.command().toString();
         System.out.println("exec " + command);
 
-        ProcessBuilder pb = new ProcessBuilder(args);
         // adding jvm.so to library path
         if (launcher) {
             Path dir = Paths.get(TEST_JDK);
@@ -141,6 +165,36 @@ public class ExecDriver {
         if (exitCode != 0 && (!java || exitCode != 95)) {
             throw new AssertionError(command + " exit code is " + exitCode);
         }
+    }
+
+    private static boolean isJdkTool(String executable) {
+        Path path = Paths.get(executable).toAbsolutePath().normalize();
+        String name = path.getFileName().toString();
+        name = name.toLowerCase(java.util.Locale.ROOT);
+        if (name.endsWith(".exe")) name = name.substring(0, name.length() - 4);
+        if (!name.equals("java") && !name.equals("javac") && !name.equals("jar")) return false;
+        for (String property : List.of("test.jdk", "compile.jdk")) {
+            String jdk = System.getProperty(property);
+            if (jdk != null && path.getParent().equals(Paths.get(jdk, "bin").toAbsolutePath().normalize())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasVmOption(List<String> command, String property) {
+        Set<String> withArgument = Set.of("-cp", "-classpath", "--class-path", "-p",
+                "--module-path", "--upgrade-module-path", "--add-modules", "--limit-modules",
+                "--add-exports", "--add-opens", "--add-reads", "--patch-module",
+                "--enable-native-access", "--source");
+        for (int i = 1; i < command.size(); i++) {
+            String arg = command.get(i);
+            if (arg.equals(property) || arg.startsWith(property + "=")) return true;
+            if (arg.equals("-jar") || arg.equals("-m") || arg.equals("--module") ||
+                    arg.startsWith("--module=") || arg.startsWith("@") || !arg.startsWith("-")) break;
+            if (withArgument.contains(arg)) i++;
+        }
+        return false;
     }
 
     // copied from jdk.test.lib.Platform::sharedLibraryPathVariableName

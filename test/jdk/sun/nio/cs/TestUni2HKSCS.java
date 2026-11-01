@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
    @bug 4634811
    @summary Check Unicode 2.1 --> Big5-HKSCS reverse compatible mappings
  */

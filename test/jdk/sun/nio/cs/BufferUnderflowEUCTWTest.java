@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
    @bug 4834154
    @summary Decode a file using EUC-TW, test for decode errors
  */

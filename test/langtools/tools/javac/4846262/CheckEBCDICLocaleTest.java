@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @ignore Legacy-only EBCDIC test; codec excluded from the modern profile
  * @bug 4846262
  * @summary check that javac operates correctly in EBCDIC locale
  * @library /tools/lib

@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 6379808 8166339
  * @summary Check all Cp933 SBCS characters are not supported in Cp834
  * @modules jdk.charsets

@@ -85,7 +85,6 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
-import sun.nio.cs.UTF_8;
 
 /**
  * The {@code System} class contains several useful class fields
@@ -196,11 +195,6 @@ public final class System {
     // Initial values of System.in and System.err, set in initPhase1().
     private static @Stable InputStream initialIn;
     private static @Stable PrintStream initialErr;
-
-    // `sun.jnu.encoding` if it is not supported. Otherwise null.
-    // It is initialized in `initPhase1()` before any charset providers
-    // are initialized.
-    private static String notSupportedJnuEncoding;
 
     /**
      * Reassigns the "standard" input stream.
@@ -1705,9 +1699,24 @@ public final class System {
     private static PrintStream newPrintStream(OutputStream out, String enc) {
         if (enc != null) {
             return new PrintStream(new BufferedOutputStream(out, 128), true,
-                                   Charset.forName(enc, UTF_8.INSTANCE));
+                                   Charset.forName(enc));
         }
         return new PrintStream(new BufferedOutputStream(out, 128), true);
+    }
+
+    private static void checkStreamEncoding(String property) {
+        String encoding = props.getProperty(property);
+        if (encoding != null) {
+            try {
+                if (Charset.isSupported(encoding)) {
+                    return;
+                }
+            } catch (java.nio.charset.IllegalCharsetNameException ignored) {
+                // Report invalid and unavailable encodings in the same way.
+            }
+            throw new InternalError("Unsupported " + property + ": " + encoding +
+                    ". Configure a supported encoding matching the output destination.");
+        }
     }
 
     /**
@@ -1798,11 +1807,13 @@ public final class System {
         VM.saveProperties(tempProps);
         props = createProperties(tempProps);
 
-        // Check if sun.jnu.encoding is supported. If not, replace it with UTF-8.
+        // Unix paths require a byte encoding. Windows paths use Unicode; its
+        // native byte-conversion helpers reject unsupported encodings on use.
         var jnuEncoding = props.getProperty("sun.jnu.encoding");
-        if (jnuEncoding == null || !Charset.isSupported(jnuEncoding)) {
-            notSupportedJnuEncoding = jnuEncoding == null ? "null" : jnuEncoding;
-            props.setProperty("sun.jnu.encoding", "UTF-8");
+        if (!SystemProps.isWindows() &&
+                (jnuEncoding == null || !Charset.isSupported(jnuEncoding))) {
+            throw new InternalError("Unsupported native filesystem encoding: "
+                    + jnuEncoding + ". Use a UTF-8 locale.");
         }
 
         StaticProperty.javaHome();          // Load StaticProperty to cache the property values
@@ -1817,6 +1828,8 @@ public final class System {
         // stdout/err.encoding are set when the VM is associated with the terminal,
         // thus they are equivalent to Console.charset(), otherwise the encodings
         // of those properties default to native.encoding
+        checkStreamEncoding("stdout.encoding");
+        checkStreamEncoding("stderr.encoding");
         setOut0(newPrintStream(fdOut, props.getProperty("stdout.encoding")));
         initialErr = newPrintStream(fdErr, props.getProperty("stderr.encoding"));
         setErr0(initialErr);
@@ -1970,14 +1983,6 @@ public final class System {
                     throw new Error("A command line option has attempted to allow or enable the Security Manager."
                             + " Enabling a Security Manager is not supported.");
             }
-        }
-
-        // Emit a warning if `sun.jnu.encoding` is not supported.
-        if (notSupportedJnuEncoding != null) {
-            System.err.println(
-                    "WARNING: The encoding of the underlying platform's" +
-                    " file system is not supported: " +
-                    notSupportedJnuEncoding);
         }
 
         // initializing the system class loader

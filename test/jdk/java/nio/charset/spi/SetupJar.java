@@ -42,7 +42,8 @@ public class SetupJar {
         Files.createDirectories(provider.getParent());
         Files.write(provider, "FooProvider".getBytes(), CREATE);
 
-        String[] files = {"FooCharset.class", "FooProvider.class"};
+        String[] files = {"FooCharset.class", "FooCharset$Decoder.class",
+                "FooCharset$Encoder.class", "FooProvider.class"};
         for (String f : files) {
             Path source = Paths.get(System.getProperty("test.classes")).resolve(f);
             Path target = xdir.resolve(source.getFileName());

@@ -45,7 +45,9 @@ public class ForName {
         return Stream.of(
                 Arguments.of("UTF-8", null, StandardCharsets.UTF_8),
                 Arguments.of("UTF-8", StandardCharsets.US_ASCII, StandardCharsets.UTF_8),
-                Arguments.of("windows-31j", StandardCharsets.US_ASCII, Charset.forName("windows-31j")),
+                Arguments.of("UTF-32", StandardCharsets.US_ASCII, Charset.forName("UTF-32")),
+                Arguments.of("windows-31j", StandardCharsets.US_ASCII, StandardCharsets.US_ASCII),
+                Arguments.of("windows-31j", null, null),
                 Arguments.of("foo", StandardCharsets.US_ASCII, StandardCharsets.US_ASCII),
                 Arguments.of("foo", null, null),
                 Arguments.of("\u3042", null, null),

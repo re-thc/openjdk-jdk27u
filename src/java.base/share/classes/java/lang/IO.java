@@ -30,7 +30,6 @@ import java.io.InputStreamReader;
 import java.io.IOError;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 import jdk.internal.util.StaticProperty;
 
@@ -190,7 +189,7 @@ public final class IO {
     static synchronized BufferedReader reader() {
         if (br == null) {
             String enc = StaticProperty.stdinEncoding();
-            Charset cs = Charset.forName(enc, StandardCharsets.UTF_8);
+            Charset cs = Charset.forName(enc);
             br = new BufferedReader(new InputStreamReader(System.in, cs));
         }
         return br;

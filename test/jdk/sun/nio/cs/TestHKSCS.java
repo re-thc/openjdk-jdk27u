@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 8166258
  * @summary Some corner cases for hkscs charsets
  * @modules jdk.charsets

@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 6529796 6710199
  * @summary Test SJIS/MS932_0213 charsets
  * @modules jdk.charsets

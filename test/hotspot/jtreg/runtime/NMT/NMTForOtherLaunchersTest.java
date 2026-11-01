@@ -61,6 +61,7 @@ public class NMTForOtherLaunchersTest {
                 "-J-XX:+UnlockDiagnosticVMOptions",
                 "-J-XX:+PrintNMTStatistics",
                 "--help"});
+        ProcessTools.configureTestToolStreams(pb);
         System.out.println(pb.command());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);

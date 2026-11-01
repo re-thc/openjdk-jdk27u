@@ -59,13 +59,8 @@ public class StandardCharsets extends CharsetProvider {
     }
 
     private String canonicalize(String csn) {
-        if (csn.startsWith("gb18030-")) {
-            return csn.equals("gb18030-2022") && !GB18030.IS_2000 ||
-                   csn.equals("gb18030-2000") && GB18030.IS_2000 ? "gb18030" : csn;
-        } else {
-            String acn = aliasMap().get(csn);
-            return (acn != null) ? acn : csn;
-        }
+        String acn = aliasMap().get(csn);
+        return (acn != null) ? acn : csn;
     }
 
     private Map<String,String> aliasMap() {

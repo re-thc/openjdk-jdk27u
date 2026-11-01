@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
    @bug 4179800 8042125
    @summary Make sure JIS0212.Decoder really works
  */

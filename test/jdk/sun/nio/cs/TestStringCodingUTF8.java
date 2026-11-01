@@ -35,7 +35,6 @@ import java.nio.charset.*;
 public class TestStringCodingUTF8 {
     public static void main(String[] args) throws Throwable {
         test("UTF-8");
-        test("CESU-8");
     }
 
     static void test(String csn) throws Throwable {

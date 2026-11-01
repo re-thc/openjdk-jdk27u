@@ -33,7 +33,7 @@
  */
 
 import java.io.File;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
 
@@ -55,14 +55,16 @@ public class NewLineTest {
         File javacOutput = new File("output.txt");
         new JavacTask(tb, Task.Mode.EXEC)
                 .redirect(Task.OutputKind.STDOUT, javacOutput.getPath())
-                .options("-J-Dline.separator='@'")
+                .options("-J-Dline.separator='@'", "-J-Dstdout.encoding=UTF-8",
+                         "-J-Dstderr.encoding=UTF-8")
                 .run(Task.Expect.FAIL);
 
-        String encoding = System.getProperty("native.encoding");
-        Charset cs = (encoding != null) ? Charset.forName(encoding) : Charset.defaultCharset();
-        List<String> lines = Files.readAllLines(javacOutput.toPath(), cs);
+        List<String> lines = Files.readAllLines(javacOutput.toPath(), StandardCharsets.UTF_8);
         if (lines.size() != 1) {
             throw new AssertionError("The compiler output should have one line only");
+        }
+        if (!lines.get(0).contains("@")) {
+            throw new AssertionError("The compiler output should use the requested separator");
         }
     }
 

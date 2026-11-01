@@ -27,6 +27,7 @@
  * @summary Verify that assertions are enabled before the class is initialized
  * and not thereafter
  * @author gafter
+ * @library /tools/lib
  * @build EarlyAssert EarlyAssertWrapper
  * @run main EarlyAssertWrapper
  */

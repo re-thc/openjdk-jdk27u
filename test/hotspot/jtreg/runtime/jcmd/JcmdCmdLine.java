@@ -32,10 +32,12 @@
  */
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class JcmdCmdLine {
     private static LingeredApp theApp = null;
@@ -51,7 +53,9 @@ public class JcmdCmdLine {
             while (classPath.length() < BUFFER_LEN) {
                 classPath += File.pathSeparator + classPath;
             }
-            LingeredApp.startAppExactJvmOpts(theApp, "-cp",  classPath);
+            List<String> targetOptions = new ArrayList<>(ProcessTools.testStreamOptions(""));
+            targetOptions.addAll(List.of("-cp", classPath));
+            LingeredApp.startAppExactJvmOpts(theApp, targetOptions.toArray(String[]::new));
             long pid = theApp.getPid();
 
             PidJcmdExecutor cmdExecutor = new PidJcmdExecutor(String.valueOf(pid));

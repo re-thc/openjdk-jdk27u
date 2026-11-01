@@ -25,7 +25,7 @@
  * @test
  * @bug 6987384
  * @summary -XprintProcessorRoundsInfo message printed with different timing than previous
- * @library /tools/javac/lib
+ * @library /tools/javac/lib /tools/lib
  * @modules java.compiler
  *          jdk.compiler
  * @build JavacTestingAbstractProcessor Test TestWithXstdout
@@ -36,6 +36,7 @@ import java.io.*;
 import java.nio.charset.*;
 import java.nio.file.*;
 import java.util.*;
+import toolbox.ToolBox;
 
 public class TestWithXstdout {
     public static void main(String... args) throws Exception {
@@ -62,6 +63,7 @@ public class TestWithXstdout {
 
         List<String> opts = new ArrayList<>();
         opts.add(javac.getPath());
+        opts.addAll(new ToolBox().testStreamOptions("-J"));
 
         String toolOpts = System.getProperty("test.tool.vm.opts");
         if (toolOpts != null && !"".equals(toolOpts.trim())) {

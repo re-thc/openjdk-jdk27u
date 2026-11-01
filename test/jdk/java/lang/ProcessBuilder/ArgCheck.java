@@ -69,9 +69,22 @@ public class ArgCheck {
     private static final Boolean AMBIGUOUS_PROP_BOOLEAN = AMBIGUOUS_PROP_VALUE == null ? null :
                                                           Boolean.valueOf(!"false".equals(AMBIGUOUS_PROP_VALUE));
 
-    private static final List<String> ECHO_JAVA_ARGS = Arrays.asList("java", "-classpath", TEST_CLASSES.toString(), "ArgCheck");
+    private static final List<String> ECHO_JAVA_ARGS = echoJavaArgs();
     private static final List<String> ECHO_CMD_ARGS = Arrays.asList(ECHO_CMD_PATH);
     private static final List<String> ECHO_VBS_ARGS = Arrays.asList("CScript", "/b", ECHO_VBS_PATH);
+
+    private static List<String> echoJavaArgs() {
+        List<String> args = new ArrayList<>();
+        args.add("java");
+        String encoding = System.getProperty("test.stream.encoding");
+        if (encoding != null) {
+            args.add("-Dstdin.encoding=" + encoding);
+            args.add("-Dstdout.encoding=" + encoding);
+            args.add("-Dstderr.encoding=" + encoding);
+        }
+        args.addAll(Arrays.asList("-classpath", TEST_CLASSES.toString(), "ArgCheck"));
+        return args;
+    }
 
     /**
      * If zero arguments are supplied, run the test cases, by launching each as a child process.

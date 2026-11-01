@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 4262894 6233303
  * @summary Testing substitute character Escape sequence
  * @modules jdk.charsets

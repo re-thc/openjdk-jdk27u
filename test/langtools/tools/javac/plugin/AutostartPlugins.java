@@ -157,6 +157,7 @@ public class AutostartPlugins extends TestRunner {
 
         String suffix = tb.isWindows() ? ".exe" : "";
         List<String> stdout = new ExecTask(tb, tmpJDK.resolve("bin").resolve("javac" + suffix))
+                .jdkToolStreamOptions("-J")
                 .args("-d", Files.createDirectories(base.resolve("out")).toString(),
                         Path.of("hw").resolve("HelloWorld.java").toString())
                 .run()

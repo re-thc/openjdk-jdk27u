@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 8232161
  * @summary Those test data confirm the preferred b2c irreversible mappings defined in MS950.nr file.
  */

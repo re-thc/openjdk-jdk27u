@@ -50,7 +50,7 @@ public class TestDocEncoding extends JavadocTester {
     @Test
     public void test() {
         javadoc("-d", "out",
-                "-docencoding", "Cp930",
+                "-docencoding", "UTF-16BE",
                 "-sourcepath", testSrc,
                 "-notimestamp",
                 "pkg");
@@ -67,7 +67,7 @@ public class TestDocEncoding extends JavadocTester {
         checkOutput("resource-files/stylesheet.css", false,
                 """
                     body {
-                        background-color:var(--page-bg-color);""");
+                        background-color:var(--body-background-color);""");
     }
 }
 

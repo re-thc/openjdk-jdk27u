@@ -83,6 +83,7 @@ public class JcmdWithNMTDisabled {
   public static void jcmdCommand(String command) throws Exception {
 
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", command});
+    ProcessTools.configureTestToolStreams(pb);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     // Verify that jcmd reports that NMT is not enabled

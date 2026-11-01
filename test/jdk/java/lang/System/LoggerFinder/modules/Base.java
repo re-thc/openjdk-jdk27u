@@ -21,6 +21,8 @@
  * questions.
  */
 
+import jdk.test.lib.process.ProcessTools;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -234,7 +236,8 @@ public class Base {
      * run test with supplied java image which could be jdk image or customized image
      */
     protected void runTest(Path image, String... opts) throws Throwable {
-        String[] options = Stream.concat(Stream.of(getJava(image)), Stream.of(opts))
+        String[] options = Stream.concat(Stream.concat(Stream.of(getJava(image)),
+                ProcessTools.testStreamOptions("").stream()), Stream.of(opts))
                                  .toArray(String[]::new);
 
         ProcessBuilder pb = new ProcessBuilder(options);
@@ -260,6 +263,7 @@ public class Base {
         String path = JDKToolFinder.getJDKTool(tool);
         List<String> commands = new ArrayList<>();
         commands.add(path);
+        commands.addAll(ProcessTools.testStreamOptions("-J"));
         Stream.of(args).forEach(commands::add);
         ProcessBuilder pb = new ProcessBuilder(commands);
 

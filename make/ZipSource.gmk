@@ -31,6 +31,7 @@ include Modules.gmk
 include ZipArchive.gmk
 
 SRC_ZIP_WORK_DIR := $(SUPPORT_OUTPUTDIR)/src
+SRC_ZIP_PROFILE_STAMP := $(SUPPORT_OUTPUTDIR)/_the.src-charset-profile
 $(if $(filter $(TOPDIR)/%, $(SUPPORT_OUTPUTDIR)), $(eval SRC_ZIP_BASE := $(TOPDIR)), $(eval SRC_ZIP_BASE := $(SUPPORT_OUTPUTDIR)))
 
 ################################################################################
@@ -61,6 +62,20 @@ TARGETS += $(SRC_ZIP_SRCS)
 # src directory structure has been generated.
 ifeq ($(SRC_GENERATED), true)
 
+  # The source archive describes the shipped profile, not retired codecs.
+  SRC_ZIP_EXCLUDE_FILES += \
+      java.base/sun/nio/cs/CESU_8.java \
+      java.base/sun/nio/cs/GB18030.java \
+      java.base/sun/nio/cs/HKSCS.java \
+      java.base/sun/nio/cs/CharsetMapping.java \
+      java.base/sun/nio/cs/DelegatableDecoder.java \
+      java.base/sun/nio/cs/DoubleByte.java \
+      java.base/sun/nio/cs/SingleByte.java \
+      java.base/sun/nio/cs/StringUTF16.java \
+      $(addprefix jdk.charsets/sun/nio/cs/ext/, \
+          $(notdir $(filter-out %/AbstractCharsetProvider.java, \
+              $(wildcard $(TOPDIR)/src/jdk.charsets/share/classes/sun/nio/cs/ext/*.java))))
+
   # Rewrite the EXCLUDE_TRANSLATIONS locales as exclude patters for java files
   TRANSLATIONS_PATTERN := $(addprefix %_, $(addsuffix .java, $(EXCLUDE_TRANSLATIONS)))
 
@@ -87,7 +102,12 @@ ifeq ($(SRC_GENERATED), true)
   .PHONY: do-zip
 endif
 
-zip: $(SRC_ZIP_SRCS)
+$(SRC_ZIP_PROFILE_STAMP): $(TOPDIR)/make/data/charsetmapping/modern-profile \
+    $(TOPDIR)/make/ZipSource.gmk
+	$(RM) $(SUPPORT_OUTPUTDIR)/src.zip
+	$(TOUCH) $@
+
+zip: $(SRC_ZIP_SRCS) $(SRC_ZIP_PROFILE_STAMP)
 	+$(MAKE) $(MAKE_ARGS) -f ZipSource.gmk do-zip SRC_GENERATED=true
 
 TARGETS += zip

@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
    @bug 4179153 4652234 6529796 8368845
    @summary Read code mapping table and check code conversion
    @modules jdk.charsets

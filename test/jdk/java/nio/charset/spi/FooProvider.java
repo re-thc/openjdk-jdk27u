@@ -23,8 +23,8 @@
 
 import java.nio.charset.Charset;
 import java.nio.charset.spi.CharsetProvider;
-import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 public class FooProvider
     extends CharsetProvider
@@ -33,13 +33,21 @@ public class FooProvider
     public FooProvider() {}
 
     public Iterator charsets() {
-        return Collections.singleton(new FooCharset()).iterator();
+        return List.of(new FooCharset(), legacy()).iterator();
     }
 
     public Charset charsetForName(String charsetName) {
         if (charsetName.equalsIgnoreCase("FOO"))
             return new FooCharset();
+        if (charsetName.equalsIgnoreCase("windows-1252") || charsetName.equalsIgnoreCase("cp1252"))
+            return legacy();
         return null;
+    }
+
+    private static Charset legacy() {
+        // Deliberately simple test codec: the name exercises SPI precedence,
+        // not the real windows-1252 mapping.
+        return new FooCharset("windows-1252", new String[] { "cp1252" });
     }
 
 }

@@ -78,9 +78,10 @@ public class CanonicalCase {
         }
         if (provider.charsetForName("UTF8") != expected[0]
                 || provider.charsetForName("latin1") != expected[2]
-                || !Charset.forName("windows-1252").name().equals("windows-1252")
                 || !provider.charsetForName("UTF-16").equals(java.nio.charset.StandardCharsets.UTF_16)) {
             throw new AssertionError("alias/fallback");
         }
+        if (provider.charsetForName("windows-1252") != null)
+            throw new AssertionError("legacy built-in charset available");
     }
 }

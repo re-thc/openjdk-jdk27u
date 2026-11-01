@@ -37,14 +37,17 @@ import jdk.internal.util.StaticProperty;
 class Util {
     private Util() { }
 
-    private static final Charset jnuEncoding = Charset.forName(
-        StaticProperty.jnuEncoding());
+    // Windows uses these utilities for wide-character paths too. Resolve the
+    // platform byte encoding only when a byte conversion is actually needed.
+    private static class JnuEncoding {
+        static final Charset INSTANCE = Charset.forName(StaticProperty.jnuEncoding());
+    }
 
     /**
      * Returns {@code Charset} corresponding to the sun.jnu.encoding property
      */
     static Charset jnuEncoding() {
-        return jnuEncoding;
+        return JnuEncoding.INSTANCE;
     }
 
     /**
@@ -52,7 +55,7 @@ class Util {
      * specified by the sun.jnu.encoding property.
      */
     static byte[] toBytes(String s) {
-        return s.getBytes(jnuEncoding);
+        return s.getBytes(jnuEncoding());
     }
 
     /**
@@ -60,7 +63,7 @@ class Util {
      * {@code Charset} specified by the sun.jnu.encoding property.
      */
     static String toString(byte[] bytes) {
-        return new String(bytes, jnuEncoding);
+        return new String(bytes, jnuEncoding());
     }
 
 

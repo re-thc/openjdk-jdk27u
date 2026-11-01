@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @ignore Legacy-only EUC-JP encoding test; codec excluded from the modern profile
  * @bug 8285517
  * @summary System.getenv() and argument don't return locale dependent data by JEP400
  * @requires (os.family == "linux")

@@ -24,9 +24,10 @@
  /*
  * @test
  * @requires !jdk.static
- * @run main/othervm/native -Xcheck:jni StringPlatformChars
+ * @run main/othervm/native -Xcheck:jni -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 StringPlatformChars
  */
 import java.util.Arrays;
+import java.nio.charset.Charset;
 
 public class StringPlatformChars {
 
@@ -35,6 +36,65 @@ public class StringPlatformChars {
     public static void main(String... args) throws Exception {
         System.out.println("sun.jnu.encoding: " + JNU_ENCODING);
         System.loadLibrary("stringPlatformChars");
+        if (!Arrays.equals(getBytesStrict("a"), new byte[] {'a'})) {
+            throw new AssertionError("Strict ASCII platform conversion failed");
+        }
+
+        if (!Charset.isSupported(JNU_ENCODING)) {
+            if (JNU_ENCODING.equalsIgnoreCase("Cp1252")) {
+                // The Windows native helper remains available independently of
+                // the public charset provider, and rejects lossy conversions.
+                String text = "?\u00e9\u20ac";
+                byte[] bytes = {'?', (byte) 0xe9, (byte) 0x80};
+                if (!Arrays.equals(bytes, getBytes(text)) || !text.equals(newString(bytes))) {
+                    throw new AssertionError("Native Cp1252 mapping mismatch");
+                }
+                for (String unmappable : new String[] {"\u0081", "\ud83d\ude00"}) {
+                    try {
+                        getBytes(unmappable);
+                        throw new AssertionError("Unmappable character accepted");
+                    } catch (IllegalArgumentException expected) { }
+                }
+            } else {
+                // The ASCII subset remains usable for native library names;
+                // non-ASCII conversions must fail rather than use UTF-8.
+                if (!Arrays.equals(getBytes("ascii"), new byte[] {'a', 's', 'c', 'i', 'i'}) ||
+                        !newString(new byte[] {'a'}).equals("a")) {
+                    throw new AssertionError("Native ASCII subset mismatch");
+                }
+                for (String ascii : new String[] {"", "a".repeat(4096), "abc"}) {
+                    byte[] expected = ascii.getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+                    if (!Arrays.equals(expected, getBytes(ascii)) ||
+                            !Arrays.equals(expected, getBytesStrict(ascii))) {
+                        throw new AssertionError("Native ASCII conversion failed");
+                    }
+                }
+                if (!Arrays.equals(getBytes("a\u0000bc"), new byte[] {'a'})) {
+                    throw new AssertionError("Native NUL termination failed");
+                }
+                try {
+                    getBytesStrict("a\u0000bc");
+                    throw new AssertionError("Strict conversion accepted NUL");
+                } catch (IllegalArgumentException expected) { }
+                try {
+                    getBytes("ascii\u20ac");
+                    throw new AssertionError("Unsupported native encoding accepted");
+                } catch (InternalError expected) {
+                    if (!expected.getMessage().contains("Unsupported native filesystem encoding")) {
+                        throw expected;
+                    }
+                }
+                try {
+                    newString(new byte[] {(byte) 0xe9});
+                    throw new AssertionError("Unsupported native decoding accepted");
+                } catch (InternalError expected) {
+                    if (!expected.getMessage().contains("Unsupported native filesystem encoding")) {
+                        throw expected;
+                    }
+                }
+            }
+            return;
+        }
 
         // Test varying lengths, provoking different allocation paths
         StringBuilder unicodeSb = new StringBuilder();
@@ -87,6 +147,8 @@ public class StringPlatformChars {
     }
 
     static native byte[] getBytes(String string);
+
+    static native byte[] getBytesStrict(String string);
 
     static native String newString(byte[] bytes);
 }

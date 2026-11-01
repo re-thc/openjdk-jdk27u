@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
    @bug 4890726
    @summary Check the correctness of KOI8_U by comparing to KOI8_R
  */

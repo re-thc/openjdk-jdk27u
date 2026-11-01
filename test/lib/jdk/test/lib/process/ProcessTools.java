@@ -453,6 +453,19 @@ public final class ProcessTools {
         List<String> args = new ArrayList<>();
         args.add(javapath);
 
+        // Some test environments explicitly configure the encoding of their
+        // process pipes. Put these defaults before the test's own arguments,
+        // so a test can still exercise an unsupported stream encoding.
+        String streamEncoding = System.getProperty("test.stream.encoding");
+        if (streamEncoding != null) {
+            for (String stream : List.of("stdin", "stdout", "stderr")) {
+                if (!hasLegacyStreamOption(command, stream)) {
+                    args.add("-D" + stream + ".encoding=" + streamEncoding);
+                }
+            }
+            args.add("-Dtest.stream.encoding=" + streamEncoding);
+        }
+
         String noCPString = System.getProperty("test.noclasspath", "false");
         boolean noCP = Boolean.valueOf(noCPString);
         if (!noCP) {
@@ -481,6 +494,117 @@ public final class ProcessTools {
             pb.environment().remove("CLASSPATH");
         }
         return pb;
+    }
+
+    private static boolean hasLegacyStreamOption(String[] command, String stream) {
+        if (stream.equals("stdin")) {
+            return false;
+        }
+        String property = "-Dsun." + stream + ".encoding";
+        Set<String> optionsWithArgument = Set.of("-cp", "-classpath", "--class-path",
+                "-p", "--module-path", "--upgrade-module-path", "--add-modules",
+                "--limit-modules", "--add-exports", "--add-opens", "--add-reads",
+                "--patch-module", "--enable-native-access", "--source");
+        for (int i = 0; i < command.length; i++) {
+            String arg = command[i];
+            if (arg.equals(property) || arg.startsWith(property + "=")) {
+                return true;
+            }
+            if (arg.equals("-jar") || arg.equals("-m") || arg.equals("--module") ||
+                    arg.startsWith("--module=") || arg.startsWith("@") || !arg.startsWith("-")) {
+                break;
+            }
+            if (optionsWithArgument.contains(arg)) {
+                i++;
+            }
+        }
+        return false;
+    }
+
+    /** Options for subprocess pipes explicitly configured by the test environment. */
+    public static List<String> testStreamOptions(String prefix) {
+        String encoding = System.getProperty("test.stream.encoding");
+        if (encoding == null) {
+            return List.of();
+        }
+        return List.of(prefix + "-Dstdin.encoding=" + encoding,
+                       prefix + "-Dstdout.encoding=" + encoding,
+                       prefix + "-Dstderr.encoding=" + encoding,
+                       prefix + "-Dtest.stream.encoding=" + encoding);
+    }
+
+    /** Configure the pipes of a JDK tool without overriding explicit stream options. */
+    public static void configureTestToolStreams(ProcessBuilder builder) {
+        List<String> options = new ArrayList<>(testStreamOptions("-J"));
+        if (options.isEmpty()) {
+            return;
+        }
+        List<String> command = new ArrayList<>(builder.command());
+        for (String stream : List.of("stdin", "stdout", "stderr")) {
+            String property = "-J-D" + stream + ".encoding";
+            String legacy = "-J-Dsun." + stream + ".encoding";
+            if (command.stream().anyMatch(arg -> arg.equals(property) ||
+                    arg.startsWith(property + "=") ||
+                    (!stream.equals("stdin") &&
+                            (arg.equals(legacy) || arg.startsWith(legacy + "="))))) {
+                options.removeIf(arg -> arg.startsWith(property + "="));
+            }
+        }
+        command.addAll(1, options);
+        builder.command(command);
+    }
+
+    /** Configure a native test process that creates a JVM through JNI.
+     * JAVA_TOOL_OPTIONS emits a diagnostic, so use this only when the test
+     * does not require exact process output.
+     */
+    public static void configureNativeTestStreams(ProcessBuilder builder) {
+        List<String> options = new ArrayList<>(testStreamOptions(""));
+        if (!options.isEmpty()) {
+            for (String variable : List.of("JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS")) {
+                String existing = builder.environment().get(variable);
+                if (existing == null) {
+                    continue;
+                }
+                // A legacy property would otherwise be shadowed by the
+                // canonical default, regardless of argument order.
+                for (String stream : List.of("stdout", "stderr")) {
+                    if (hasNativeLegacyStreamOption(existing, stream)) {
+                        options.removeIf(opt -> opt.startsWith("-D" + stream + ".encoding="));
+                    }
+                }
+            }
+            builder.environment().merge("JAVA_TOOL_OPTIONS", String.join(" ", options),
+                    (previous, defaults) -> defaults + " " + previous);
+        }
+    }
+
+    // Match HotSpot's JAVA_TOOL_OPTIONS tokenization, including quoted pieces.
+    private static boolean hasNativeLegacyStreamOption(String options, String stream) {
+        String property = "-Dsun." + stream + ".encoding";
+        StringBuilder token = new StringBuilder();
+        char quote = 0;
+        for (int i = 0; i <= options.length(); i++) {
+            char c = i == options.length() ? ' ' : options.charAt(i);
+            if (quote != 0) {
+                if (c == quote) {
+                    quote = 0;
+                } else {
+                    token.append(c);
+                }
+            } else if (c == '\'' || c == '"') {
+                quote = c;
+            } else if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == 0x0b) {
+                String arg = token.toString();
+                if (arg.equals(property) || arg.startsWith(property + "=")) {
+                    return true;
+                }
+                token.setLength(0);
+            } else {
+                token.append(c);
+            }
+        }
+        return false;
     }
 
     // 8377729: Check for duplicate VM JVMTI agent options, as it may
@@ -562,7 +686,31 @@ public final class ProcessTools {
      * @return The ProcessBuilder instance representing the java command.
      */
     public static ProcessBuilder createTestJavaProcessBuilder(String... command) {
-        return createJavaProcessBuilder(Utils.prependTestJavaOpts(command));
+        String[] allOptions = Utils.prependTestJavaOpts(command);
+        String streamEncoding = System.getProperty("test.stream.encoding");
+        if (streamEncoding == null) {
+            return createJavaProcessBuilder(allOptions);
+        }
+        // A test's legacy sun.* property must not be shadowed by the
+        // configured canonical default inherited through test.java.opts.
+        int inheritedCount = allOptions.length - command.length;
+        List<String> options = new ArrayList<>();
+        for (int i = 0; i < allOptions.length; i++) {
+            boolean shadowed = false;
+            if (i < inheritedCount) {
+                for (String stream : List.of("stdin", "stdout", "stderr")) {
+                    if (allOptions[i].equals("-D" + stream + ".encoding=" + streamEncoding)
+                            && hasLegacyStreamOption(command, stream)) {
+                        shadowed = true;
+                        break;
+                    }
+                }
+            }
+            if (!shadowed) {
+                options.add(allOptions[i]);
+            }
+        }
+        return createJavaProcessBuilder(options.toArray(String[]::new));
     }
 
     /**

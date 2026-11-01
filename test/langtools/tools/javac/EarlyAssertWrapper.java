@@ -23,6 +23,7 @@
 
 import java.io.*;
 import java.util.*;
+import toolbox.ToolBox;
 
 /*
  * Wrapper for the EarlyAssert test to run the test in a JVM without assertions
@@ -38,6 +39,7 @@ public class EarlyAssertWrapper {
         List<String> cmd = new ArrayList<String>();
         File java_home = new File(System.getProperty("java.home"));
         cmd.add(new File(new File(java_home, "bin"), "java").getPath());
+        cmd.addAll(new ToolBox().testStreamOptions(""));
 
         // propogate classpath
         cmd.add("-classpath");

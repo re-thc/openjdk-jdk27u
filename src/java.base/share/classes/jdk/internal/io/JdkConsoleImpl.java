@@ -44,7 +44,6 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.StaticProperty;
 import sun.nio.cs.StreamDecoder;
 import sun.nio.cs.StreamEncoder;
-import sun.nio.cs.UTF_8;
 
 /**
  * JdkConsole implementation based on the platform's TTY.
@@ -124,8 +123,8 @@ public final class JdkConsoleImpl implements JdkConsole {
                 return SharedSecrets.getJavaIOAccess().isStdinTty() ?
                         Optional.of(
                                 new JdkConsoleImpl(
-                                        Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE),
-                                        Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE))) :
+                                        Charset.forName(StaticProperty.stdinEncoding()),
+                                        Charset.forName(StaticProperty.stdoutEncoding()))) :
                         Optional.empty();
             }
         }

@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @ignore Legacy-only charset test; codecs excluded from the modern profile
  * @bug 4328178
  * @summary Performs baseline and regression test on the ISCII91 charset
  * @modules jdk.charsets

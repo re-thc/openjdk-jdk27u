@@ -31,6 +31,8 @@
  * @library /test/lib
  * @run testng/othervm SetCwd
  */
+import jdk.test.lib.process.ProcessTools;
+
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -43,13 +45,15 @@ public class SetCwd {
     private static final String TEST_CLASSES = System.getProperty(
             "test.classes", ".");
 
-    private static final String[] CMD_ARRAY = new String[2];
+    private static String[] CMD_ARRAY;
 
     @BeforeTest
     public static void setUp() throws Exception {
-        CMD_ARRAY[0] = System.getProperty("java.home") + File.separator +
-                "bin" + File.separator + "java";
-        CMD_ARRAY[1] = SimpleProcess.class.getName();
+        java.util.List<String> command = new java.util.ArrayList<>();
+        command.add(System.getProperty("java.home") + File.separator + "bin" + File.separator + "java");
+        command.addAll(ProcessTools.testStreamOptions(""));
+        command.add(SimpleProcess.class.getName());
+        CMD_ARRAY = command.toArray(String[]::new);
     }
 
     @Test

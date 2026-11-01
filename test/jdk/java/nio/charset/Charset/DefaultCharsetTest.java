@@ -37,62 +37,49 @@
  * @run junit DefaultCharsetTest
  */
 
-import java.util.Map;
+import java.nio.charset.Charset;
 import java.util.stream.Stream;
 
 import jdk.test.lib.process.ProcessTools;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DefaultCharsetTest {
 
-    private static final ProcessBuilder pb
-            = ProcessTools.createTestJavaProcessBuilder(Default.class.getName());
-    private static final Map<String, String> env = pb.environment();
-    private static String UNSUPPORTED = null;
-
-    @BeforeAll
-    public static void checkSupports() throws Exception {
-        UNSUPPORTED = runWithLocale("nonexist");
-    }
-
-    public static Stream<Arguments> locales() {
-        return Stream.of(
-                Arguments.of("en_US", "iso-8859-1"),
-                Arguments.of("ja_JP.utf8", "utf-8"),
-                Arguments.of("tr_TR", "iso-8859-9"),
-                Arguments.of("C", "us-ascii"),
-                Arguments.of("ja_JP", "x-euc-jp-linux"),
-                Arguments.of("ja_JP.eucjp", "x-euc-jp-linux"),
-                Arguments.of("ja_JP.ujis", "x-euc-jp-linux"),
-                Arguments.of("ja_JP.utf8", "utf-8")
-        );
+    public static Stream<String> locales() {
+        return Stream.of("en_US", "en_US.utf8", "ja_JP.utf8", "tr_TR",
+                "ru_RU", "zh_CN", "C", "ja_JP", "ja_JP.eucjp", "ja_JP.ujis");
     }
 
     @ParameterizedTest
     @MethodSource("locales")
-    public void testDefaultCharset(String locale, String expectedCharset) throws Exception {
-        String actual = runWithLocale(locale);
-        if (UNSUPPORTED.equals(actual)) {
+    public void testDefaultCharset(String locale) throws Exception {
+        boolean installed = ProcessTools.executeProcess("locale", "-a").getStdout().lines()
+                .anyMatch(name -> name.equalsIgnoreCase(locale));
+        if (!installed) {
             System.out.println(locale + ": Locale not supported, skipping...");
-        } else {
-            assertTrue(actual.equalsIgnoreCase(expectedCharset),
+            return;
+        }
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                "-Dfile.encoding=COMPAT", Default.class.getName());
+        pb.environment().put("LC_ALL", locale);
+        ProcessBuilder charmap = new ProcessBuilder("locale", "charmap");
+        charmap.environment().put("LC_ALL", locale);
+        String expectedCharset = ProcessTools.executeProcess(charmap)
+                .shouldHaveExitValue(0).getStdout().trim();
+        var result = ProcessTools.executeProcess(pb);
+        if (Charset.isSupported(expectedCharset)) {
+            String actual = result.shouldHaveExitValue(0).getStdout();
+            String expected = "DEFAULT_CHARSET=" + Charset.forName(expectedCharset).name();
+            assertTrue(actual.lines().anyMatch(line -> line.equalsIgnoreCase(expected)),
                        String.format("LC_ALL = %s, got defaultCharset = %s, "
                                + "NOT as expected %s",
                                locale, actual, expectedCharset));
+        } else {
+            result.shouldNotHaveExitValue(0)
+                  .shouldContain("Unsupported native filesystem encoding");
         }
-    }
-
-    private static String runWithLocale(String locale) throws Exception {
-        env.remove("LC_ALL");
-        env.put("LC_ALL", locale);
-        return ProcessTools.executeProcess(pb)
-                           .shouldHaveExitValue(0)
-                           .getStdout()
-                           .replace(System.lineSeparator(), "");
     }
 }

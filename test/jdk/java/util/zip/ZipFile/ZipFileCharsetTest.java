@@ -32,9 +32,9 @@ import java.util.zip.ZipOutputStream;
 import org.junit.jupiter.api.Test;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /*
  * @test
@@ -44,8 +44,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * @run junit ZipFileCharsetTest
  */
 public class ZipFileCharsetTest {
-
-    private static final String ISO_8859_15_NAME = "ISO-8859-15";
 
     /**
      * The internal implementation of java.util.zip.ZipFile maintains a cache
@@ -63,47 +61,17 @@ public class ZipFileCharsetTest {
      */
     @Test
     void testCachedZipFileSource() throws Exception {
-        // ISO-8859-15 is not a standard charset in Java. We skip this test
-        // when it is unavailable
-        assumeTrue(Charset.availableCharsets().containsKey(ISO_8859_15_NAME),
-                "skipping test since " + ISO_8859_15_NAME + " charset isn't available");
-
-        // We choose the byte 0xA4 for entry name in the ZIP file.
-        // 0xA4 is "Euro sign" in ISO-8859-15 charset and
-        // "Currency sign (generic)" in ISO-8859-1 charset.
-        final byte[] entryNameBytes = new byte[]{(byte) 0xA4}; // intentional cast
-        final Charset euroSignCharset = Charset.forName(ISO_8859_15_NAME);
-        final Charset currencySignCharset = ISO_8859_1;
-
-        final String euroSign = new String(entryNameBytes, euroSignCharset);
-        final String currencySign = new String(entryNameBytes, currencySignCharset);
-
-        // create a ZIP file whose entry name is encoded using ISO-8859-15 charset
-        final Path zip = createZIP("euro", euroSignCharset, entryNameBytes);
-
-        // Construct a ZipFile instance using the (incorrect) charset ISO-8859-1.
-        // While that ZipFile instance is still open (and the ZIP file structure
-        // still cached), construct another instance for the same ZIP file, using
-        // the (correct) charset ISO-8859-15.
-        try (ZipFile incorrect = new ZipFile(zip.toFile(), currencySignCharset);
-             ZipFile correct = new ZipFile(zip.toFile(), euroSignCharset)) {
-
-            // correct encoding should resolve the entry name to euro sign
-            // and the entry should be thus be located
-            assertNotNull(correct.getEntry(euroSign), "euro sign entry missing in " + correct);
-            // correct encoding should not be able to find an entry name
-            // with the currency sign
-            assertNull(correct.getEntry(currencySign), "currency sign entry unexpectedly found in "
-                    + correct);
-
-            // incorrect encoding should resolve the entry name to currency sign
-            // and the entry should be thus be located by the currency sign name
-            assertNotNull(incorrect.getEntry(currencySign), "currency sign entry missing in "
-                    + incorrect);
-            // incorrect encoding should not be able to find an entry name
-            // with the euro sign
-            assertNull(incorrect.getEntry(euroSign), "euro sign entry unexpectedly found in "
-                    + incorrect);
+        // Both codecs decode these bytes successfully, but to distinct names.
+        final byte[] entryNameBytes = new byte[]{(byte) 0xc2, (byte) 0xa4};
+        final String utf16Name = new String(entryNameBytes, UTF_16BE);
+        final String latin1Name = new String(entryNameBytes, ISO_8859_1);
+        final Path zip = createZIP("charset-cache", UTF_16BE, entryNameBytes);
+        try (ZipFile latin1 = new ZipFile(zip.toFile(), ISO_8859_1);
+             ZipFile utf16 = new ZipFile(zip.toFile(), UTF_16BE)) {
+            assertNotNull(utf16.getEntry(utf16Name), "UTF-16BE name missing");
+            assertNull(utf16.getEntry(latin1Name), "Latin-1 name unexpectedly found");
+            assertNotNull(latin1.getEntry(latin1Name), "Latin-1 name missing");
+            assertNull(latin1.getEntry(utf16Name), "UTF-16BE name unexpectedly found");
         }
     }
 

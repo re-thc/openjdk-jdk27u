@@ -38,6 +38,7 @@ import jdk.test.lib.process.ProcessTools;
 public class CallerAccessTest {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createNativeTestProcessBuilder("CallerAccessTest");
+        ProcessTools.configureNativeTestStreams(pb);
         System.out.println("Launching: " + pb.command() + " shared library path: " +
                            pb.environment().get(Platform.sharedLibraryPathVariableName()));
         ProcessTools.executeProcess(pb).shouldHaveExitValue(0);

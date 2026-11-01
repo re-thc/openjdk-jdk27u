@@ -27,14 +27,15 @@
 #include "jni.h"
 #include "jni_util.h"
 
-JNIEXPORT jbyteArray JNICALL
-Java_StringPlatformChars_getBytes(JNIEnv *env, jclass unused, jstring value)
+static jbyteArray
+getBytes(JNIEnv *env, jstring value, jboolean strict)
 {
     const char* str;
     int len;
     jbyteArray bytes = NULL;
 
-    str = JNU_GetStringPlatformChars(env, value, NULL);
+    str = strict ? JNU_GetStringPlatformCharsStrict(env, value, NULL)
+                 : JNU_GetStringPlatformChars(env, value, NULL);
     if (str == NULL) {
         return NULL;
     }
@@ -42,14 +43,24 @@ Java_StringPlatformChars_getBytes(JNIEnv *env, jclass unused, jstring value)
     bytes = (*env)->NewByteArray(env, len);
     if (bytes != 0) {
         jclass strClazz = JNU_ClassString(env);
-        if (strClazz == NULL) {
-            return NULL;
+        if (strClazz != NULL) {
+            (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte *)str);
         }
-        (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte *)str);
-
-        return bytes;
     }
-    return NULL;
+    JNU_ReleaseStringPlatformChars(env, value, str);
+    return bytes;
+}
+
+JNIEXPORT jbyteArray JNICALL
+Java_StringPlatformChars_getBytes(JNIEnv *env, jclass unused, jstring value)
+{
+    return getBytes(env, value, JNI_FALSE);
+}
+
+JNIEXPORT jbyteArray JNICALL
+Java_StringPlatformChars_getBytesStrict(JNIEnv *env, jclass unused, jstring value)
+{
+    return getBytes(env, value, JNI_TRUE);
 }
 
 JNIEXPORT jstring JNICALL
