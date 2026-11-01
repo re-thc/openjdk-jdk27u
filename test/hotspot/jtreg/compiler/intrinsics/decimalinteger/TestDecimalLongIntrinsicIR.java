@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Keep signed-long decimal writers as single native leaves
+ * @summary Keep variable signed-long decimal writers as single native leaves
  * @requires vm.compiler2.enabled & (os.arch == "amd64" | os.arch == "aarch64")
  * @library /test/lib /
  * @modules java.base/jdk.internal.util
@@ -66,14 +66,64 @@ public class TestDecimalLongIntrinsicIR {
         return DecimalDigits.uncheckedGetCharsUTF16(value, END, UTF16);
     }
 
-    @Run(test = {"latin1", "utf16"})
+    @Test
+    @IR(failOn = {IRNode.CALL_OF, "formatZmijInteger", IRNode.CALL, IRNode.IF, IRNode.ANY_LOOP})
+    public static int constantLatin1() {
+        return DecimalDigits.uncheckedGetCharsLatin1(123L, END, LATIN1);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.CALL_OF, "formatZmijInteger", IRNode.CALL, IRNode.IF, IRNode.ANY_LOOP})
+    public static int constantUTF16() {
+        return DecimalDigits.uncheckedGetCharsUTF16(123L, END, UTF16);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.CALL_OF, "formatZmijInteger", IRNode.CALL, IRNode.IF, IRNode.ANY_LOOP})
+    public static int minimumLatin1() {
+        return DecimalDigits.uncheckedGetCharsLatin1(Long.MIN_VALUE, END, LATIN1);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.CALL_OF, "formatZmijInteger", IRNode.CALL, IRNode.IF, IRNode.ANY_LOOP})
+    public static int minimumUTF16() {
+        return DecimalDigits.uncheckedGetCharsUTF16(Long.MIN_VALUE, END, UTF16);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.CALL_OF, "formatZmijInteger", IRNode.CALL, IRNode.IF, IRNode.ANY_LOOP})
+    public static int maximumLatin1() {
+        return DecimalDigits.uncheckedGetCharsLatin1(Long.MAX_VALUE, END, LATIN1);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.CALL_OF, "formatZmijInteger", IRNode.CALL, IRNode.IF, IRNode.ANY_LOOP})
+    public static int maximumUTF16() {
+        return DecimalDigits.uncheckedGetCharsUTF16(Long.MAX_VALUE, END, UTF16);
+    }
+
+    @Run(test = {"latin1", "utf16", "constantLatin1", "constantUTF16",
+                 "minimumLatin1", "minimumUTF16", "maximumLatin1", "maximumUTF16"})
     public void run() {
         long value = VALUES[cursor++ % VALUES.length];
-        Arrays.fill(LATIN1, (byte) 0x55);
-        Arrays.fill(UTF16, (byte) 0x55);
+        clear();
         String expected = decimal(value);
         check(LATIN1, latin1(value), expected, false);
         check(UTF16, utf16(value), expected, true);
+        clear();
+        check(LATIN1, constantLatin1(), "123", false);
+        check(UTF16, constantUTF16(), "123", true);
+        clear();
+        check(LATIN1, minimumLatin1(), "-9223372036854775808", false);
+        check(UTF16, minimumUTF16(), "-9223372036854775808", true);
+        clear();
+        check(LATIN1, maximumLatin1(), "9223372036854775807", false);
+        check(UTF16, maximumUTF16(), "9223372036854775807", true);
+    }
+
+    private static void clear() {
+        Arrays.fill(LATIN1, (byte) 0x55);
+        Arrays.fill(UTF16, (byte) 0x55);
     }
 
     private static void check(byte[] output, int start, String expected, boolean utf16) {

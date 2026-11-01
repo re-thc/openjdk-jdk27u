@@ -6849,6 +6849,27 @@ bool LibraryCallKit::inline_formatZmijInteger() {
   }
   Node* index = argument(is_long ? 2 : 1);
   Node* value = argument(0);
+  if (is_long && value->is_Con()) {
+    // Format literals once during compilation, keeping the stores in the intrinsic.
+    const int capacity = 32;
+    char digits[capacity];
+    int first = ZmijInteger::format_long_latin1(digits, capacity, _gvn.type(value)->is_long()->get_con());
+    int length = capacity - first;
+    assert(length > 0 && length <= 20, "signed long decimal length");
+    Node* start = _gvn.transform(new SubINode(index, intcon(length)));
+    Node* byte_start = utf16 ? _gvn.transform(new LShiftINode(start, intcon(1))) : start;
+    BasicType bt = utf16 ? T_CHAR : T_BYTE;
+    const Type* type = utf16 ? TypeInt::CHAR : TypeInt::BYTE;
+    DecoratorSet decorators = IN_HEAP | MO_UNORDERED | (utf16 ? C2_MISMATCHED : 0);
+    for (int i = 0; i < length; ++i) {
+      Node* offset = _gvn.transform(new AddINode(byte_start, intcon(i << (utf16 ? 1 : 0))));
+      Node* adr = array_element_address(output, offset, T_BYTE);
+      access_store_at(output, adr, TypeAryPtr::BYTES, intcon(static_cast<unsigned char>(digits[first + i])),
+                      type, bt, decorators);
+    }
+    set_result(start);
+    return true;
+  }
   Node* data = array_element_address(output, intcon(0), T_BYTE);
   int slots = is_long ? 4 : 3;
   const Type** fields = TypeTuple::fields(slots);
