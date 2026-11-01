@@ -88,6 +88,10 @@ public interface JavaNioAccess {
      */
     UnmapperProxy unmapper(Buffer buffer);
 
+    // Whether this buffer has a mapped-file descriptor or its own segment is mapped.
+    // Allocation-free metadata query; does not inspect attachment parents or check scope access.
+    boolean isMappedStorage(Buffer buffer);
+
     /**
      * Used by {@code jdk.internal.foreign.AbstractMemorySegmentImpl} and byte buffer var handle views.
      */

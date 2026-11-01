@@ -82,11 +82,7 @@ final class BufferStorage {
         // A fault in a truncated mapped file is reported as an InternalError for the
         // accesses of the Java loops, but would terminate the VM inside the intrinsic.
         for (Buffer b = buffer; ; ) {
-            if (NIO.unmapper(b) != null) {
-                return false;
-            }
-            var segment = NIO.bufferSegment(b);
-            if (segment != null && segment.isMapped()) {
+            if (NIO.isMappedStorage(b)) {
                 return false;
             }
             if (b instanceof DirectBuffer direct && direct.attachment() instanceof Buffer parent) {

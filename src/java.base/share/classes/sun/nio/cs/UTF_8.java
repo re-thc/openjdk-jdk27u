@@ -303,9 +303,18 @@ public final class UTF_8 extends Unicode {
         private static void decodeBuffers(ByteBuffer src, CharBuffer dst) {
             int n = src.remaining();
             int room = dst.remaining();
-            if (n < BULK_MIN || room < BULK_MIN
-                    || !mayStart(src.get(src.position()), src.get(src.position() + 1))
-                    || !BufferStorage.accessible(src, false) || !BufferStorage.accessible(dst, true)) {
+            if (n < BULK_MIN || room < BULK_MIN) {
+                return;
+            }
+            // Only a potentially valid non-ASCII lead needs the second byte.
+            // Keep the original admission predicate without eagerly reading it
+            // for ASCII or an already-invalid lead byte.
+            int lead = src.get(src.position()) & 0xff;
+            if (lead >= 0x80 && (lead < 0xc2 || lead > 0xf4
+                    || (src.get(src.position() + 1) & 0xc0) != 0x80)) {
+                return;
+            }
+            if (!BufferStorage.accessible(src, false) || !BufferStorage.accessible(dst, true)) {
                 return;
             }
             Object srcBase = BufferStorage.base(src);

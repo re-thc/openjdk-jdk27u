@@ -305,6 +305,33 @@ class UTF_32Coder {
                     || (Character.isHighSurrogate(c) && Character.isLowSurrogate(next));
         }
 
+        // The superclass validates the default before this encoder's fields are initialized.
+        // Only exact built-in charset classes have the decoder semantics assumed here;
+        // a subclass may override newDecoder(), even when it inherits newEncoder().
+        @Override
+        public boolean isLegalReplacement(byte[] repl) {
+            if (repl != null && repl.length == 4) {
+                Charset cs = charset();
+                if (cs != null) {
+                    if (repl[0] == 0 && repl[1] == 0 &&
+                        repl[2] == (byte) 0xff && repl[3] == (byte) 0xfd) {
+                        Class<?> type = cs.getClass();
+                        if (type == UTF_32.class || type == UTF_32BE.class ||
+                            type == UTF_32BE_BOM.class) {
+                            return true;
+                        }
+                    } else if (repl[0] == (byte) 0xfd && repl[1] == (byte) 0xff &&
+                               repl[2] == 0 && repl[3] == 0) {
+                        Class<?> type = cs.getClass();
+                        if (type == UTF_32LE.class || type == UTF_32LE_BOM.class) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return super.isLegalReplacement(repl);
+        }
+
         protected Encoder(Charset cs, int byteOrder, boolean doBOM) {
             super(cs, 4.0f,
                   doBOM?8.0f:4.0f,

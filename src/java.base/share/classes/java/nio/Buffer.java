@@ -874,6 +874,16 @@ public abstract sealed class Buffer
                 }
 
                 @Override
+                @ForceInline
+                public boolean isMappedStorage(Buffer buffer) {
+                    if (buffer instanceof MappedByteBuffer mbb && mbb.isMapped()) {
+                        return true;
+                    }
+                    var segment = buffer.segment;
+                    return segment != null && segment.isMapped();
+                }
+
+                @Override
                 public UnmapperProxy unmapper(Buffer buffer) {
                     if (buffer instanceof MappedByteBuffer mbb) {
                         return mbb.unmapper();

@@ -116,6 +116,11 @@ public abstract sealed class MappedByteBuffer
         this.isSync = false;
     }
 
+    // Allocation-free mapped-file predicate for internal bulk-access admission.
+    final boolean isMapped() {
+        return fd != null;
+    }
+
     UnmapperProxy unmapper() {
         return fd == null
                 ? null

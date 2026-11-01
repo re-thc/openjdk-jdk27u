@@ -703,11 +703,10 @@ JRT_LEAF(jint, SimdUTF::encode_ascii_array(const jbyte* src, jbyte* dst, jint le
 JRT_END
 
 // Latin-1 bytes to UTF-8. Every byte converts and yields one or two bytes. The library's
-// output-bounded conversion is several times slower than the unbounded one, so the chunk
-// is sized first from the input, which is cheap, and only a chunk that the output cannot
-// hold goes through the bounded one. Unlike the other prefix leaves this one relies on the
-// input not changing between the two passes, which holds for the one thing it is given, the
-// storage of a String.
+// output-bounded conversion is several times slower than the unbounded one. A worst-case
+// output bound avoids sizing when it fits; otherwise the input is sized first. Only a chunk
+// that the output cannot hold goes through the bounded one. The exact-sized path relies on
+// the input not changing between the two passes, which holds for its String storage.
 JRT_LEAF(jlong, SimdUTF::encode_latin1_utf8_prefix(const jbyte* src, jint length, jbyte* dst, jint capacity))
   assert(length >= 0 && length <= 1024 * 1024 && capacity >= 0, "bounded conversion");
   if (length < ConversionTail) {
@@ -715,8 +714,8 @@ JRT_LEAF(jlong, SimdUTF::encode_latin1_utf8_prefix(const jbyte* src, jint length
   }
   const char* input = reinterpret_cast<const char*>(src);
   char* output = reinterpret_cast<char*>(dst);
-  size_t needed = simdutf::utf8_length_from_latin1(input, length);
-  if (needed <= static_cast<size_t>(capacity)) {
+  if (static_cast<size_t>(capacity) >= 2 * static_cast<size_t>(length) ||
+      simdutf::utf8_length_from_latin1(input, length) <= static_cast<size_t>(capacity)) {
     size_t written = simdutf::convert_latin1_to_utf8(input, length, output);
     return within(written, capacity) && written >= static_cast<size_t>(length)
         ? pack(length, static_cast<jint>(written)) : 0;
