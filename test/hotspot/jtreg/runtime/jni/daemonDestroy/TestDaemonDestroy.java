@@ -41,6 +41,7 @@
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
 import java.io.IOException;
@@ -67,6 +68,7 @@ public class TestDaemonDestroy {
             cmd.add("daemon");
         }
         ProcessBuilder pb = new ProcessBuilder(cmd);
+        ProcessTools.configureNativeTestStreams(pb);
 
         // Need to add libjvm location to LD_LIBRARY_PATH
         String envVar = Platform.sharedLibraryPathVariableName();

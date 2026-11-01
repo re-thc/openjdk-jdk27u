@@ -51,6 +51,7 @@ public class SummarySanityCheck {
 
     // Run  'jcmd <pid> VM.native_memory summary scale=KB'
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary", "scale=KB"});
+    ProcessTools.configureTestToolStreams(pb);
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     jcmdout = output.getOutput();

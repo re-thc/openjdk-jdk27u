@@ -36,11 +36,49 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestNativeProcessBuilder {
     public static void main(String args[]) throws Exception {
+        if (System.getProperty("test.stream.encoding") != null) {
+            checkStreamOptionOverrides();
+        }
         ProcessBuilder pb = ProcessTools.createNativeTestProcessBuilder("jvm-test-launcher");
+        ProcessTools.configureNativeTestStreams(pb);
         pb.environment().put("CLASSPATH", Utils.TEST_CLASS_PATH);
         new OutputAnalyzer(pb.start())
             .shouldHaveExitValue(0)
             .stdoutShouldContain("Hello Test");
+    }
+
+    private static void checkStreamOptionOverrides() {
+        ProcessBuilder pb = new ProcessBuilder();
+        pb.environment().remove("_JAVA_OPTIONS");
+        pb.environment().put("JAVA_TOOL_OPTIONS", "-Dsun.stdout.encoding.extra=true");
+        ProcessTools.configureNativeTestStreams(pb);
+        String options = pb.environment().get("JAVA_TOOL_OPTIONS");
+        if (!options.contains("-Dstdout.encoding=")) {
+            throw new AssertionError("Unrelated property suppressed stdout default: " + options);
+        }
+
+        pb.environment().put("JAVA_TOOL_OPTIONS", "-Ddummy=x" + (char) 0x1c + "-Dsun.stdout.encoding=US-ASCII");
+        ProcessTools.configureNativeTestStreams(pb);
+        options = pb.environment().get("JAVA_TOOL_OPTIONS");
+        if (!options.contains("-Dstdout.encoding=")) {
+            throw new AssertionError("Property value suppressed stdout default: " + options);
+        }
+
+        pb.environment().put("JAVA_TOOL_OPTIONS", "'-Dsun.stdout.encoding=US-ASCII'");
+        ProcessTools.configureNativeTestStreams(pb);
+        options = pb.environment().get("JAVA_TOOL_OPTIONS");
+        if (options.contains("-Dstdout.encoding=") || !options.contains("-Dstderr.encoding=")) {
+            throw new AssertionError("Legacy override was shadowed: " + options);
+        }
+
+        pb.environment().remove("JAVA_TOOL_OPTIONS");
+        pb.environment().put("_JAVA_OPTIONS", "-Dsun.stderr.encoding=US-ASCII");
+        ProcessTools.configureNativeTestStreams(pb);
+        options = pb.environment().get("JAVA_TOOL_OPTIONS");
+        if (options.contains("-Dstderr.encoding=") || !options.contains("-Dstdout.encoding=") ||
+                !"-Dsun.stderr.encoding=US-ASCII".equals(pb.environment().get("_JAVA_OPTIONS"))) {
+            throw new AssertionError("_JAVA_OPTIONS override was shadowed: " + options);
+        }
     }
 
     public static class Test {

@@ -27,6 +27,7 @@ import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,11 +45,13 @@ public abstract class JcmdExecutor extends CommandExecutor {
     }
 
     public List<String> getCommandLine(String... cmds) {
-        return createCommandLine(String.join(" ", cmds));
+        ProcessBuilder builder = new ProcessBuilder(new ArrayList<>(createCommandLine(String.join(" ", cmds))));
+        ProcessTools.configureTestToolStreams(builder);
+        return builder.command();
     }
 
     protected OutputAnalyzer executeImpl(String cmd) throws CommandExecutorException {
-        List<String> commandLine = createCommandLine(cmd);
+        List<String> commandLine = getCommandLine(cmd);
 
         try {
             System.out.printf("Executing command '%s'%n", commandLine);

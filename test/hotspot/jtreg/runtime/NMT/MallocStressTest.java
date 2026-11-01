@@ -105,6 +105,7 @@ public class MallocStressTest {
         String expected_test_summary = "Test (reserved=" + mallocd_total_in_KB +"KB, committed=" + mallocd_total_in_KB + "KB)";
         // Run 'jcmd <pid> VM.native_memory summary'
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary"});
+        ProcessTools.configureTestToolStreams(pb);
         output = new OutputAnalyzer(pb.start());
         output.shouldContain(expected_test_summary);
 
@@ -135,6 +136,7 @@ public class MallocStressTest {
 
         // Verify that tracking level has not been downgraded
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "statistics"});
+        ProcessTools.configureTestToolStreams(pb);
         output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("Tracking level has been downgraded due to lack of resources");
 

@@ -33,6 +33,7 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.process.ProcessTools;
 
 public class JcmdSummaryStatistics {
 
@@ -44,6 +45,7 @@ public class JcmdSummaryStatistics {
 
         // Run 'jcmd <pid> VM.native_memory statistics=true'
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "statistics=true"});
+        ProcessTools.configureTestToolStreams(pb);
         output = new OutputAnalyzer(pb.start());
 
         output.shouldContainMultiLinePattern(

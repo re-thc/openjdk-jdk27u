@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.time.Instant;
+import jdk.test.lib.process.ProcessTools;
 
 /**
  * This class starts a process specified by the passed command line waits till
@@ -49,6 +50,7 @@ class ToolRunner {
      */
     ToolResults runToCompletion() throws Exception {
         ProcessBuilder pb = new ProcessBuilder(cmdArgs);
+        ProcessTools.configureTestToolStreams(pb);
         Path out = Files.createTempFile(Paths.get("."), "out.", ".txt");
         Path err = out.resolveSibling(out.getFileName().toString().replaceFirst("out", "err"));
 

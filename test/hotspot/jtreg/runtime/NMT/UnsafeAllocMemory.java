@@ -48,6 +48,7 @@ public class UnsafeAllocMemory {
 
     // Run 'jcmd <pid> VM.native_memory summary'
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary"});
+    ProcessTools.configureTestToolStreams(pb);
     output = new OutputAnalyzer(pb.start());
 
     output.shouldContain("Other (reserved=");

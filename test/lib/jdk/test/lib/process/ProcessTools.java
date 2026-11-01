@@ -533,6 +533,80 @@ public final class ProcessTools {
                        prefix + "-Dtest.stream.encoding=" + encoding);
     }
 
+    /** Configure the pipes of a JDK tool without overriding explicit stream options. */
+    public static void configureTestToolStreams(ProcessBuilder builder) {
+        List<String> options = new ArrayList<>(testStreamOptions("-J"));
+        if (options.isEmpty()) {
+            return;
+        }
+        List<String> command = new ArrayList<>(builder.command());
+        for (String stream : List.of("stdin", "stdout", "stderr")) {
+            String property = "-J-D" + stream + ".encoding";
+            String legacy = "-J-Dsun." + stream + ".encoding";
+            if (command.stream().anyMatch(arg -> arg.equals(property) ||
+                    arg.startsWith(property + "=") ||
+                    (!stream.equals("stdin") &&
+                            (arg.equals(legacy) || arg.startsWith(legacy + "="))))) {
+                options.removeIf(arg -> arg.startsWith(property + "="));
+            }
+        }
+        command.addAll(1, options);
+        builder.command(command);
+    }
+
+    /** Configure a native test process that creates a JVM through JNI.
+     * JAVA_TOOL_OPTIONS emits a diagnostic, so use this only when the test
+     * does not require exact process output.
+     */
+    public static void configureNativeTestStreams(ProcessBuilder builder) {
+        List<String> options = new ArrayList<>(testStreamOptions(""));
+        if (!options.isEmpty()) {
+            for (String variable : List.of("JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS")) {
+                String existing = builder.environment().get(variable);
+                if (existing == null) {
+                    continue;
+                }
+                // A legacy property would otherwise be shadowed by the
+                // canonical default, regardless of argument order.
+                for (String stream : List.of("stdout", "stderr")) {
+                    if (hasNativeLegacyStreamOption(existing, stream)) {
+                        options.removeIf(opt -> opt.startsWith("-D" + stream + ".encoding="));
+                    }
+                }
+            }
+            builder.environment().merge("JAVA_TOOL_OPTIONS", String.join(" ", options),
+                    (previous, defaults) -> defaults + " " + previous);
+        }
+    }
+
+    // Match HotSpot's JAVA_TOOL_OPTIONS tokenization, including quoted pieces.
+    private static boolean hasNativeLegacyStreamOption(String options, String stream) {
+        String property = "-Dsun." + stream + ".encoding";
+        StringBuilder token = new StringBuilder();
+        char quote = 0;
+        for (int i = 0; i <= options.length(); i++) {
+            char c = i == options.length() ? ' ' : options.charAt(i);
+            if (quote != 0) {
+                if (c == quote) {
+                    quote = 0;
+                } else {
+                    token.append(c);
+                }
+            } else if (c == '\'' || c == '"') {
+                quote = c;
+            } else if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f' || c == 0x0b) {
+                String arg = token.toString();
+                if (arg.equals(property) || arg.startsWith(property + "=")) {
+                    return true;
+                }
+                token.setLength(0);
+            } else {
+                token.append(c);
+            }
+        }
+        return false;
+    }
+
     // 8377729: Check for duplicate VM JVMTI agent options, as it may
     // cause test to fail
     public static void checkDuplicateAgentOpts(List<String> args) {

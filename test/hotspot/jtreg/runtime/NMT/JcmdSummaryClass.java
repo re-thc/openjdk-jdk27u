@@ -48,6 +48,7 @@ public class JcmdSummaryClass {
 
         // Run 'jcmd <pid> VM.native_memory baseline=true'
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory"});
+        ProcessTools.configureTestToolStreams(pb);
         output = new OutputAnalyzer(pb.start());
 
         String classes_line = "classes #\\d+";

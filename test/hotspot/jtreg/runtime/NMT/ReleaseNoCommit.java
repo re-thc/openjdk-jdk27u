@@ -53,12 +53,14 @@ public class ReleaseNoCommit {
         addr = wb.NMTReserveMemory(reserveSize);
         // Check for reserved
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "scale=KB"});
+        ProcessTools.configureTestToolStreams(pb);
         output = new OutputAnalyzer(pb.start());
         output.shouldContain(" Test (reserved=256KB, committed=0KB)");
 
         wb.NMTReleaseMemory(addr, reserveSize);
 
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "scale=KB"});
+        ProcessTools.configureTestToolStreams(pb);
         output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("Test (reserved=");
     }

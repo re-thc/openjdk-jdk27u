@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.List;
 import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.process.ProcessTools;
 
 /**
  * Helper class for compilation of Java and Jasm {@link SourceCode}.
@@ -108,6 +109,7 @@ class Compile {
         List<String> command = new ArrayList<>();
 
         command.add(JAVA_PATH);
+        command.addAll(ProcessTools.testStreamOptions(""));
         command.add("-classpath");
         command.add(getAsmToolsPath());
         command.add("org.openjdk.asmtools.jasm.Main");
@@ -174,9 +176,11 @@ class Compile {
      * Execute a given compilation, given as a {@code command}.
      */
     private static void executeCompileCommand(List<String> command) {
-        Utils.printlnVerbose("Compile command: " + String.join(" ", command));
-
         ProcessBuilder builder = new ProcessBuilder(command);
+        if (command.get(0).equals(JAVAC_PATH)) {
+            ProcessTools.configureTestToolStreams(builder);
+        }
+        Utils.printlnVerbose("Compile command: " + String.join(" ", builder.command()));
         builder.redirectErrorStream(true);
 
         String output;
@@ -187,7 +191,7 @@ class Compile {
             boolean exited = process.waitFor(timeout, TimeUnit.SECONDS);
             if (!exited) {
                 process.destroyForcibly();
-                System.out.println("Timeout: compile command: " + String.join(" ", command));
+                System.out.println("Timeout: compile command: " + String.join(" ", builder.command()));
                 throw new InternalCompileFrameworkException("Process timeout: compilation took too long.");
             }
             output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
@@ -201,7 +205,7 @@ class Compile {
         // Note: the output can be non-empty even if the compilation succeeds, e.g. for warnings.
         if (exitCode != 0) {
             System.err.println("Compilation failed.");
-            System.err.println("Command: " + command);
+            System.err.println("Command: " + builder.command());
             System.err.println("Exit code: " + exitCode);
             System.err.println("Output: '" + output + "'");
             throw new CompileFrameworkException("Compilation failed.");

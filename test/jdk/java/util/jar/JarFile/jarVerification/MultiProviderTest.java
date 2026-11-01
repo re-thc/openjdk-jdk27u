@@ -140,7 +140,10 @@ public class MultiProviderTest {
     private static void genKey() throws Throwable {
         String keytool = JDKToolFinder.getJDKTool("keytool");
         Files.deleteIfExists(Paths.get(KEYSTORE));
-        ProcessTools.executeCommand(keytool,
+        List<String> command = new ArrayList<>();
+        command.add(keytool);
+        command.addAll(ProcessTools.testStreamOptions("-J"));
+        command.addAll(List.of(
                 "-J-Duser.language=en",
                 "-J-Duser.country=US",
                 "-genkey",
@@ -149,8 +152,8 @@ public class MultiProviderTest {
                 "-keystore", KEYSTORE,
                 "-keypass", KEYPASS,
                 "-dname", "cn=sample",
-                "-storepass", STOREPASS
-        ).shouldHaveExitValue(0);
+                "-storepass", STOREPASS));
+        ProcessTools.executeCommand(command.toArray(String[]::new)).shouldHaveExitValue(0);
     }
 
 

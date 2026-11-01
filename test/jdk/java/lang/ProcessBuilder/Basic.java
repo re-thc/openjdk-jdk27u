@@ -71,6 +71,7 @@ import static java.lang.Boolean.TRUE;
 import static java.util.AbstractMap.SimpleImmutableEntry;
 
 import jdk.test.lib.Platform;
+import jdk.test.lib.process.ProcessTools;
 
 public class Basic {
 
@@ -1830,8 +1831,9 @@ public class Basic {
         //----------------------------------------------------------------
         try {
             List<String> list = new ArrayList<String>(javaChildArgs);
-            list.add(1, String.format("-XX:OnOutOfMemoryError=%s -version",
-                                      javaExe));
+            String streamOptions = String.join(" ", ProcessTools.testStreamOptions(""));
+            list.add(1, String.format("-XX:OnOutOfMemoryError=%s %s -version",
+                                      javaExe, streamOptions));
             list.add("ArrayOOME");
             ProcessResults r = run(new ProcessBuilder(list));
             check(r.err().contains("java.lang.OutOfMemoryError:"));

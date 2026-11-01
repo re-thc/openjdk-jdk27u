@@ -23,6 +23,7 @@
 
 package jdk.test.lib.hexdump;
 
+import jdk.test.lib.process.ProcessTools;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -131,6 +132,7 @@ class StreamDumpTest {
     void testStreamDump(String[] args, int expectedStatus, int expectedStdout, int expectedStderr) throws IOException {
         List<String> argList = new ArrayList<>();
         argList.add(testJDK + "/bin/" + "java");
+        argList.addAll(ProcessTools.testStreamOptions(""));
         argList.add("-classpath");
         argList.add(classpath);
         argList.add("jdk.test.lib.hexdump.StreamDump");
@@ -141,7 +143,7 @@ class StreamDumpTest {
 
         ProcessBuilder pb = new ProcessBuilder(argList);
         pb.redirectOutput(stdoutPath.toFile());
-        pb.redirectOutput(stdoutPath.toFile());
+        pb.redirectError(stderrPath.toFile());
 
         System.out.println("args: " + argList);
         Process p = pb.start();

@@ -519,6 +519,20 @@ public class Binder extends DebugeeBinder {
             vmArgs = vmUserArgs;
         }
 
+        // The launching connector starts java itself, bypassing launchProcess.
+        List<String> streamArgs = new ArrayList<>();
+        streamArgs.add(argumentHandler.getLaunchExecPath());
+        if (vmUserArgs != null) {
+            StringTokenizer tokens = new StringTokenizer(vmUserArgs);
+            while (tokens.hasMoreTokens()) streamArgs.add(tokens.nextToken());
+        }
+        int originalSize = streamArgs.size();
+        configureJavaStreams(streamArgs);
+        int added = streamArgs.size() - originalSize;
+        if (added > 0) {
+            vmArgs = String.join(" ", streamArgs.subList(1, 1 + added)) + " " + vmArgs;
+        }
+
         boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
         if (vthreadMode) {
             /* Some tests need more carrier threads than the default provided. */
