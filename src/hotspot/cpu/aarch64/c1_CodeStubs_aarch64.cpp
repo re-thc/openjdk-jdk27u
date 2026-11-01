@@ -130,7 +130,7 @@ void CommonIntrinsicFallbackStub::emit_code(LIR_Assembler* ce) {
   Address resolve(target, _digest ? relocInfo::opt_virtual_call_type
                                  : relocInfo::static_call_type);
   if (__ trampoline_call(resolve) == nullptr) {
-    ce->bailout("trampoline stub overflow");
+    ce->compilation()->bailout("trampoline stub overflow");
     return;
   }
   ce->add_call_info_here(_info);
