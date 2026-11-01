@@ -187,6 +187,30 @@ class PredicateFailedStub: public CodeStub {
 #endif // PRODUCT
 };
 
+// A normal Java invocation for bounded hash/digest eligibility misses.  Unlike
+// PredicateFailedStub this returns, and does not invalidate or poison the site.
+class CommonIntrinsicFallbackStub: public CodeStub {
+ private:
+  CodeEmitInfo* _info;
+  bool _digest;
+  LIR_Opr _hash_type;
+
+ public:
+  CommonIntrinsicFallbackStub(CodeEmitInfo* info, bool digest,
+                              LIR_Opr hash_type = LIR_OprFact::illegalOpr)
+    : _info(info), _digest(digest), _hash_type(hash_type) {}
+  virtual void emit_code(LIR_Assembler* e);
+  virtual CodeEmitInfo* info() const { return _info; }
+  virtual void visit(LIR_OpVisitState* visitor) {
+    // The containing hash/digest operation is marked as a call.  Its inputs
+    // survive until the branch; live caller values are spilled by LinearScan.
+    visitor->do_slow_case(_info);
+  }
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("CommonIntrinsicFallbackStub"); }
+#endif
+};
+
 class DivByZeroStub: public CodeStub {
  private:
   CodeEmitInfo* _info;

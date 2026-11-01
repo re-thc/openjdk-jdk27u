@@ -114,16 +114,25 @@ public class TestCommonIntrinsicGuardIsolation {
         }
         WB.deoptimizeMethod(method);
         WB.clearMethodState(method);
-        compile(method, level);
+        int id = compile(method, level);
         Method hash = ArraysSupport.class.getDeclaredMethod("vectorizedHashCode",
                 Object.class, int.class, int.class, int.class, int.class);
         int sites = WB.isIntrinsicAvailable(hash, level) ? 3 : 2;
         for (int site = 0; site < sites; site++) {
+            int traps = WB.getMethodTrapCount(method, "intrinsic");
             reject(site);
-            if (WB.isMethodCompiled(method)) {
-                throw new AssertionError("unrelated call site lost its intrinsic: " + site);
+            if (site == 2) {
+                // Hash validation now calls Java normally, including null input.
+                checkCompilation(method, id, site);
+                if (WB.getMethodTrapCount(method, "intrinsic") != traps) {
+                    throw new AssertionError("hash fallback recorded an intrinsic trap");
+                }
+            } else {
+                if (WB.isMethodCompiled(method)) {
+                    throw new AssertionError("unrelated call site lost its intrinsic: " + site);
+                }
+                id = compile(method, level);
             }
-            int id = compile(method, level);
             for (int i = 0; i < 1000; i++) {
                 for (int failed = 0; failed <= site; failed++) {
                     reject(failed);

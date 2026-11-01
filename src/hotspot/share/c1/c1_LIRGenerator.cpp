@@ -33,6 +33,7 @@
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciObjArray.hpp"
+#include "ci/ciTypeArrayKlass.hpp"
 #include "ci/ciUtilities.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
@@ -3311,9 +3312,9 @@ void LIRGenerator::do_ArrayIntrinsic(Intrinsic* x) {
 
 void LIRGenerator::do_DigestIntrinsic(Intrinsic* x) {
 #if defined(AMD64) || defined(AARCH64)
-  CodeEmitInfo* info = state_for(x, x->state_before());
-  info->set_force_reexecute();
-  CodeStub* fallback = new PredicateFailedStub(info, true);
+  // A returning invocation needs post-argument state, not reexecute state.
+  CodeEmitInfo* info = state_for(x, x->state());
+  CodeEmitInfo* null_info = x->needs_null_check() ? state_for(x) : nullptr;
 #ifdef AMD64
   const Register registers[] = { rdi, rsi, rdx, rcx };
   LIR_Opr tmp = FrameMap::as_long_opr(rbx);
@@ -3330,6 +3331,10 @@ void LIRGenerator::do_DigestIntrinsic(Intrinsic* x) {
     args[i] = i < 2 ? FrameMap::as_oop_opr(registers[i]) : FrameMap::as_opr(registers[i]);
     item.load_item_force(args[i]);
   }
+  // An optimized private-method call does not provide a receiver null check.
+  // Keep invocation semantics even if its Java body would return immediately.
+  if (null_info != nullptr) __ null_check(args[0], null_info);
+  CodeStub* fallback = new CommonIntrinsicFallbackStub(info, true);
   LIR_Opr result = result_register_for(intType);
   __ append(new LIR_OpDigestMB(args[0], args[1], args[2], args[3], result, tmp, info, fallback));
   __ move(result, rlock_result(x));
@@ -3340,9 +3345,8 @@ void LIRGenerator::do_DigestIntrinsic(Intrinsic* x) {
 
 void LIRGenerator::do_HashIntrinsic(Intrinsic* x) {
 #if defined(AMD64) || defined(AARCH64)
-  CodeEmitInfo* info = state_for(x, x->state_before());
-  info->set_force_reexecute();
-  CodeStub* fallback = new PredicateFailedStub(info, true);
+  // A returning invocation needs post-argument state, not reexecute state.
+  CodeEmitInfo* info = state_for(x, x->state());
 #ifdef AMD64
   const Register registers[] = { rax, rdi, rsi, rdx, rcx };
 #ifdef _WIN64
@@ -3354,12 +3358,23 @@ void LIRGenerator::do_HashIntrinsic(Intrinsic* x) {
   LIR_Opr args[5];
   for (int i = 0; i < 5; i++) {
     LIRItem item(x->argument_at(i), this);
+    if (i == 4 && item.is_constant()) {
+      // Keep the typed wrapper's basicType visible to the assembler.
+      args[i] = LIR_OprFact::intConst(item.get_jint_constant());
+      continue;
+    }
     args[i] = i == 0 ? FrameMap::as_oop_opr(registers[i]) : FrameMap::as_opr(registers[i]);
     item.load_item_force(args[i]);
   }
+  // Primitive array classes are final. A declared primitive array type is
+  // enough to select the representation, including the two T_CHAR forms.
+  ciArrayKlass* array_klass = as_array_klass(x->argument_at(0)->declared_type());
+  BasicType array_type = array_klass != nullptr && array_klass->is_type_array_klass()
+      ? array_klass->as_type_array_klass()->element_type() : T_ILLEGAL;
+  CodeStub* fallback = new CommonIntrinsicFallbackStub(info, false, args[4]);
   LIR_Opr result = result_register_for(intType);
   __ append(new LIR_OpHashCode(args[0], args[1], args[2], args[3], args[4], result,
-                              LIR_OprFact::illegalOpr, info, fallback));
+                              LIR_OprFact::illegalOpr, array_type, info, fallback));
   __ move(result, rlock_result(x));
 #else
   ShouldNotReachHere();

@@ -138,7 +138,7 @@ public class TestCommonIntrinsicAvailability {
         boolean enabled = !args[0].equals("disabled");
         Set<String> disabled = switch (args[0]) {
             case "selective" -> Set.of("_multiplyToLen", "_vectorizedHashCode", "_addExactI");
-            case "no_sha3" -> Set.of("_sha3_implCompress", "_digestBase_implCompressMB");
+            case "no_sha3" -> Set.of("_sha3_implCompress");
             default -> Set.of();
         };
         for (Entry entry : ENTRIES) {
@@ -166,10 +166,22 @@ public class TestCommonIntrinsicAvailability {
             if (System.getProperty("os.arch").equals("aarch64") && entry.id().equals("_double_keccak")) {
                 expected &= Boolean.TRUE.equals(wb.getBooleanVMFlag("UseSIMDForSHA3Intrinsic"));
             }
+            boolean digestMB = entry.id().equals("_digestBase_implCompressMB");
+            boolean flagsEnabled = !digestMB;
             for (String flag : entry.flags().split(",")) {
                 if (flag.isEmpty()) continue;
-                expected &= Boolean.TRUE.equals(wb.getBooleanVMFlag(flag));
+                boolean flagEnabled = Boolean.TRUE.equals(wb.getBooleanVMFlag(flag));
+                if (digestMB) {
+                    // The no_sha3 mode disables the ID rather than its CPU flag.
+                    if (flag.equals("UseSHA3Intrinsics") && disabled.contains("_sha3_implCompress")) {
+                        flagEnabled = false;
+                    }
+                    flagsEnabled |= flagEnabled;
+                } else {
+                    flagsEnabled &= flagEnabled;
+                }
             }
+            expected &= flagsEnabled;
             boolean actual = wb.isIntrinsicAvailable(method, 1);
             if (actual != expected) {
                 throw new AssertionError(entry.id() + ": C1 available=" + actual + ", expected=" + expected);

@@ -1774,19 +1774,21 @@ class LIR_OpHashCode : public LIR_Op {
   LIR_Opr _initial;
   LIR_Opr _type;
   LIR_Opr _tmp;
+  BasicType _array_type;
   CodeStub* _fallback;
  public:
   LIR_OpHashCode(LIR_Opr array, LIR_Opr offset, LIR_Opr length, LIR_Opr initial, LIR_Opr type,
-                  LIR_Opr result, LIR_Opr tmp, CodeEmitInfo* info, CodeStub* fallback)
+                  LIR_Opr result, LIR_Opr tmp, BasicType array_type, CodeEmitInfo* info, CodeStub* fallback)
     : LIR_Op(lir_hash_code, result, info),
       _array(array), _offset(offset), _length(length), _initial(initial), _type(type),
-      _tmp(tmp), _fallback(fallback) {}
+      _tmp(tmp), _array_type(array_type), _fallback(fallback) {}
   LIR_Opr array() const { return _array; }
   LIR_Opr offset() const { return _offset; }
   LIR_Opr length() const { return _length; }
   LIR_Opr initial() const { return _initial; }
   LIR_Opr type() const { return _type; }
   LIR_Opr tmp() const { return _tmp; }
+  BasicType array_type() const { return _array_type; }
   CodeStub* fallback() const { return _fallback; }
   virtual void emit_code(LIR_Assembler* masm);
   virtual void print_instr(outputStream* out) const PRODUCT_RETURN;

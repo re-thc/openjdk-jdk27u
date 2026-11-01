@@ -1551,7 +1551,13 @@ void TemplateInterpreterGenerator::generate_digest_entry(Label& slow_path) {
   address entries[] = { StubRoutines::md5_implCompressMB_entry_address(), StubRoutines::sha1_implCompressMB_entry_address(),
                         StubRoutines::sha256_implCompressMB_entry_address(), StubRoutines::sha512_implCompressMB_entry_address(),
                         StubRoutines::sha3_implCompressMB_entry_address() };
+  const vmIntrinsics::ID ids[] = { vmIntrinsics::_md5_implCompress, vmIntrinsics::_sha_implCompress,
+                                  vmIntrinsics::_sha2_implCompress, vmIntrinsics::_sha5_implCompress,
+                                  vmIntrinsics::_sha3_implCompress };
   for (int i = 0; i < 5; i++) {
+    // Stub slots are populated after interpreter generation; retain the
+    // runtime null check below, but never enable a disabled algorithm.
+    if (!vmIntrinsics::is_intrinsic_available(ids[i])) continue;
     Label next, matches;
     layout(classes[i], r11, next);
     __ ldr(r0, java_slot(0));

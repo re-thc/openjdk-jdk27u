@@ -107,6 +107,37 @@ void PredicateFailedStub::emit_code(LIR_Assembler* ce) {
   DEBUG_ONLY(__ should_not_reach_here());
 }
 
+void CommonIntrinsicFallbackStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+  // Java uses r1... whereas the intrinsic receives its arguments in r0... .
+  if (!_digest) {
+    if (_hash_type->is_constant()) {
+      __ movw(j_rarg4, _hash_type->as_constant_ptr()->as_jint());
+    } else {
+      __ movw(j_rarg4, r4);
+    }
+  }
+  __ movw(j_rarg3, r3);
+  __ movw(j_rarg2, r2);
+  if (_digest) __ mov(j_rarg1, r1);
+  else __ movw(j_rarg1, r1);
+  __ mov(j_rarg0, r0);
+  ce->align_call(_digest ? lir_optvirtual_call : lir_static_call);
+  ce->emit_static_call_stub();
+  if (ce->compilation()->bailed_out()) return;
+  address target = _digest ? SharedRuntime::get_resolve_opt_virtual_call_stub()
+                           : SharedRuntime::get_resolve_static_call_stub();
+  Address resolve(target, _digest ? relocInfo::opt_virtual_call_type
+                                 : relocInfo::static_call_type);
+  if (__ trampoline_call(resolve) == nullptr) {
+    ce->bailout("trampoline stub overflow");
+    return;
+  }
+  ce->add_call_info_here(_info);
+  __ post_call_nop();
+  __ b(_continuation);
+}
+
 void DivByZeroStub::emit_code(LIR_Assembler* ce) {
   if (_offset != -1) {
     ce->compilation()->implicit_exception_table()->append(_offset, __ offset());

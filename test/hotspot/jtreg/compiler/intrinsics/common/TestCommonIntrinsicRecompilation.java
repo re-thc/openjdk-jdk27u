@@ -85,12 +85,22 @@ public class TestCommonIntrinsicRecompilation {
             WB.deoptimizeMethod(method);
             WB.clearMethodState(method);
             compile(method, level);
-            reject(name);
-            if (WB.isMethodCompiled(method)) {
-                throw new AssertionError("expected a guarded deoptimization: " + name);
-            }
-            compile(method, level);
             int compileId = NMethod.get(method, false).compile_id;
+            int traps = WB.getMethodTrapCount(method, "intrinsic");
+            reject(name);
+            if (name.equals("hash")) {
+                NMethod retained = NMethod.get(method, false);
+                if (retained == null || retained.compile_id != compileId ||
+                        WB.getMethodTrapCount(method, "intrinsic") != traps) {
+                    throw new AssertionError("hash fallback invalidated its caller");
+                }
+            } else {
+                if (WB.isMethodCompiled(method)) {
+                    throw new AssertionError("expected a guarded deoptimization: " + name);
+                }
+                compile(method, level);
+                compileId = NMethod.get(method, false).compile_id;
+            }
             for (int i = 0; i < 1_000; i++) {
                 reject(name);
                 call(name, false);

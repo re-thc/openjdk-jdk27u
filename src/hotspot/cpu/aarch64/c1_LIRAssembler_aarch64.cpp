@@ -72,7 +72,6 @@ void LIR_Assembler::emit_digest_mb(LIR_OpDigestMB* op) {
          op->offset()->as_register() == r2 && op->limit()->as_register() == r3, "fixed digest operands");
   __ sxtw(r2, r2);
   __ sxtw(r3, r3);
-  __ cbz(r0, slow);
   __ cmpw(r3, r2);
   __ br(Assembler::LT, slow);
   __ ldrw(r10, Address(r0, CommonIntrinsics::digest_block_size_offset));
@@ -88,7 +87,11 @@ void LIR_Assembler::emit_digest_mb(LIR_OpDigestMB* op) {
                    &CommonIntrinsics::sha256_state_offset, &CommonIntrinsics::sha512_state_offset, &CommonIntrinsics::sha3_state_offset };
   address entries[] = { StubRoutines::md5_implCompressMB(), StubRoutines::sha1_implCompressMB(), StubRoutines::sha256_implCompressMB(),
                         StubRoutines::sha512_implCompressMB(), StubRoutines::sha3_implCompressMB() };
+  const vmIntrinsics::ID ids[] = { vmIntrinsics::_md5_implCompress, vmIntrinsics::_sha_implCompress,
+                                  vmIntrinsics::_sha2_implCompress, vmIntrinsics::_sha5_implCompress,
+                                  vmIntrinsics::_sha3_implCompress };
   for (int i = 0; i < 5; i++) {
+    if (!vmIntrinsics::is_intrinsic_available(ids[i]) || entries[i] == nullptr) continue;
     Label next, matches;
     __ lea(rscratch1, ExternalAddress(reinterpret_cast<address>(classes[i])));
     __ ldar(r13, rscratch1);
@@ -115,6 +118,7 @@ void LIR_Assembler::emit_digest_mb(LIR_OpDigestMB* op) {
   }
   __ b(slow);
   __ bind(done);
+  __ bind(*op->fallback()->continuation());
 }
 
 void LIR_Assembler::emit_hash_code(LIR_OpHashCode* op) {
@@ -122,7 +126,7 @@ void LIR_Assembler::emit_hash_code(LIR_OpHashCode* op) {
   Label done;
   assert(op->array()->as_register() == r0 && op->offset()->as_register() == r1 &&
          op->length()->as_register() == r2 && op->initial()->as_register() == r3 &&
-         op->type()->as_register() == r4, "fixed hash operands");
+         (op->type()->is_constant() || op->type()->as_register() == r4), "fixed hash operands");
   __ sxtw(r1, r1);
   __ cbz(r0, slow);
   __ tbnz(r1, 31, slow);
@@ -134,15 +138,24 @@ void LIR_Assembler::emit_hash_code(LIR_OpHashCode* op) {
   const address entries[] = { CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_unsigned_bytes), CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_bytes),
                               CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_shorts), CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_chars),
                               CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_chars), CAST_FROM_FN_PTR(address, CommonIntrinsics::hash_ints) };
+  const bool constant_type = op->type()->is_constant();
+  const int type = constant_type ? op->type()->as_constant_ptr()->as_jint() : T_ILLEGAL;
+  const bool known_array = op->array_type() != T_ILLEGAL;
+  if (!known_array) __ load_klass(rscratch1, r0);
   for (int i = 0; i < 6; i++) {
+    if ((constant_type && type != tags[i]) ||
+        (known_array && op->array_type() != arrays[i])) continue;
     Label next;
     int shift = tags[i] == T_INT ? 2 : (tags[i] == T_SHORT || tags[i] == T_CHAR) ? 1 : 0;
-    __ cmpw(r4, tags[i]);
-    __ br(Assembler::NE, next);
-    __ load_klass(rscratch1, r0);
-    __ mov_metadata(rscratch2, Universe::typeArrayKlass(arrays[i]));
-    __ cmp(rscratch1, rscratch2);
-    __ br(Assembler::NE, next);
+    if (!constant_type) {
+      __ cmpw(r4, tags[i]);
+      __ br(Assembler::NE, next);
+    }
+    if (!known_array) {
+      __ mov_metadata(rscratch2, Universe::typeArrayKlass(arrays[i]));
+      __ cmp(rscratch1, rscratch2);
+      __ br(Assembler::NE, next);
+    }
     __ ldrw(r10, Address(r0, arrayOopDesc::length_offset_in_bytes()));
     if (tags[i] == T_CHAR && arrays[i] == T_BYTE) __ lsrw(r10, r10, 1);
     __ cmpw(r1, r10);
@@ -162,6 +175,7 @@ void LIR_Assembler::emit_hash_code(LIR_OpHashCode* op) {
   }
   __ b(slow);
   __ bind(done);
+  __ bind(*op->fallback()->continuation());
 }
 
 void LIR_Assembler::common_scalar_op(LIR_Op2* op) {

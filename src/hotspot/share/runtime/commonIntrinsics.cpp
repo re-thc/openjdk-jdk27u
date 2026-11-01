@@ -64,11 +64,11 @@ InstanceKlass* CommonIntrinsics::feedback_cipher_klass = nullptr;
 
 namespace {
 
-bool all_digest_intrinsics_enabled() {
-  return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_md5_implCompress) &&
-         vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha_implCompress) &&
-         vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha2_implCompress) &&
-         vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha5_implCompress) &&
+bool any_digest_intrinsics_enabled() {
+  return vmIntrinsics::is_intrinsic_available(vmIntrinsics::_md5_implCompress) ||
+         vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha_implCompress) ||
+         vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha2_implCompress) ||
+         vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha5_implCompress) ||
          vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha3_implCompress);
 }
 
@@ -358,7 +358,7 @@ bool CommonIntrinsics::is_supported(vmIntrinsics::ID id) {
   if (!enabled()) {
     return false;
   }
-  if (id == vmIntrinsics::_digestBase_implCompressMB && !all_digest_intrinsics_enabled()) {
+  if (id == vmIntrinsics::_digestBase_implCompressMB && !any_digest_intrinsics_enabled()) {
     return false;
   }
 #ifdef AARCH64
@@ -469,14 +469,18 @@ bool CommonIntrinsics::is_available_for_c1(vmIntrinsics::ID id) {
     case vmIntrinsics::_sha3_implCompress: return StubRoutines::sha3_implCompress() != nullptr;
     case vmIntrinsics::_galoisCounterMode_AESCrypt: return StubRoutines::galoisCounterMode_AESCrypt() != nullptr;
     case vmIntrinsics::_digestBase_implCompressMB:
-      // The receiver has the abstract DigestBase type. Do not speculate that
-      // it is a supported subclass when only some digest kernels are enabled.
-      return StubRoutines::md5_implCompressMB() != nullptr &&
-             StubRoutines::sha1_implCompressMB() != nullptr &&
-             StubRoutines::sha256_implCompressMB() != nullptr &&
-             StubRoutines::sha512_implCompressMB() != nullptr &&
-             StubRoutines::sha3_implCompressMB() != nullptr &&
-             all_digest_intrinsics_enabled();
+      // Dispatch only to individually enabled, published backends. Other
+      // receiver types use the ordinary Java fallback at this same call site.
+      return (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_md5_implCompress) &&
+              StubRoutines::md5_implCompressMB() != nullptr) ||
+             (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha_implCompress) &&
+              StubRoutines::sha1_implCompressMB() != nullptr) ||
+             (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha2_implCompress) &&
+              StubRoutines::sha256_implCompressMB() != nullptr) ||
+             (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha5_implCompress) &&
+              StubRoutines::sha512_implCompressMB() != nullptr) ||
+             (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_sha3_implCompress) &&
+              StubRoutines::sha3_implCompressMB() != nullptr);
     case vmIntrinsics::_vectorizedHashCode:
       return true;
     default: return false;
