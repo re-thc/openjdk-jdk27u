@@ -3566,6 +3566,185 @@ const char* GraphBuilder::should_not_inline(ciMethod* callee) const {
   return nullptr;
 }
 
+// Keep normal bounded/alias misses in the compiled caller. These predicates
+// use only invocation arguments; no raw array pointers cross the Java call.
+void GraphBuilder::build_bounded_common_intrinsic(ciMethod* callee, Values* args,
+                                               ValueStack* state_before, bool ignore_return) {
+  assert(callee->is_static() || callee->is_private(), "bounded kernels have static binding");
+  const bool has_receiver = !callee->is_static();
+  if (has_receiver) null_check(args->at(0));
+  // Eligibility branches still precede the invocation. Keep its arguments in
+  // their operand-stack states until either arm actually invokes the callee.
+  // Besides preserving bytecode state, this lets C1 pin cross-block values
+  // after optimizations (for example a ternary argument Phi becoming an IfOp).
+  for (int i = 0; i < args->length(); i++) push(args->at(i)->type(), args->at(i));
+  const vmIntrinsics::ID id = callee->intrinsic_id();
+  ValueType* result_type = as_ValueType(callee->return_type());
+  BlockBegin* slow = new BlockBegin(bci());
+  BlockBegin* cont = block_at(next_bci());
+  if (cont == nullptr) {
+    cont = new BlockBegin(next_bci());
+    cont->set_depth_first_number(0);
+  }
+  bool live = true;
+
+  // Use actual successors: canonicalization can turn an If into a Goto.
+  auto finish = [&](BlockEnd* end) {
+    block()->set_end(end);
+    for (int i = 0; i < end->number_of_sux(); i++) {
+      if (!end->sux_at(i)->try_merge(end->state(), compilation()->has_irreducible_loops())) {
+        bailout("common intrinsic block join failed");
+      }
+    }
+  };
+  auto enter = [&](BlockBegin* next) {
+    live = next->state() != nullptr;
+    if (live) {
+      kill_all();
+      _block = next;
+      _last = next;
+      _state = next->state()->copy_for_parsing();
+      next->set(BlockBegin::was_visited_flag);
+    }
+  };
+  auto constant = [&](int value) -> Value {
+    return append(new Constant(new IntConstant(value)));
+  };
+  auto reject = [&](Value left, If::Condition condition, Value right) {
+    if (!live || bailed_out()) return;
+    BlockBegin* next = new BlockBegin(bci());
+    BlockEnd* end = append(new If(left, condition, false, right, slow, next,
+                                  state_before, false))->as_BlockEnd();
+    finish(end);
+    enter(next);
+  };
+  auto reject_int = [&](int index, If::Condition condition, int value) {
+    if (live && !bailed_out()) reject(args->at(index), condition, constant(value));
+  };
+  auto bounded = [&](int index, int maximum) {
+    reject_int(index, If::leq, 0);
+    reject_int(index, If::gtr, maximum);
+  };
+
+  switch (id) {
+    case vmIntrinsics::_multiplyToLen:
+      bounded(1, CommonIntrinsics::max_quadratic_limbs);
+      bounded(3, CommonIntrinsics::max_quadratic_limbs);
+      reject(args->at(0), If::eql, args->at(4));
+      reject(args->at(2), If::eql, args->at(4));
+      break;
+    case vmIntrinsics::_squareToLen:
+      bounded(1, CommonIntrinsics::max_quadratic_limbs);
+      reject(args->at(0), If::eql, args->at(2));
+      break;
+    case vmIntrinsics::_mulAdd:
+      bounded(3, CommonIntrinsics::max_leaf_elements);
+      break;
+    case vmIntrinsics::_montgomeryMultiply:
+    case vmIntrinsics::_montgomerySquare: {
+      bool multiply = id == vmIntrinsics::_montgomeryMultiply;
+      int length_index = multiply ? 3 : 2;
+      int output = multiply ? 5 : 4;
+      bounded(length_index, CommonIntrinsics::max_montgomery_limbs);
+      for (int i = 0; i < length_index; i++) reject(args->at(i), If::eql, args->at(output));
+      break;
+    }
+    case vmIntrinsics::_bigIntegerLeftShiftWorker:
+    case vmIntrinsics::_bigIntegerRightShiftWorker: {
+      bool left = id == vmIntrinsics::_bigIntegerLeftShiftWorker;
+      bounded(4, CommonIntrinsics::max_leaf_elements);
+      bounded(3, 31);
+      reject_int(2, If::lss, 0);
+      if (!left) reject_int(2, If::gtr, 1);
+      if (live && !bailed_out()) {
+        BlockBegin* alias = new BlockBegin(bci());
+        BlockBegin* next = new BlockBegin(bci());
+        finish(append(new If(args->at(0), If::eql, false, args->at(1), alias, next,
+                             state_before, false))->as_BlockEnd());
+        enter(alias);
+        if (live) {
+          finish(append(new If(args->at(2), If::neq, false, constant(left ? 0 : 1),
+                               slow, next, state_before, false))->as_BlockEnd());
+        }
+        enter(next);
+      }
+      break;
+    }
+    case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
+    case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
+    case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
+    case vmIntrinsics::_counterMode_AESCrypt: {
+      bounded(3, CommonIntrinsics::max_leaf_elements);
+      if (live && !bailed_out()) {
+        BlockBegin* alias = new BlockBegin(bci());
+        BlockBegin* next = new BlockBegin(bci());
+        finish(append(new If(args->at(1), If::eql, false, args->at(4), alias, next,
+                             state_before, false))->as_BlockEnd());
+        enter(alias);
+        if (live) {
+          finish(append(new If(args->at(2), If::neq, false, args->at(5),
+                               slow, next, state_before, false))->as_BlockEnd());
+        }
+        enter(next);
+      }
+      break;
+    }
+    case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
+      bounded(3, CommonIntrinsics::max_leaf_elements);
+      reject(args->at(1), If::eql, args->at(4));
+      break;
+    case vmIntrinsics::_galoisCounterMode_AESCrypt:
+      bounded(2, CommonIntrinsics::max_leaf_elements);
+      reject(args->at(0), If::eql, args->at(5));
+      break;
+    case vmIntrinsics::_ghash_processBlocks:
+      bounded(2, CommonIntrinsics::max_leaf_elements / 16);
+      break;
+    case vmIntrinsics::_poly1305_processBlocks:
+      reject_int(3, If::gtr, CommonIntrinsics::max_leaf_elements);
+      break;
+    default: ShouldNotReachHere();
+  }
+  CHECK_BAILOUT();
+
+  auto join_result = [&](Value value) {
+    if (result_type != voidType && !ignore_return) push(result_type, value);
+    if (callee != method() && profile_return() && result_type->is_object_kind()) {
+      profile_return_type(value, callee);
+    }
+    finish(append(new Goto(cont, false))->as_BlockEnd());
+  };
+  if (live) {
+    Values* fast_args = state()->pop_arguments(callee->arg_size());
+    Intrinsic* fast = new Intrinsic(result_type, id, fast_args, has_receiver, state_before,
+                                    vmIntrinsics::preserves_state(id), vmIntrinsics::can_trap(id));
+    fast->set_flag(Instruction::CommonIntrinsicEligibilityProvenFlag, true);
+    if (has_receiver) fast->set_needs_null_check(false);
+    join_result(append_split(fast));
+  }
+  enter(slow);
+  if (live) {
+    // Append directly, not through try_inline: the original Java body is the
+    // fallback and must not recursively lower to the same intrinsic here.
+    Values* slow_args = state()->pop_arguments(callee->arg_size());
+    Values* call_args = slow_args;
+    Value receiver = nullptr;
+    if (has_receiver) {
+      receiver = slow_args->at(0);
+      call_args = new Values(slow_args->length() - 1);
+      for (int i = 1; i < slow_args->length(); i++) call_args->append(slow_args->at(i));
+    }
+    Invoke* call = new Invoke(has_receiver ? Bytecodes::_invokespecial : Bytecodes::_invokestatic,
+                               result_type, receiver, call_args, callee, state_before);
+    join_result(append_split(call));
+  }
+  CHECK_BAILOUT();
+  assert(cont->state() != nullptr, "at least one route must reach continuation");
+  if (!cont->is_set(BlockBegin::was_visited_flag)) scope_data()->add_to_work_list(cont);
+  _skip_block = true;
+}
+
+
 void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_return) {
   vmIntrinsics::ID id = callee->intrinsic_id();
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
@@ -3657,6 +3836,19 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
         profile_call(callee, recv, nullptr, collect_args_for_profiling(args, callee, true), true);
       }
     }
+  }
+
+  const bool bounded_crypto = id == vmIntrinsics::_electronicCodeBook_encryptAESCrypt ||
+      id == vmIntrinsics::_electronicCodeBook_decryptAESCrypt ||
+      id == vmIntrinsics::_cipherBlockChaining_encryptAESCrypt ||
+      id == vmIntrinsics::_cipherBlockChaining_decryptAESCrypt ||
+      id == vmIntrinsics::_counterMode_AESCrypt || id == vmIntrinsics::_galoisCounterMode_AESCrypt;
+  const bool bounded_array = id == vmIntrinsics::_ghash_processBlocks ||
+      id == vmIntrinsics::_poly1305_processBlocks;
+  if (CommonIntrinsics::is_available_for_c1(id) &&
+      (CommonIntrinsics::is_big_integer(id) || bounded_crypto || bounded_array)) {
+    build_bounded_common_intrinsic(callee, args, state_before, ignore_return);
+    return;
   }
 
   Intrinsic* result = new Intrinsic(result_type, callee->intrinsic_id(),

@@ -2884,8 +2884,12 @@ void LIRGenerator::do_CommonScalarIntrinsic(Intrinsic* x) {
 }
 
 void LIRGenerator::do_BigIntegerIntrinsic(Intrinsic* x) {
-  CodeEmitInfo* info = state_for(x, x->state_before());
-  info->set_force_reexecute();
+  const bool eligibility_proven = x->check_flag(Instruction::CommonIntrinsicEligibilityProvenFlag);
+  CodeEmitInfo* info = nullptr;
+  if (!eligibility_proven) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+  }
   LIR_OprList values(x->number_of_arguments());
   for (int i = 0; i < x->number_of_arguments(); i++) {
     LIRItem item(x->argument_at(i), this);
@@ -2893,6 +2897,7 @@ void LIRGenerator::do_BigIntegerIntrinsic(Intrinsic* x) {
     values.append(item.result());
   }
   auto guard = [&](LIR_Condition condition, LIR_Opr left, LIR_Opr right) {
+    if (eligibility_proven) return;
     __ cmp(condition, left, right);
     __ branch(condition, new PredicateFailedStub(info, true));
   };
@@ -2949,11 +2954,13 @@ void LIRGenerator::do_BigIntegerIntrinsic(Intrinsic* x) {
       bounded(values.at(3), 31);
       guard(lir_cond_less, values.at(2), LIR_OprFact::intConst(0));
       if (!left) guard(lir_cond_greater, values.at(2), LIR_OprFact::intConst(1));
-      LabelObj* disjoint = new LabelObj();
-      __ cmp(lir_cond_notEqual, values.at(0), values.at(1));
-      __ branch(lir_cond_notEqual, disjoint->label());
-      guard(lir_cond_notEqual, values.at(2), LIR_OprFact::intConst(left ? 0 : 1));
-      __ branch_destination(disjoint->label());
+      if (!eligibility_proven) {
+        LabelObj* disjoint = new LabelObj();
+        __ cmp(lir_cond_notEqual, values.at(0), values.at(1));
+        __ branch(lir_cond_notEqual, disjoint->label());
+        guard(lir_cond_notEqual, values.at(2), LIR_OprFact::intConst(left ? 0 : 1));
+        __ branch_destination(disjoint->label());
+      }
       entry = left ? StubRoutines::bigIntegerLeftShift() : StubRoutines::bigIntegerRightShift();
       break;
     }
@@ -2999,6 +3006,7 @@ void LIRGenerator::do_BigIntegerIntrinsic(Intrinsic* x) {
 }
 
 void LIRGenerator::do_CryptoIntrinsic(Intrinsic* x) {
+  const bool eligibility_proven = x->check_flag(Instruction::CommonIntrinsicEligibilityProvenFlag);
   CodeEmitInfo* info = state_for(x, x->state_before());
   info->set_force_reexecute();
   LIR_OprList values(x->number_of_arguments());
@@ -3030,10 +3038,12 @@ void LIRGenerator::do_CryptoIntrinsic(Intrinsic* x) {
                                     : CommonIntrinsics::aes_encrypt_key_offset);
   };
   auto bounded = [&](LIR_Opr length) {
+    if (eligibility_proven) return;
     guard(lir_cond_lessEqual, length, LIR_OprFact::intConst(0));
     guard(lir_cond_greater, length, LIR_OprFact::intConst(CommonIntrinsics::max_leaf_elements));
   };
   auto same_position = [&](int src, int src_offset, int dst, int dst_offset) {
+    if (eligibility_proven) return;
     LabelObj* disjoint = new LabelObj();
     __ cmp(lir_cond_notEqual, values.at(src), values.at(dst));
     __ branch(lir_cond_notEqual, disjoint->label());
@@ -3067,7 +3077,7 @@ void LIRGenerator::do_CryptoIntrinsic(Intrinsic* x) {
   } else if (ecb || cbc || ctr) {
     bounded(values.at(3));
     if (cbc && decrypting) {
-      guard(lir_cond_equal, values.at(1), values.at(4));
+      if (!eligibility_proven) guard(lir_cond_equal, values.at(1), values.at(4));
     } else {
       same_position(1, 2, 4, 5);
     }
@@ -3086,7 +3096,7 @@ void LIRGenerator::do_CryptoIntrinsic(Intrinsic* x) {
     }
   } else if (gcm) {
     bounded(values.at(2));
-    guard(lir_cond_equal, values.at(0), values.at(5));
+    if (!eligibility_proven) guard(lir_cond_equal, values.at(0), values.at(5));
     key = aes_key(values.at(7), false);
     counter = field(values.at(7), CommonIntrinsics::ctr_counter_offset);
     state = field(values.at(8), CommonIntrinsics::ghash_state_offset);
@@ -3171,8 +3181,12 @@ void LIRGenerator::do_CryptoIntrinsic(Intrinsic* x) {
 }
 
 void LIRGenerator::do_ArrayIntrinsic(Intrinsic* x) {
-  CodeEmitInfo* info = state_for(x, x->state_before());
-  info->set_force_reexecute();
+  const bool eligibility_proven = x->check_flag(Instruction::CommonIntrinsicEligibilityProvenFlag);
+  CodeEmitInfo* info = nullptr;
+  if (!eligibility_proven) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+  }
   LIR_OprList values(x->number_of_arguments());
   for (int i = 0; i < x->number_of_arguments(); i++) {
     LIRItem item(x->argument_at(i), this);
@@ -3180,6 +3194,7 @@ void LIRGenerator::do_ArrayIntrinsic(Intrinsic* x) {
     values.append(item.result());
   }
   auto guard = [&](LIR_Condition condition, LIR_Opr left, LIR_Opr right) {
+    if (eligibility_proven) return;
     __ cmp(condition, left, right);
     __ branch(condition, new PredicateFailedStub(info, true));
   };
