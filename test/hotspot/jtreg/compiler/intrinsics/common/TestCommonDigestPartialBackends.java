@@ -29,6 +29,11 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox jdk.test.whitebox.code.NMethod
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xint -XX:+UseCommonIntrinsics compiler.intrinsics.common.TestCommonDigestPartialBackends 0
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xint -XX:+UseCommonIntrinsics -XX:-UseSHA3Intrinsics compiler.intrinsics.common.TestCommonDigestPartialBackends 0
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xint -XX:+UseCommonIntrinsics -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics -XX:-UseSHA512Intrinsics -XX:-UseSHA3Intrinsics compiler.intrinsics.common.TestCommonDigestPartialBackends 0
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xint -XX:+UseCommonIntrinsics -XX:-UseMD5Intrinsics -XX:-UseSHA1Intrinsics -XX:-UseSHA256Intrinsics -XX:-UseSHA512Intrinsics -XX:-UseSHA3Intrinsics compiler.intrinsics.common.TestCommonDigestPartialBackends 0
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xint -XX:+UseCommonIntrinsics -XX:-UseCommonIntrinsics compiler.intrinsics.common.TestCommonDigestPartialBackends 0
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseCommonIntrinsics -XX:CompileCommand=inline,sun.security.provider.DigestBase::implCompressMultiBlock  compiler.intrinsics.common.TestCommonDigestPartialBackends 1
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseCommonIntrinsics -XX:CompileCommand=inline,sun.security.provider.DigestBase::implCompressMultiBlock -XX:-UseMD5Intrinsics compiler.intrinsics.common.TestCommonDigestPartialBackends 1
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:TieredStopAtLevel=1 -XX:+UseCommonIntrinsics -XX:CompileCommand=inline,sun.security.provider.DigestBase::implCompressMultiBlock -XX:-UseSHA1Intrinsics compiler.intrinsics.common.TestCommonDigestPartialBackends 1
@@ -76,6 +81,13 @@ public class TestCommonDigestPartialBackends {
     }
     public static void main(String[] args) throws Exception {
         int level=Integer.parseInt(args[0]);
+        if (level == 0) {
+            for (int a = 0; a < ALGORITHMS.length; a++) check(ALGORITHMS[a], a, 0);
+            check("MD5", 0, 1);
+            check("SHA-256", 3, 1);
+            System.out.println("Interpreter partial-backend digest checks passed");
+            return;
+        }
         // Two distinct implementations avoid unique-implementor CHA dependencies.
         check("MD5",0,0); check("SHA-256",3,0);
         Class<?> base=Class.forName("sun.security.provider.DigestBase");
