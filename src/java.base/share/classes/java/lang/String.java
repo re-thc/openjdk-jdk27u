@@ -54,6 +54,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
@@ -521,8 +522,23 @@ public final class String
             return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
         }
         // Decode with a stable copy, to be the result if the decoded length is the same
-        byte[] latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
+        byte[] latin1;
         int sp = dp;            // first dp bytes are already in the copy
+        if (length - dp >= UTF8_BULK_MIN && (bytes[offset + dp] & 0xfe) == 0xc2) {
+            // The text continues with Latin-1 characters. Convert them from the
+            // caller's array into the new copy, then copy what follows, so that the
+            // loop below and the UTF-16 decode read only the private copy. If another
+            // thread changes the array meanwhile, the result mixes old and new bytes,
+            // as copying the array does, but the characters converted are never lost.
+            latin1 = new byte[length];
+            System.arraycopy(bytes, offset, latin1, 0, dp);
+            long converted = utf8ToLatin1(bytes, offset + dp, offset + length, latin1, dp);
+            sp += (int) (converted >>> 32);
+            dp += (int) converted;
+            System.arraycopy(bytes, offset + sp, latin1, sp, length - sp);
+        } else {
+            latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
+        }
         while (sp < length) {
             int b1 = latin1[sp++];
             if (b1 >= 0) {
@@ -656,6 +672,11 @@ public final class String
         byte[] dst = new byte[length];
         System.arraycopy(bytes, offset, dst, 0, dp);
         offset += dp;
+        if (sl - offset >= UTF8_BULK_MIN && (bytes[offset] & 0xfe) == 0xc2) {
+            long converted = utf8ToLatin1(bytes, offset, sl, dst, dp);
+            offset += (int) (converted >>> 32);
+            dp += (int) converted;
+        }
         while (offset < sl) {
             int b1 = bytes[offset++];
             if (b1 >= 0) {
@@ -1125,10 +1146,65 @@ public final class String
                                 ((byte) 0x80 <<  0))));
     }
 
+    // Ranges shorter than UTF8_BULK_MIN stay in the loops; the intrinsic converts at
+    // most UTF8_BULK_MAX source bytes per call.
+    private static final int UTF8_BULK_MIN = 32;
+    private static final int UTF8_BULK_MAX = 1 << 20;
+    // The bytes or chars the loops convert before they offer a range to the intrinsic again
+    // after a call that stopped near its start
+    private static final int UTF8_BULK_BACKOFF = 256;
+
+    /**
+     * Converts the valid complete prefix of the {@code n} chars from index {@code from} to
+     * UTF-8 in calls of bounded length, for the char buffer of a string. See
+     * {@code JavaLangAccess.encodeUTF8Run}.
+     */
+    long encodeUTF8Run(int from, int n, Object dst, long dstAddress, int room) {
+        Objects.checkFromIndexSize(from, n, length());
+        return isLatin1()
+                ? UTF_8.encodeLatin1Run(value, Unsafe.ARRAY_BYTE_BASE_OFFSET + from, n, dst, dstAddress, room)
+                : UTF_8.encodeRun(value, Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) from << 1), n, dst, dstAddress, room);
+    }
+
+    // Converts the longest prefix of complete, valid UTF-8 whose characters are all
+    // Latin-1, reading and writing the given storage as (object, address) pairs, and
+    // returns the consumed bytes in the high word and the produced bytes in the low
+    // word. The caller's loop handles any other character, including malformed input
+    // and a trailing partial sequence. The Java body declines by consuming nothing.
+    @IntrinsicCandidate
+    private static long utf8ToLatin1Bulk(Object src, long srcAddress, int srcLength,
+                                         Object dst, long dstAddress, int dstCapacity) {
+        return 0L;
+    }
+
+    // Converts the UTF-8 text in src[sp, sl) that is Latin-1 into dst from dp on, in
+    // calls of bounded length, and returns the consumed and produced bytes as above.
+    private static long utf8ToLatin1(byte[] src, int sp, int sl, byte[] dst, int dp) {
+        int consumed = 0;
+        int produced = 0;
+        while (sl - sp - consumed >= UTF8_BULK_MIN) {
+            long r = utf8ToLatin1Bulk(src, Unsafe.ARRAY_BYTE_BASE_OFFSET + sp + consumed,
+                                      Math.min(sl - sp - consumed, UTF8_BULK_MAX),
+                                      dst, Unsafe.ARRAY_BYTE_BASE_OFFSET + dp + produced,
+                                      dst.length - dp - produced);
+            int count = (int) (r >>> 32);
+            if (count == 0) {
+                break;
+            }
+            consumed += count;
+            produced += (int) r;
+        }
+        return ((long) consumed << 32) | produced;
+    }
+
+    // This entry receives the private snapshot made by utf8, not caller-owned bytes.
+    @IntrinsicCandidate
     private static int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp) {
         return decodeUTF8_UTF16(src, sp, sl, dst, dp, null);
     }
 
+    // newStringOrThrow transfers ownership of the input array to String.
+    @IntrinsicCandidate
     private static int decodeUTF8_UTF16OrThrow(
             byte[] src, int sp, int sl, byte[] dst, int dp)
             throws MalformedInputException {
@@ -1145,7 +1221,27 @@ public final class String
     private static <E extends Exception> int decodeUTF8_UTF16(
             byte[] src, int sp, int sl, byte[] dst, int dp, Class <E> exClass)
             throws E {
+        // The intrinsic takes ranges of a bounded length and declines at malformed input.
+        // Reaching here, convert the valid prefix in calls of bounded length, so that a long
+        // range or a late malformed byte still costs one pass of the library, and again after
+        // each malformed sequence that follows a long prefix. The loop below only sees the
+        // sequences the library does not convert, and everything while it is not worth a call.
+        int retry = sp;
         while (sp < sl) {
+            if (sp >= retry && sl - sp >= UTF8_BULK_MIN) {
+                long r = UTF_8.decodeRun(src, Unsafe.ARRAY_BYTE_BASE_OFFSET + sp, sl - sp,
+                                         dst, Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) dp << 1),
+                                         (dst.length >> 1) - dp);
+                int consumed = (int) (r >>> 32);
+                sp += consumed;
+                dp += (int) r;
+                // After a long prefix, a malformed sequence is likely isolated; after a short
+                // one, leave a stretch to the loop before trying again
+                retry = sp + (consumed >= UTF8_BULK_MIN ? 1 : UTF8_BULK_BACKOFF);
+                if (sp >= sl) {
+                    break;
+                }
+            }
             int b1 = src[sp++];
             if (b1 >= 0) {
                 StringUTF16.putChar(dst, dp++, (char) b1);
@@ -1366,8 +1462,17 @@ public final class String
         if (positives > 0) {
             System.arraycopy(val, 0, dst, 0, positives);
         }
-        int dp = positives;
-        for (int i = dp; i < val.length; i++) {
+        int dp = encodeUTF8Latin1(val, positives, dst, positives);
+        if (dp == dst.length) {
+            return dst;
+        }
+        return Arrays.copyOf(dst, dp);
+    }
+
+    // The input is String storage; dst has room for two bytes per input byte.
+    @IntrinsicCandidate
+    private static int encodeUTF8Latin1(byte[] val, int start, byte[] dst, int dp) {
+        for (int i = start; i < val.length; i++) {
             byte c = val[i];
             if (c < 0) {
                 dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));
@@ -1376,10 +1481,7 @@ public final class String
                 dst[dp++] = c;
             }
         }
-        if (dp == dst.length) {
-            return dst;
-        }
-        return Arrays.copyOf(dst, dp);
+        return dp;
     }
 
     // This follows the implementation of encodeUTF8
@@ -1431,7 +1533,34 @@ public final class String
             dst[dp++] = (byte)c;
             sp++;
         }
+        dp = encodeUTF8UTF16(val, sp, dst, dp, exClass);
+        if (dp == dst.length) {
+            return dst;
+        }
+        return Arrays.copyOf(dst, dp);
+    }
+
+    // String storage is immutable; the caller owns dst and handles its final size.
+    @IntrinsicCandidate
+    private static <E extends Exception> int encodeUTF8UTF16(byte[] val, int sp,
+                                                            byte[] dst, int dp,
+                                                            Class<E> exClass) throws E {
+        int sl = val.length >> 1;
+        // As in decodeUTF8_UTF16: the valid prefix, in calls of bounded length, before and
+        // between the unpaired surrogates that the loop handles
+        int retry = sp;
         while (sp < sl) {
+            if (sp >= retry && sl - sp >= UTF8_BULK_MIN) {
+                long r = UTF_8.encodeRun(val, Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) sp << 1), sl - sp,
+                                         dst, Unsafe.ARRAY_BYTE_BASE_OFFSET + dp, dst.length - dp);
+                int consumed = (int) (r >>> 32);
+                sp += consumed;
+                dp += (int) r;
+                retry = sp + (consumed >= UTF8_BULK_MIN ? 1 : UTF8_BULK_BACKOFF);
+                if (sp >= sl) {
+                    break;
+                }
+            }
             char c = StringUTF16.getChar(val, sp++);
             if (c < 0x80) {
                 dst[dp++] = (byte)c;
@@ -1465,10 +1594,7 @@ public final class String
                 dst[dp++] = (byte)(0x80 | (c & 0x3f));
             }
         }
-        if (dp == dst.length) {
-            return dst;
-        }
-        return Arrays.copyOf(dst, dp);
+        return dp;
     }
 
     /**

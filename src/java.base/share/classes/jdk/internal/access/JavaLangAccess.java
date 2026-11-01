@@ -464,6 +464,18 @@ public interface JavaLangAccess {
     int encodeASCII(char[] sa, int sp, byte[] da, int dp, int len);
 
     /**
+     * Converts the valid complete prefix of the {@code n} chars of a string, from index
+     * {@code from}, to UTF-8 at {@code dstAddress} of {@code dst}, which has room for
+     * {@code room} bytes. The conversion ends before an unpaired surrogate, and may end
+     * early for other reasons, so the caller converts what follows.
+     *
+     * @return the number of chars converted in the high word and the bytes produced
+     *         in the low word
+     * @throws IndexOutOfBoundsException if the chars are not all in the string
+     */
+    long encodeUTF8Run(String s, int from, int n, Object dst, long dstAddress, int room);
+
+    /**
      * Set the cause of Throwable
      * @param cause set t's cause to new value
      */

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +24,14 @@
  */
 
 #include "asm/macroAssembler.hpp"
+#include "classfile/javaClasses.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "runtime/stubRoutines.hpp"
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
@@ -513,4 +516,255 @@ address TemplateInterpreterGenerator::generate_currentThread() {
   __ jmp(rcx);
 
   return entry_point;
+}
+
+// The Java arguments stay on the expression stack, including exClass, so the
+// ordinary bytecode entry can handle short input or malformed UTF-16 unchanged.
+address TemplateInterpreterGenerator::generate_String_utf8_entry(AbstractInterpreter::MethodKind kind) {
+  const bool utf16 = kind == Interpreter::java_lang_String_encodeUTF8UTF16;
+  const bool decode = kind == Interpreter::java_lang_String_decodeUTF8UTF16 ||
+                      kind == Interpreter::java_lang_String_decodeUTF8UTF16OrThrow;
+  const int maximum = 1024 * 1024;
+  if (!SimdUTF::available() || SIMDUTFMinLength > maximum) {
+    return nullptr;
+  }
+  address entry = __ pc();
+  Label slow;
+  __ safepoint_poll(slow, false, false);
+  const int args = utf16 || decode ? 5 : 4;
+  const int dst_slot = decode ? 2 : args - 2;
+  const int dp_slot = decode ? 1 : args - 3;
+  const Register src = c_rarg0;
+  const Register length = c_rarg1;
+  const Register dst = c_rarg2;
+  __ movptr(src, Address(rsp, args * wordSize));
+  if (decode) {
+    __ movl(length, Address(rsp, 3 * wordSize));
+  } else {
+    __ movl(length, Address(src, arrayOopDesc::length_offset_in_bytes()));
+  }
+  if (utf16) {
+    __ shrl(length, 1);
+  }
+  __ subl(length, Address(rsp, (args - 1) * wordSize));
+  __ cmpl(length, (int)SIMDUTFMinLength);
+  __ jcc(Assembler::below, slow);
+  __ cmpl(length, maximum);
+  __ jcc(Assembler::above, slow);
+  __ movptr(dst, Address(rsp, dst_slot * wordSize));
+  if (utf16) {
+    __ movl(rax, Address(dst, arrayOopDesc::length_offset_in_bytes()));
+    __ subl(rax, Address(rsp, dp_slot * wordSize));
+    __ leal(r10, Address(length, length, Address::times_2));
+    __ cmpl(rax, r10);
+    __ jcc(Assembler::less, slow);
+  }
+  __ movl2ptr(r10, Address(rsp, (args - 1) * wordSize));
+  __ lea(src, Address(src, r10, utf16 ? Address::times_2 : Address::times_1,
+                     arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+  __ movl2ptr(r10, Address(rsp, dp_slot * wordSize));
+  __ lea(dst, Address(dst, r10, decode ? Address::times_2 : Address::times_1, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+  __ super_call_VM_leaf(decode ? CAST_FROM_FN_PTR(address, SimdUTF::decode_utf8_utf16)
+                              : utf16 ? CAST_FROM_FN_PTR(address, SimdUTF::encode_utf16_utf8)
+                              : CAST_FROM_FN_PTR(address, SimdUTF::encode_latin1_utf8),
+                        src, length, dst);
+  if (utf16 || decode) {
+    __ testl(rax, rax);
+    __ jcc(Assembler::negative, slow);
+  }
+  __ addl(rax, Address(rsp, dp_slot * wordSize));
+  __ pop(rdi);
+  __ mov(rsp, r13);
+  __ jmp(rdi);
+  __ bind(slow);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
+
+// Existing Java entry arguments remain intact for the short-input fallback.
+address TemplateInterpreterGenerator::generate_bulk_entry(AbstractInterpreter::MethodKind kind) {
+  const bool search = kind == Interpreter::java_lang_StringLatin1_indexOfChar ||
+                      kind == Interpreter::java_lang_StringUTF16_indexOfChar;
+  const bool wide = kind == Interpreter::java_lang_StringUTF16_indexOfChar;
+  const bool mime = kind == Interpreter::java_util_Base64_decode0;
+  const bool decode = mime || kind == Interpreter::java_util_Base64_decodeBlock;
+  if (!SimdUTF::available() || SIMDUTFMinLength > 1024 * 1024 ||
+      (mime && !UseBASE64Intrinsics)) return nullptr;
+  address entry = __ pc();
+  Label slow, done;
+  __ safepoint_poll(slow, false, false);
+  if (decode && !mime) {
+    __ cmpl(Address(rsp, wordSize), 0); // isMIME
+    __ jcc(Assembler::notEqual, slow);
+  }
+  if (mime) {
+    __ movptr(r10, Address(rsp, 5 * wordSize));
+    __ cmpb(Address(r10, java_util_Base64_Decoder::isMIME_offset()), 0);
+    __ jcc(Assembler::equal, slow);
+  }
+  // Offsets count from the return address; Base64 includes its receiver.
+  const int src_slot = search ? 4 : mime ? 4 : decode ? 7 : 6;
+  const int start_slot = search ? 2 : src_slot - 1;
+  const int limit_slot = search ? 1 : src_slot - 2;
+  const int dst_slot = mime ? 1 : decode ? 4 : 3;
+  const int dp_slot = decode ? 3 : 2;
+  __ movptr(c_rarg0, Address(rsp, src_slot * wordSize));
+  __ movl(c_rarg1, Address(rsp, limit_slot * wordSize));
+  __ subl(c_rarg1, Address(rsp, start_slot * wordSize));
+  __ cmpl(c_rarg1, (int)SIMDUTFMinLength);
+  __ jcc(Assembler::below, slow);
+  __ cmpl(c_rarg1, 1024 * 1024);
+  __ jcc(Assembler::above, slow);
+  if (search) {
+    __ movl(c_rarg2, Address(rsp, 3 * wordSize));
+    if (wide) {
+      __ testl(c_rarg2, c_rarg2);
+      __ jcc(Assembler::negative, slow);
+    }
+  } else {
+    __ movptr(c_rarg2, Address(rsp, dst_slot * wordSize));
+    if (decode) {
+      __ cmpptr(c_rarg0, c_rarg2);
+      __ jcc(Assembler::equal, slow);
+      __ movl(c_rarg3, Address(c_rarg2, arrayOopDesc::length_offset_in_bytes()));
+      if (!mime) __ subl(c_rarg3, Address(rsp, dp_slot * wordSize));
+    } else {
+      __ movl(c_rarg3, Address(rsp, wordSize));
+    }
+    if (mime) { __ xorptr(r10, r10); }
+    else { __ movl2ptr(r10, Address(rsp, dp_slot * wordSize)); }
+    __ lea(c_rarg2, Address(c_rarg2, r10, Address::times_1, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+  }
+  __ movl2ptr(r10, Address(rsp, start_slot * wordSize));
+  __ lea(c_rarg0, Address(c_rarg0, r10, wide ? Address::times_2 : Address::times_1,
+                         arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+  address leaf = search ? (wide ? CAST_FROM_FN_PTR(address, SimdUTF::index_of_utf16)
+                               : CAST_FROM_FN_PTR(address, SimdUTF::index_of_latin1))
+                        : mime ? CAST_FROM_FN_PTR(address, SimdUTF::decode_base64_mime)
+                        : decode ? CAST_FROM_FN_PTR(address, SimdUTF::decode_base64)
+                                 : CAST_FROM_FN_PTR(address, SimdUTF::encode_base64);
+  if (decode && !mime) {
+#ifdef _WIN64
+    // The fifth C argument follows the four-register shadow area. Preserve
+    // sender_sp while using its callee-saved register to restore alignment.
+    __ movl(r10, Address(rsp, 2 * wordSize));
+    __ push(r13);
+    __ movptr(r13, rsp);
+    __ andptr(rsp, -16);
+    __ subptr(rsp, 6 * wordSize);
+    __ movl(Address(rsp, 4 * wordSize), r10);
+    __ call(RuntimeAddress(leaf));
+    __ movptr(rsp, r13);
+    __ pop(r13);
+#else
+    __ movl(c_rarg4, Address(rsp, 2 * wordSize));
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2, c_rarg3);
+#endif
+  } else if (search) {
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2);
+  } else {
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2, c_rarg3);
+  }
+  if (decode) {
+    __ testl(rax, rax);
+    __ jcc(Assembler::negative, slow);
+  }
+  if (search) {
+    __ testl(rax, rax);
+    __ jcc(Assembler::negative, done);
+    __ addl(rax, Address(rsp, start_slot * wordSize));
+  }
+  __ bind(done);
+  __ pop(rdi);
+  __ mov(rsp, r13);
+  __ jmp(rdi);
+  __ bind(slow);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
+
+// Method entries for the String coding helpers that only C2 implements with stubs:
+//   int  countPositives0(byte[] ba, int off, int len)
+//   void inflate0(byte[] src, int srcOff, char[] / byte[] dst, int dstOff, int len)
+//   int  compress0(char[] / byte[] src, int srcOff, byte[] dst, int dstOff, int len)
+// encodeISOArray0 has the arguments, the result and the semantics of compress0, and
+// encodeAsciiArray0 the same arguments and result, ending at the first char above U+007F.
+// The Java wrappers have checked the ranges and the leaves are exact for every
+// length. Offsets count UTF-16 elements for the char side of a conversion.
+address TemplateInterpreterGenerator::generate_string_coding_entry(AbstractInterpreter::MethodKind kind) {
+  if (!SimdUTF::available()) {
+    return nullptr;
+  }
+  // countCodePoints has the arguments of countPositives, with the offset in chars
+  const bool chars = kind == Interpreter::java_lang_StringUTF16_countCodePoints;
+  const bool count = kind == Interpreter::java_lang_StringCoding_countPositives || chars;
+  const bool inflate = kind == Interpreter::java_lang_StringLatin1_inflateChars ||
+                       kind == Interpreter::java_lang_StringLatin1_inflateBytes;
+  const Address::ScaleFactor src_scale = ((!count && !inflate) || chars) ? Address::times_2 : Address::times_1;
+  const Address::ScaleFactor dst_scale = inflate ? Address::times_2 : Address::times_1;
+  address leaf = SimdUTF::leaf_for(AbstractInterpreter::method_intrinsic(kind));
+  assert(leaf != nullptr, "every string coding kind has a leaf");
+  address entry = __ pc();
+  Label slow;
+  __ safepoint_poll(slow, false /* at_return */, false /* in_nmethod */);
+  // The last argument is at rsp + wordSize; slot 0 holds the return address.
+  if (count) {
+    __ movl(c_rarg1, Address(rsp, wordSize));
+    __ movl2ptr(r10, Address(rsp, 2 * wordSize));
+    __ movptr(c_rarg0, Address(rsp, 3 * wordSize));
+    __ lea(c_rarg0, Address(c_rarg0, r10, src_scale, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1);
+  } else {
+    __ movl(c_rarg2, Address(rsp, wordSize));
+    __ movl2ptr(r10, Address(rsp, 4 * wordSize));
+    __ movptr(c_rarg0, Address(rsp, 5 * wordSize));
+    __ lea(c_rarg0, Address(c_rarg0, r10, src_scale, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+    __ movl2ptr(r10, Address(rsp, 2 * wordSize));
+    __ movptr(c_rarg1, Address(rsp, 3 * wordSize));
+    __ lea(c_rarg1, Address(c_rarg1, r10, dst_scale, arrayOopDesc::base_offset_in_bytes(T_BYTE)));
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2);
+  }
+  // result in rax, if any
+  __ pop(rdi);                // get return address
+  __ mov(rsp, r13);           // set sp to sender sp
+  __ jmp(rdi);
+  __ bind(slow);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
+
+// Method entry for the static prefix conversions of the Charset coder loops and the
+// String UTF-8 decoder:
+//   long f(Object src, long srcAddress, int srcLength, Object dst, long dstAddress, int dstCapacity)
+// A null object makes the address absolute. The Java body declines by consuming
+// nothing, so a pending safepoint simply takes the ordinary bytecode entry.
+address TemplateInterpreterGenerator::generate_convert_prefix_entry(AbstractInterpreter::MethodKind kind) {
+  if (!SimdUTF::available()) {
+    return nullptr;
+  }
+  address leaf = SimdUTF::leaf_for(AbstractInterpreter::method_intrinsic(kind));
+  assert(leaf != nullptr, "every prefix kind has a leaf");
+  address entry = __ pc();
+  Label slow;
+  __ safepoint_poll(slow, false /* at_return */, false /* in_nmethod */);
+  // Arguments are reversed on the java expression stack, each long taking two
+  // slots. Slot 0 holds the return address.
+  const Register src = c_rarg0;
+  const Register length = c_rarg1;
+  const Register dst = c_rarg2;
+  const Register capacity = c_rarg3;
+  __ movptr(src, Address(rsp, 8 * wordSize));
+  __ addptr(src, Address(rsp, 6 * wordSize));
+  __ movl(length, Address(rsp, 5 * wordSize));
+  __ movptr(dst, Address(rsp, 4 * wordSize));
+  __ addptr(dst, Address(rsp, 2 * wordSize));
+  __ movl(capacity, Address(rsp, wordSize));
+  __ super_call_VM_leaf(leaf, src, length, dst, capacity);
+  // result in rax
+  __ pop(rdi);                // get return address
+  __ mov(rsp, r13);           // set sp to sender sp
+  __ jmp(rdi);
+  __ bind(slow);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
 }

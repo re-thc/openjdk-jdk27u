@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -416,9 +417,57 @@ class methodHandle;
    do_signature(Preconditions_checkLongIndex_signature,          "(JJLjava/util/function/BiFunction;)J")                \
                                                                                                                         \
   do_class(java_lang_StringCoding,        "java/lang/StringCoding")                                                     \
+  do_intrinsic(_encodeUTF8Latin1, java_lang_String, encodeUTF8Latin1_name, encodeUTF8Latin1_signature, F_S)              \
+   do_name(encodeUTF8Latin1_name, "encodeUTF8Latin1")                                                                    \
+   do_signature(encodeUTF8Latin1_signature, "([BI[BI)I")                                                                 \
+  do_intrinsic(_encodeUTF8UTF16, java_lang_String, encodeUTF8UTF16_name, encodeUTF8UTF16_signature, F_S)                \
+   do_name(encodeUTF8UTF16_name, "encodeUTF8UTF16")                                                                      \
+   do_signature(encodeUTF8UTF16_signature, "([BI[BILjava/lang/Class;)I")                                                 \
+  do_intrinsic(_decodeUTF8UTF16, java_lang_String, decodeUTF8UTF16_name, byteArray_int_int_byteArray_int_signature, F_S) \
+   do_name(decodeUTF8UTF16_name, "decodeUTF8_UTF16")                                                                     \
+  do_intrinsic(_decodeUTF8UTF16OrThrow, java_lang_String, decodeUTF8UTF16OrThrow_name, byteArray_int_int_byteArray_int_signature, F_S) \
+   do_name(decodeUTF8UTF16OrThrow_name, "decodeUTF8_UTF16OrThrow")                                                        \
   do_intrinsic(_countPositives,     java_lang_StringCoding, countPositives_name, countPositives_signature, F_S)         \
    do_name(     countPositives_name,                       "countPositives0")                                           \
    do_signature(countPositives_signature,                  "([BII)I")                                                   \
+  do_intrinsic(_countCodePoints,    java_lang_StringUTF16,  countCodePoints_name, countPositives_signature, F_S)        \
+   do_name(     countCodePoints_name,                      "countCodePoints")                                           \
+                                                                                                                        \
+  /* support for the UTF-8 and UTF-32 Charset coders */                                                                 \
+  do_class(sun_nio_cs_utf8_Decoder,  "sun/nio/cs/UTF_8$Decoder")                                                        \
+  do_class(sun_nio_cs_utf8_Encoder,  "sun/nio/cs/UTF_8$Encoder")                                                        \
+  do_class(sun_nio_cs_utf32_Decoder, "sun/nio/cs/UTF_32Coder$Decoder")                                                  \
+  do_class(sun_nio_cs_utf32_Encoder, "sun/nio/cs/UTF_32Coder$Encoder")                                                  \
+  do_intrinsic(_decodeUTF8Bulk,  sun_nio_cs_utf8_Decoder,  decodeBulk_name, bulkConvert_signature, F_S)                  \
+   do_name(     decodeBulk_name,                         "decodeBulk")                                                    \
+   do_signature(bulkConvert_signature,                   "(Ljava/lang/Object;JILjava/lang/Object;JI)J")                   \
+  do_intrinsic(_encodeUTF8Bulk,  sun_nio_cs_utf8_Encoder,  encodeBulk_name, bulkConvert_signature, F_S)                  \
+   do_name(     encodeBulk_name,                         "encodeBulk")                                                    \
+  do_intrinsic(_decodeUTF32Bulk, sun_nio_cs_utf32_Decoder, decodeBulk_name, bulkConvert_signature, F_S)                  \
+  do_intrinsic(_encodeUTF32Bulk, sun_nio_cs_utf32_Encoder, encodeBulk_name, bulkConvert_signature, F_S)                  \
+  do_intrinsic(_decodeUTF32BEBulk, sun_nio_cs_utf32_Decoder, decodeBulkBE_name, bulkConvert_signature, F_S)             \
+  do_intrinsic(_encodeUTF32BEBulk, sun_nio_cs_utf32_Encoder, encodeBulkBE_name, bulkConvert_signature, F_S)             \
+  do_intrinsic(_utf8ToLatin1Bulk, java_lang_String,        utf8ToLatin1Bulk_name, bulkConvert_signature, F_S)             \
+   do_name(     utf8ToLatin1Bulk_name,                   "utf8ToLatin1Bulk")                                              \
+  do_class(sun_nio_cs_UnicodeDecoder, "sun/nio/cs/UnicodeDecoder")                                                      \
+  do_class(sun_nio_cs_UnicodeEncoder, "sun/nio/cs/UnicodeEncoder")                                                      \
+  do_intrinsic(_decodeUTF16LEBulk, sun_nio_cs_UnicodeDecoder, decodeBulkLE_name, bulkConvert_signature, F_S)            \
+   do_name(     decodeBulkLE_name,                           "decodeBulkLE")                                            \
+  do_intrinsic(_decodeUTF16BEBulk, sun_nio_cs_UnicodeDecoder, decodeBulkBE_name, bulkConvert_signature, F_S)            \
+   do_name(     decodeBulkBE_name,                           "decodeBulkBE")                                            \
+  do_intrinsic(_encodeUTF16LEBulk, sun_nio_cs_UnicodeEncoder, encodeBulkLE_name, bulkConvert_signature, F_S)            \
+   do_name(     encodeBulkLE_name,                           "encodeBulkLE")                                            \
+  do_intrinsic(_encodeUTF16BEBulk, sun_nio_cs_UnicodeEncoder, encodeBulkBE_name, bulkConvert_signature, F_S)            \
+   do_name(     encodeBulkBE_name,                           "encodeBulkBE")                                            \
+  do_class(sun_nio_cs_iso8859_1_Decoder, "sun/nio/cs/ISO_8859_1$Decoder")                                               \
+  do_class(sun_nio_cs_us_ascii_Decoder,  "sun/nio/cs/US_ASCII$Decoder")                                                 \
+  do_class(sun_nio_cs_us_ascii_Encoder,  "sun/nio/cs/US_ASCII$Encoder")                                                 \
+  do_intrinsic(_decodeLatin1Bulk, sun_nio_cs_iso8859_1_Decoder, decodeBulk_name, bulkConvert_signature, F_S)            \
+  do_intrinsic(_encodeLatin1Bulk, sun_nio_cs_iso8859_1_Encoder, encodeBulk_name, bulkConvert_signature, F_S)            \
+  do_intrinsic(_decodeAsciiBulk,  sun_nio_cs_us_ascii_Decoder,  decodeBulk_name, bulkConvert_signature, F_S)            \
+  do_intrinsic(_encodeAsciiBulk,  sun_nio_cs_us_ascii_Encoder,  encodeBulk_name, bulkConvert_signature, F_S)            \
+  do_intrinsic(_encodeLatin1UTF8Bulk, sun_nio_cs_utf8_Encoder, encodeLatin1Bulk_name, bulkConvert_signature, F_S)       \
+   do_name(     encodeLatin1Bulk_name,                   "encodeLatin1Bulk")                                              \
                                                                                                                         \
   do_class(sun_nio_cs_iso8859_1_Encoder,  "sun/nio/cs/ISO_8859_1$Encoder")                                              \
   do_intrinsic(_encodeISOArray,     sun_nio_cs_iso8859_1_Encoder, encodeISOArray_name, encodeISOArray_signature, F_S)   \
@@ -557,6 +606,9 @@ class methodHandle;
                                                                                                                         \
   /* support for java.util.Base64.Decoder*/                                                                             \
   do_class(java_util_Base64_Decoder, "java/util/Base64$Decoder")                                                        \
+  do_intrinsic(_base64_decode0, java_util_Base64_Decoder, decode0_name, decode0_signature, F_R) \
+   do_name(decode0_name, "decode0") \
+   do_signature(decode0_signature, "([BII[B)I") \
   do_intrinsic(_base64_decodeBlock, java_util_Base64_Decoder, decodeBlock_name, decodeBlock_signature, F_R)             \
    do_name(decodeBlock_name, "decodeBlock")                                                                             \
    do_signature(decodeBlock_signature, "([BII[BIZZ)I")                                                                  \

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +26,16 @@
 
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
-#include "compiler/disassembler.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
+#include "interpreter/bytecodeTracer.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "interpreter/interp_masm.hpp"
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
-#include "interpreter/bytecodeTracer.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/method.hpp"
@@ -51,6 +52,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/timer.hpp"
@@ -58,6 +60,7 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
+
 #include <sys/types.h>
 
 // Size of interpreter code.  Increase if too small.  Interpreter will
@@ -2154,3 +2157,259 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
 }
 
 #endif // !PRODUCT
+
+address TemplateInterpreterGenerator::generate_String_utf8_entry(AbstractInterpreter::MethodKind kind) {
+  const bool utf16 = kind == Interpreter::java_lang_String_encodeUTF8UTF16;
+  const bool decode = kind == Interpreter::java_lang_String_decodeUTF8UTF16 ||
+                      kind == Interpreter::java_lang_String_decodeUTF8UTF16OrThrow;
+  const int maximum = 1024 * 1024;
+  if (!SimdUTF::available() || SIMDUTFMinLength > maximum) {
+    return nullptr;
+  }
+  address entry = __ pc();
+  Label slow;
+  __ safepoint_poll(slow, false, false);
+  const int args = utf16 || decode ? 5 : 4;
+  const int dst_slot = decode ? 2 : args - 2;
+  const int dp_slot = decode ? 1 : args - 3;
+  const Register src = c_rarg0;
+  const Register length = c_rarg1;
+  const Register dst = c_rarg2;
+  __ ldr(src, Address(esp, (args - 1) * wordSize));
+  if (decode) {
+    __ ldrw(length, Address(esp, 2 * wordSize));
+  } else {
+    __ ldrw(length, Address(src, arrayOopDesc::length_offset_in_bytes()));
+  }
+  if (utf16) {
+    __ lsrw(length, length, 1);
+  }
+  __ ldrw(rscratch1, Address(esp, (args - 2) * wordSize));
+  __ subw(length, length, rscratch1);
+  __ movw(rscratch1, (int)SIMDUTFMinLength);
+  __ cmpw(length, rscratch1);
+  __ br(Assembler::LO, slow);
+  __ movw(rscratch1, maximum);
+  __ cmpw(length, rscratch1);
+  __ br(Assembler::HI, slow);
+  __ ldr(dst, Address(esp, (dst_slot - 1) * wordSize));
+  if (utf16) {
+    __ ldrw(rscratch1, Address(dst, arrayOopDesc::length_offset_in_bytes()));
+    __ ldrw(rscratch2, Address(esp, (dp_slot - 1) * wordSize));
+    __ subw(rscratch1, rscratch1, rscratch2);
+    __ addw(rscratch2, length, length, Assembler::LSL, 1);
+    __ cmpw(rscratch1, rscratch2);
+    __ br(Assembler::LT, slow);
+  }
+  __ ldrw(rscratch1, Address(esp, (args - 2) * wordSize));
+  __ add(src, src, rscratch1, Assembler::LSL, utf16 ? 1 : 0);
+  __ add(src, src, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  __ ldrw(rscratch1, Address(esp, (dp_slot - 1) * wordSize));
+  __ add(dst, dst, rscratch1, Assembler::LSL, decode ? 1 : 0);
+  __ add(dst, dst, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  // esp and sender_sp are callee-saved; retain LR across the C leaf as well.
+  __ stp(lr, zr, Address(__ pre(sp, -2 * wordSize)));
+  __ super_call_VM_leaf(decode ? CAST_FROM_FN_PTR(address, SimdUTF::decode_utf8_utf16)
+                              : utf16 ? CAST_FROM_FN_PTR(address, SimdUTF::encode_utf16_utf8)
+                              : CAST_FROM_FN_PTR(address, SimdUTF::encode_latin1_utf8),
+                        src, length, dst);
+  __ ldp(lr, zr, Address(__ post(sp, 2 * wordSize)));
+  if (utf16 || decode) {
+    __ tbnz(r0, 31, slow);
+  }
+  __ ldrw(rscratch1, Address(esp, (dp_slot - 1) * wordSize));
+  __ addw(r0, r0, rscratch1);
+  __ andr(sp, r19_sender_sp, -16);
+  __ ret(lr);
+  __ bind(slow);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
+
+// Method entries for the String coding helpers that only C2 implements with stubs:
+//   int  countPositives0(byte[] ba, int off, int len)
+//   void inflate0(byte[] src, int srcOff, char[] / byte[] dst, int dstOff, int len)
+//   int  compress0(char[] / byte[] src, int srcOff, byte[] dst, int dstOff, int len)
+// encodeISOArray0 has the arguments, the result and the semantics of compress0, and
+// encodeAsciiArray0 the same arguments and result, ending at the first char above U+007F.
+// The Java wrappers have checked the ranges and the leaves are exact for every
+// length. Offsets count UTF-16 elements for the char side of a conversion.
+address TemplateInterpreterGenerator::generate_string_coding_entry(AbstractInterpreter::MethodKind kind) {
+  if (!SimdUTF::available()) {
+    return nullptr;
+  }
+  // countCodePoints has the arguments of countPositives, with the offset in chars
+  const bool chars = kind == Interpreter::java_lang_StringUTF16_countCodePoints;
+  const bool count = kind == Interpreter::java_lang_StringCoding_countPositives || chars;
+  const bool inflate = kind == Interpreter::java_lang_StringLatin1_inflateChars ||
+                       kind == Interpreter::java_lang_StringLatin1_inflateBytes;
+  const int src_shift = ((!count && !inflate) || chars) ? 1 : 0;
+  const int dst_shift = inflate ? 1 : 0;
+  address leaf = SimdUTF::leaf_for(AbstractInterpreter::method_intrinsic(kind));
+  assert(leaf != nullptr, "every string coding kind has a leaf");
+  address entry = __ pc();
+  Label slow;
+  __ safepoint_poll(slow, false /* at_return */, false /* in_nmethod */);
+  // esp addresses the last argument; each argument takes one slot.
+  if (count) {
+    __ ldrw(c_rarg1, Address(esp, 0));
+    __ ldrw(rscratch1, Address(esp, wordSize));
+    __ ldr(c_rarg0, Address(esp, 2 * wordSize));
+    __ add(c_rarg0, c_rarg0, rscratch1, Assembler::LSL, src_shift);
+    __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  } else {
+    __ ldrw(c_rarg2, Address(esp, 0));
+    __ ldrw(rscratch1, Address(esp, 3 * wordSize));
+    __ ldr(c_rarg0, Address(esp, 4 * wordSize));
+    __ add(c_rarg0, c_rarg0, rscratch1, Assembler::LSL, src_shift);
+    __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ ldrw(rscratch1, Address(esp, wordSize));
+    __ ldr(c_rarg1, Address(esp, 2 * wordSize));
+    __ add(c_rarg1, c_rarg1, rscratch1, Assembler::LSL, dst_shift);
+    __ add(c_rarg1, c_rarg1, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  }
+  // esp and sender_sp are callee-saved; retain LR across the C leaf as well.
+  __ stp(lr, zr, Address(__ pre(sp, -2 * wordSize)));
+  if (count) {
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1);
+  } else {
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2);
+  }
+  __ ldp(lr, zr, Address(__ post(sp, 2 * wordSize)));
+  // result in r0, if any
+  __ andr(sp, r19_sender_sp, -16);
+  __ ret(lr);
+  __ bind(slow);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
+
+// Method entry for the static prefix conversions of the Charset coder loops and the
+// String UTF-8 decoder:
+//   long f(Object src, long srcAddress, int srcLength, Object dst, long dstAddress, int dstCapacity)
+// A null object makes the address absolute. The Java body declines by consuming
+// nothing, so a pending safepoint simply takes the ordinary bytecode entry.
+address TemplateInterpreterGenerator::generate_convert_prefix_entry(AbstractInterpreter::MethodKind kind) {
+  if (!SimdUTF::available()) {
+    return nullptr;
+  }
+  address leaf = SimdUTF::leaf_for(AbstractInterpreter::method_intrinsic(kind));
+  assert(leaf != nullptr, "every prefix kind has a leaf");
+  address entry = __ pc();
+  Label slow;
+  __ safepoint_poll(slow, false, false);
+  // Arguments are reversed on the java expression stack, each long taking two
+  // slots; esp addresses the last argument.
+  const Register src = c_rarg0;
+  const Register length = c_rarg1;
+  const Register dst = c_rarg2;
+  const Register capacity = c_rarg3;
+  __ ldr(src, Address(esp, 7 * wordSize));
+  __ ldr(rscratch1, Address(esp, 5 * wordSize));
+  __ add(src, src, rscratch1);
+  __ ldrw(length, Address(esp, 4 * wordSize));
+  __ ldr(dst, Address(esp, 3 * wordSize));
+  __ ldr(rscratch1, Address(esp, wordSize));
+  __ add(dst, dst, rscratch1);
+  __ ldrw(capacity, Address(esp, 0));
+  // esp and sender_sp are callee-saved; retain LR across the C leaf as well.
+  __ stp(lr, zr, Address(__ pre(sp, -2 * wordSize)));
+  __ super_call_VM_leaf(leaf, src, length, dst, capacity);
+  __ ldp(lr, zr, Address(__ post(sp, 2 * wordSize)));
+  // result in r0
+  __ andr(sp, r19_sender_sp, -16);
+  __ ret(lr);
+  __ bind(slow);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}
+
+address TemplateInterpreterGenerator::generate_bulk_entry(AbstractInterpreter::MethodKind kind) {
+  const bool search = kind == Interpreter::java_lang_StringLatin1_indexOfChar ||
+                      kind == Interpreter::java_lang_StringUTF16_indexOfChar;
+  const bool wide = kind == Interpreter::java_lang_StringUTF16_indexOfChar;
+  const bool mime = kind == Interpreter::java_util_Base64_decode0;
+  const bool decode = mime || kind == Interpreter::java_util_Base64_decodeBlock;
+  if (!SimdUTF::available() || SIMDUTFMinLength > 1024 * 1024 ||
+      (mime && !UseBASE64Intrinsics)) return nullptr;
+  address entry = __ pc();
+  Label slow, done;
+  __ safepoint_poll(slow, false, false);
+  if (decode && !mime) {
+    __ ldrw(rscratch1, Address(esp)); // isMIME
+    __ cbnzw(rscratch1, slow);
+  }
+  if (mime) {
+    __ ldr(rscratch1, Address(esp, 4 * wordSize));
+    __ ldrb(rscratch1, Address(rscratch1, java_util_Base64_Decoder::isMIME_offset()));
+    __ cbzw(rscratch1, slow);
+  }
+  const int src_slot = search ? 3 : mime ? 3 : decode ? 6 : 5;
+  const int start_slot = search ? 1 : src_slot - 1;
+  const int limit_slot = search ? 0 : src_slot - 2;
+  const int dst_slot = mime ? 0 : decode ? 3 : 2;
+  const int dp_slot = decode ? 2 : 1;
+  __ ldr(c_rarg0, Address(esp, src_slot * wordSize));
+  __ ldrw(c_rarg1, Address(esp, limit_slot * wordSize));
+  __ ldrw(rscratch1, Address(esp, start_slot * wordSize));
+  __ subw(c_rarg1, c_rarg1, rscratch1);
+  __ movw(rscratch1, (int)SIMDUTFMinLength);
+  __ cmpw(c_rarg1, rscratch1);
+  __ br(Assembler::LO, slow);
+  __ movw(rscratch1, 1024 * 1024);
+  __ cmpw(c_rarg1, rscratch1);
+  __ br(Assembler::HI, slow);
+  if (search) {
+    __ ldrw(c_rarg2, Address(esp, 2 * wordSize));
+    if (wide) { __ tbnz(c_rarg2, 31, slow); }
+  } else {
+    __ ldr(c_rarg2, Address(esp, dst_slot * wordSize));
+    if (decode) {
+      __ cmp(c_rarg0, c_rarg2);
+      __ br(Assembler::EQ, slow);
+      __ ldrw(c_rarg3, Address(c_rarg2, arrayOopDesc::length_offset_in_bytes()));
+      if (!mime) {
+        __ ldrw(rscratch1, Address(esp, dp_slot * wordSize));
+        __ subw(c_rarg3, c_rarg3, rscratch1);
+        __ ldrw(c_rarg4, Address(esp, wordSize));
+      }
+    } else {
+      __ ldrw(c_rarg3, Address(esp));
+    }
+    if (!mime) {
+      __ ldrw(rscratch1, Address(esp, dp_slot * wordSize));
+      __ add(c_rarg2, c_rarg2, rscratch1);
+    }
+    __ add(c_rarg2, c_rarg2, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  }
+  __ ldrw(rscratch1, Address(esp, start_slot * wordSize));
+  __ add(c_rarg0, c_rarg0, rscratch1, Assembler::LSL, wide ? 1 : 0);
+  __ add(c_rarg0, c_rarg0, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+  address leaf = search ? (wide ? CAST_FROM_FN_PTR(address, SimdUTF::index_of_utf16)
+                               : CAST_FROM_FN_PTR(address, SimdUTF::index_of_latin1))
+                        : mime ? CAST_FROM_FN_PTR(address, SimdUTF::decode_base64_mime)
+                        : decode ? CAST_FROM_FN_PTR(address, SimdUTF::decode_base64)
+                                 : CAST_FROM_FN_PTR(address, SimdUTF::encode_base64);
+  __ stp(lr, zr, Address(__ pre(sp, -2 * wordSize)));
+  // Decode argument 5 remains in c_rarg4 across the four-register helper.
+  if (search) {
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2);
+  } else {
+    __ super_call_VM_leaf(leaf, c_rarg0, c_rarg1, c_rarg2, c_rarg3);
+  }
+  __ ldp(lr, zr, Address(__ post(sp, 2 * wordSize)));
+  if (decode) {
+    __ tbnz(r0, 31, slow);
+  }
+  if (search) {
+    __ tbnz(r0, 31, done);
+    __ ldrw(rscratch1, Address(esp, start_slot * wordSize));
+    __ addw(r0, r0, rscratch1);
+  }
+  __ bind(done);
+  __ andr(sp, r19_sender_sp, -16);
+  __ ret(lr);
+  __ bind(slow);
+  __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
+  return entry;
+}

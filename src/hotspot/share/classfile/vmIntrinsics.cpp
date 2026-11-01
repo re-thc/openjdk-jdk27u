@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,6 +196,11 @@ bool vmIntrinsics::does_virtual_dispatch(vmIntrinsics::ID id) {
 int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch (id) {
+  case vmIntrinsics::_encodeUTF8Latin1:
+  case vmIntrinsics::_encodeUTF8UTF16:
+  case vmIntrinsics::_decodeUTF8UTF16OrThrow:
+  case vmIntrinsics::_decodeUTF8UTF16:
+  case vmIntrinsics::_base64_decode0:
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
   case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
@@ -515,6 +521,32 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_dilithiumMontMulByConstant:
   case vmIntrinsics::_dilithiumDecomposePoly:
     if (!UseDilithiumIntrinsics) return true;
+    break;
+  case vmIntrinsics::_encodeUTF8Latin1:
+  case vmIntrinsics::_encodeUTF8UTF16:
+  case vmIntrinsics::_decodeUTF8UTF16OrThrow:
+  case vmIntrinsics::_decodeUTF8UTF16:
+  case vmIntrinsics::_decodeUTF8Bulk:
+  case vmIntrinsics::_encodeUTF8Bulk:
+  case vmIntrinsics::_decodeUTF32Bulk:
+  case vmIntrinsics::_encodeUTF32Bulk:
+  case vmIntrinsics::_decodeUTF32BEBulk:
+  case vmIntrinsics::_encodeUTF32BEBulk:
+  case vmIntrinsics::_utf8ToLatin1Bulk:
+  case vmIntrinsics::_decodeUTF16LEBulk:
+  case vmIntrinsics::_decodeUTF16BEBulk:
+  case vmIntrinsics::_encodeUTF16LEBulk:
+  case vmIntrinsics::_encodeUTF16BEBulk:
+  case vmIntrinsics::_decodeLatin1Bulk:
+  case vmIntrinsics::_encodeLatin1Bulk:
+  case vmIntrinsics::_decodeAsciiBulk:
+  case vmIntrinsics::_encodeAsciiBulk:
+  case vmIntrinsics::_encodeLatin1UTF8Bulk:
+  case vmIntrinsics::_countCodePoints:
+    if (!UseSIMDUTFIntrinsics) return true;
+    break;
+  case vmIntrinsics::_base64_decode0:
+    if (!UseSIMDUTFIntrinsics || !UseBASE64Intrinsics) return true;
     break;
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:

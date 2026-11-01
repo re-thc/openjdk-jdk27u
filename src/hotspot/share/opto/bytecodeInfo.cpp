@@ -193,9 +193,94 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
 }
 
 
+// A deliberately narrow parser-time exception to the unloaded-signature veto.
+// No classes are loaded or CI types refreshed here. Unloaded parameters must
+// already be literal nulls; unloaded results retain Parse::do_call's existing
+// next-bytecode null assertion and Parse's generic oop return phi.
+static bool can_inline_null_only_unloaded_signature(Compile* C,
+                                                    ciMethod* callee,
+                                                    ciMethod* caller,
+                                                    JVMState* jvms,
+                                                    bool should_delay) {
+  if (should_delay || C->inlining_incrementally() || !callee->force_inline() ||
+      caller == nullptr || !caller->holder()->uses_default_loader() ||
+      !callee->holder()->uses_default_loader() ||
+      caller->holder()->is_interface() || callee->holder()->is_interface() ||
+      caller->is_compiled_lambda_form() || callee->is_compiled_lambda_form() ||
+      caller->is_method_handle_intrinsic() || callee->is_method_handle_intrinsic() ||
+      callee->intrinsic_id() != vmIntrinsics::_none || jvms->bci() < 0) {
+    return false;
+  }
+  // All special late-inlining paths are outside this initial experiment.
+  if (C->should_delay_inlining(callee, jvms) ||
+      C->should_delay_vector_reboxing_inlining(callee, jvms)) {
+    return false;
+  }
+
+  ciBytecodeStream stream(caller);
+  stream.force_bci(jvms->bci());
+  Bytecodes::Code bc = stream.cur_bc();
+  // Keep interface dispatch and every adapted/MH/indy form on the old path.
+  if ((bc != Bytecodes::_invokevirtual && bc != Bytecodes::_invokespecial &&
+       bc != Bytecodes::_invokestatic) ||
+      stream.cur_bc_raw() == Bytecodes::_invokehandle ||
+      stream.has_appendix() || stream.has_local_signature()) {
+    return false;
+  }
+  bool will_link;
+  ciSignature* declared_signature = nullptr;
+  ciMethod* resolved = stream.get_method(will_link, &declared_signature);
+  ciSignature* signature = callee->signature();
+  // Require the same already-resolved method and exact signature. No CHA target
+  // substitution, covariant-return adaptation or loader-constraint relaxation.
+  if (!will_link || resolved != callee || declared_signature == nullptr ||
+      !declared_signature->equals(signature) ||
+      callee->is_static() != (bc == Bytecodes::_invokestatic) ||
+      signature->arg_size_for_bc(bc) != callee->arg_size()) {
+    return false;
+  }
+
+  SafePointNode* map = jvms->map();
+  uint nargs = (uint)callee->arg_size();
+  if (map == nullptr || jvms->argoff() > jvms->monoff() ||
+      nargs > jvms->monoff() - jvms->argoff() ||
+      jvms->argoff() + nargs > map->req()) {
+    return false;
+  }
+  uint slot = callee->is_static() ? 0 : 1;
+  for (int i = 0; i < signature->count(); i++) {
+    ciType* type = signature->type_at(i);
+    // Even loaded arrays are excluded to keep the initial scope explicit.
+    if (type->is_array_klass()) {
+      return false;
+    }
+    if (!type->is_loaded()) {
+      if (!type->is_instance_klass() || slot >= nargs) {
+        return false;
+      }
+      Node* arg = map->argument(jvms, slot);
+      if (arg == nullptr || !arg->is_Con() ||
+          arg->bottom_type() != TypePtr::NULL_PTR) {
+        return false;
+      }
+    }
+    slot += type->size(); // long and double occupy two JVM argument slots.
+  }
+  if (slot != nargs) {
+    return false;
+  }
+  ciType* result = signature->return_type();
+  if (result->is_array_klass() ||
+      (!result->is_loaded() && !result->is_instance_klass())) {
+    return false;
+  }
+  return true;
+}
+
 // negative filter: should callee NOT be inlined?
 bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_method,
-                                   int caller_bci, bool& should_delay, ciCallProfile& profile) {
+                                   JVMState* caller_jvms, bool& should_delay, ciCallProfile& profile) {
+  int caller_bci = caller_jvms->bci();
   const char* fail_msg = nullptr;
 
   // First check all inlining restrictions which are required for correctness
@@ -219,7 +304,9 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
   }
 
   // one more inlining restriction
-  if (fail_msg == nullptr && callee_method->has_unloaded_classes_in_signature()) {
+  if (fail_msg == nullptr && callee_method->has_unloaded_classes_in_signature() &&
+      !can_inline_null_only_unloaded_signature(C, callee_method, caller_method,
+                                               caller_jvms, should_delay)) {
     fail_msg = "unloaded signature classes";
   }
 
@@ -379,7 +466,7 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
     return false;
   }
   // 'should_delay' can be overridden during replay compilation
-  if (should_not_inline(callee_method, caller_method, caller_bci, should_delay, profile)) {
+  if (should_not_inline(callee_method, caller_method, jvms, should_delay, profile)) {
     return false;
   }
 
@@ -592,6 +679,17 @@ bool InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, ciCallPro
   // Check if inlining policy says no.
   bool success = try_to_inline(callee_method, caller_method, caller_bci, jvms, profile,
                                should_delay); // out
+  if (success && callee_method->has_unloaded_classes_in_signature()) {
+    // try_to_inline can choose incremental inlining after its negative filter.
+    // Recheck before recording success or constructing an inline tree.
+    if (!can_inline_null_only_unloaded_signature(C, callee_method, caller_method,
+                                                 jvms, should_delay)) {
+      set_msg("unloaded signature classes");
+      success = false;
+    } else {
+      set_msg("force inline by annotation (null-only unloaded signature)");
+    }
+  }
   if (success) {
     // Inline!
     if (msg() == nullptr) {

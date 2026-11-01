@@ -1737,6 +1737,14 @@ class java_lang_AssertionStatusDirectives: AllStatic {
 };
 
 
+class java_util_Base64_Decoder : AllStatic {
+  static int _isMIME_offset;
+ public:
+  static void compute_offsets();
+  static int isMIME_offset() { return _isMIME_offset; }
+  CDS_ONLY(static void serialize_offsets(SerializeClosure* f);)
+};
+
 class java_util_concurrent_locks_AbstractOwnableSynchronizer : AllStatic {
  private:
   static int  _owner_offset;

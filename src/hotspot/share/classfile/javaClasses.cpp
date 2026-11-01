@@ -4984,6 +4984,19 @@ void java_lang_AssertionStatusDirectives::set_deflt(oop o, bool val) {
   o->bool_field_put(_deflt_offset, val);
 }
 
+int java_util_Base64_Decoder::_isMIME_offset;
+#define BASE64_DECODER_FIELDS_DO(macro) \
+  macro(_isMIME_offset, k, "isMIME", bool_signature, false)
+void java_util_Base64_Decoder::compute_offsets() {
+  InstanceKlass* k = vmClasses::java_util_Base64_Decoder_klass();
+  BASE64_DECODER_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+#if INCLUDE_CDS
+void java_util_Base64_Decoder::serialize_offsets(SerializeClosure* f) {
+  BASE64_DECODER_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
 int java_util_concurrent_locks_AbstractOwnableSynchronizer::_owner_offset;
 
 #define AOS_FIELDS_DO(macro) \
@@ -5300,6 +5313,7 @@ void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
   f(jdk_internal_vm_ContinuationScope) \
   f(jdk_internal_vm_Continuation) \
   f(jdk_internal_vm_StackChunk) \
+  f(java_util_Base64_Decoder) \
   f(java_util_concurrent_locks_AbstractOwnableSynchronizer) \
   f(jdk_internal_foreign_abi_NativeEntryPoint) \
   f(jdk_internal_foreign_abi_ABIDescriptor) \

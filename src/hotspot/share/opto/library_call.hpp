@@ -339,6 +339,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_dilithiumMontMulByConstant();
   bool inline_dilithiumDecomposePoly();
   bool inline_base64_encodeBlock();
+  Node* inline_base64_decode0_predicate();
+  bool inline_base64_decode0();
   bool inline_base64_decodeBlock();
   bool inline_poly1305_processBlocks();
   bool inline_intpoly_montgomeryMult_P256();
@@ -353,6 +355,10 @@ class LibraryCallKit : public GraphKit {
   Node* get_block_size_from_digest_object(Node *digestBase_object);
   Node* inline_digestBase_implCompressMB_predicate(int predicate);
   bool inline_encodeISOArray(bool ascii);
+  bool inline_countCodePoints();
+  // The length from which an operation that C2 implements with a stub or a node of its own
+  // calls the library, or max_jint if it never does
+  static int stub_replacement_minimum(int floor);
   bool inline_updateCRC32();
   bool inline_updateBytesCRC32();
   bool inline_updateByteBufferCRC32();
@@ -363,6 +369,12 @@ class LibraryCallKit : public GraphKit {
   bool inline_updateByteBufferAdler32();
   bool inline_multiplyToLen();
   bool inline_countPositives();
+  bool inline_convert_prefix(vmIntrinsics::ID id);
+  bool inline_encodeUTF8Latin1();
+  Node* inline_encodeUTF8_predicate(bool utf16);
+  bool inline_encodeUTF8UTF16();
+  Node* inline_decodeUTF8UTF16_predicate();
+  bool inline_decodeUTF8UTF16();
   bool inline_squareToLen();
   bool inline_mulAdd();
   bool inline_montgomeryMultiply();

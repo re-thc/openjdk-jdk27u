@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +40,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/simdutfSupport.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"
@@ -109,6 +111,51 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
 
 bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   switch (id) {
+  case vmIntrinsics::_indexOfL_char:
+  case vmIntrinsics::_indexOfU_char:
+  case vmIntrinsics::_base64_encodeBlock:
+  case vmIntrinsics::_base64_decode0:
+  case vmIntrinsics::_base64_decodeBlock:
+  case vmIntrinsics::_encodeUTF8Latin1:
+  case vmIntrinsics::_encodeUTF8UTF16:
+  case vmIntrinsics::_decodeUTF8UTF16OrThrow:
+  case vmIntrinsics::_decodeUTF8UTF16:
+#if defined(AMD64) || defined(AARCH64)
+    return true;
+#else
+    return false;
+#endif
+  case vmIntrinsics::_decodeUTF8Bulk:
+  case vmIntrinsics::_encodeUTF8Bulk:
+  case vmIntrinsics::_decodeUTF32Bulk:
+  case vmIntrinsics::_encodeUTF32Bulk:
+  case vmIntrinsics::_decodeUTF32BEBulk:
+  case vmIntrinsics::_encodeUTF32BEBulk:
+  case vmIntrinsics::_utf8ToLatin1Bulk:
+  case vmIntrinsics::_decodeUTF16LEBulk:
+  case vmIntrinsics::_decodeUTF16BEBulk:
+  case vmIntrinsics::_encodeUTF16LEBulk:
+  case vmIntrinsics::_encodeUTF16BEBulk:
+  case vmIntrinsics::_decodeLatin1Bulk:
+  case vmIntrinsics::_encodeLatin1Bulk:
+  case vmIntrinsics::_decodeAsciiBulk:
+  case vmIntrinsics::_encodeAsciiBulk:
+  case vmIntrinsics::_encodeLatin1UTF8Bulk:
+  // C2 implements these with stubs; C1 would otherwise run their Java loops.
+  case vmIntrinsics::_countPositives:
+  case vmIntrinsics::_countCodePoints:
+  case vmIntrinsics::_inflateStringC:
+  case vmIntrinsics::_inflateStringB:
+  case vmIntrinsics::_compressStringC:
+  case vmIntrinsics::_compressStringB:
+  case vmIntrinsics::_encodeISOArray:
+  case vmIntrinsics::_encodeByteISOArray:
+  case vmIntrinsics::_encodeAsciiArray:
+#if defined(AMD64) || defined(AARCH64)
+    return SimdUTF::available();
+#else
+    return false;
+#endif
   case vmIntrinsics::_getObjectSize:
     // The fixed-layout intrinsic does not include hash expansion. The native
     // JVMTI implementation uses the current mark and also handles mirrors.

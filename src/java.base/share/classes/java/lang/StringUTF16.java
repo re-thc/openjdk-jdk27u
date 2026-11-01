@@ -177,6 +177,20 @@ final class StringUTF16 {
         return codePointBefore(value, index, false /* unchecked */);
     }
 
+    // Ranges shorter than this are counted by the loop below; the intrinsic counts at most
+    // CODE_POINT_BULK_MAX chars per call.
+    private static final int CODE_POINT_BULK_MIN = 128;
+    private static final int CODE_POINT_BULK_MAX = 1 << 20;
+
+    // Returns the Java code-point count of the length chars from offset when the library
+    // can establish it, and -1 otherwise or when the intrinsic is not used. Text without
+    // low surrogates needs no validation: each char, including an unpaired high surrogate,
+    // is one code point. The loop handles other malformed text.
+    @IntrinsicCandidate
+    private static int countCodePoints(byte[] value, int offset, int length) {
+        return -1;
+    }
+
     private static int codePointCount(byte[] value, int beginIndex, int endIndex, boolean checked) {
         assert beginIndex <= endIndex;
         int count = endIndex - beginIndex;
@@ -184,6 +198,22 @@ final class StringUTF16 {
         if (checked && i < endIndex) {
             checkBoundsBeginEnd(i, endIndex, value);
         }
+        // Well-formed text in calls of bounded length, which do not split a pair; the loop
+        // counts the rest, from the first range that is not well-formed
+        int total = 0;
+        while (endIndex - i >= CODE_POINT_BULK_MIN) {
+            int length = Math.min(endIndex - i, CODE_POINT_BULK_MAX);
+            if (length < endIndex - i && Character.isHighSurrogate(getChar(value, i + length - 1))) {
+                length--;
+            }
+            int n = countCodePoints(value, i, length);
+            if (n < 0) {
+                break;
+            }
+            total += n;
+            i += length;
+        }
+        count -= i - beginIndex - total;
         for (; i < endIndex - 1; ) {
             if (Character.isHighSurrogate(getChar(value, i++)) &&
                 Character.isLowSurrogate(getChar(value, i))) {

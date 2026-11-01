@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +87,20 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 public final class Base64 {
 
     private Base64() {}
+
+    // The longest range given to the block intrinsics at once, a multiple of 3 for encoding
+    // and of 4 for decoding. Longer inputs are converted in several blocks.
+    private static final int BLOCK_MAX = 3 << 18;
+
+    // The end of the block of src[sp, sl) that the block intrinsics are given: at most BLOCK_MAX
+    // bytes, which for the last blocks of an array of nearly 2^31 bytes must not overflow.
+    private static int blockEnd(int sp, int sl) {
+        return sl - sp > BLOCK_MAX ? sp + BLOCK_MAX : sl;
+    }
+
+    // The longest MIME input that decode(byte[]) sizes by an upper bound and trims, instead of
+    // scanning it for the exact length first.
+    private static final int MIME_BOUND_MAX = 1 << 20;
 
     /**
      * Returns a {@link Encoder} that encodes using the
@@ -445,6 +460,8 @@ public final class Base64 {
             int sl = off + slen;
             if (linemax > 0 && slen  > linemax / 4 * 3)
                 slen = linemax / 4 * 3;
+            else if (linemax <= 0 && slen > BLOCK_MAX)
+                slen = BLOCK_MAX;       // blocks of a length that the intrinsic takes
             int dp = 0;
             while (sp < sl) {
                 int sl0 = Math.min(sp + slen, sl);
@@ -568,7 +585,14 @@ public final class Base64 {
          *          if {@code src} is not in valid Base64 scheme
          */
         public byte[] decode(byte[] src) {
-            byte[] dst = new byte[decodedOutLength(src, 0, src.length)];
+            byte[] dst;
+            if (isMIME && src.length >= 2 && src.length <= MIME_BOUND_MAX) {
+                // The exact length of MIME output needs a scan of the whole input, which
+                // costs several times what the trim of an upper bound does at these lengths
+                dst = new byte[(int) (3 * ((src.length + 3L) / 4))];
+            } else {
+                dst = new byte[decodedOutLength(src, 0, src.length)];
+            }
             int ret = decode0(src, 0, src.length, dst);
             if (ret != dst.length) {
                 dst = Arrays.copyOf(dst, ret);
@@ -809,6 +833,7 @@ public final class Base64 {
             return new_dp - dp;
         }
 
+        @IntrinsicCandidate
         private int decode0(byte[] src, int sp, int sl, byte[] dst) {
             int[] base64 = isURL ? fromBase64URL : fromBase64;
             int dp = 0;
@@ -817,7 +842,7 @@ public final class Base64 {
 
             while (sp < sl) {
                 if (shiftto == 18 && sp < sl - 4) {       // fast path
-                    int dl = decodeBlock(src, sp, sl, dst, dp, isURL, isMIME);
+                    int dl = decodeBlock(src, sp, blockEnd(sp, sl), dst, dp, isURL, isMIME);
                     /*
                      * Calculate how many characters were processed by how many
                      * bytes of data were returned.

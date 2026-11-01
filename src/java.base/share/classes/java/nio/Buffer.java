@@ -864,6 +864,26 @@ public abstract sealed class Buffer
                 }
 
                 @Override
+                public String stringOf(CharBuffer buffer) {
+                    return buffer instanceof StringCharBuffer s && s.str instanceof String str ? str : null;
+                }
+
+                @Override
+                public int stringOffset(CharBuffer buffer) {
+                    return buffer.offset;
+                }
+
+                @Override
+                @ForceInline
+                public boolean isMappedStorage(Buffer buffer) {
+                    if (buffer instanceof MappedByteBuffer mbb && mbb.isMapped()) {
+                        return true;
+                    }
+                    var segment = buffer.segment;
+                    return segment != null && segment.isMapped();
+                }
+
+                @Override
                 public UnmapperProxy unmapper(Buffer buffer) {
                     if (buffer instanceof MappedByteBuffer mbb) {
                         return mbb.unmapper();
