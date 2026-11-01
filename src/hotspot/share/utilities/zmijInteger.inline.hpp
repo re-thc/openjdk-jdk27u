@@ -43,6 +43,47 @@ inline int hotspot_zmij_integer(void* output, int index, Int value) {
     }
     return index;
   }
+  // Keep the Java method a single intrinsic. Short signed longs use the
+  // same two-digit-at-a-time strategy as the Java fallback, but write directly
+  // inside the native leaf without a digit-count scan or temporary buffer.
+  if constexpr (sizeof(Int) == 8) {
+    bool negative = value < 0;
+    uint64_t magnitude = negative ? -uint64_t(value) : uint64_t(value);
+    // The bounded Latin1 lane wins earlier where available. Other paths
+    // retain the scalar writer longer instead of using ASCII scratch/copy.
+    if (magnitude < ((utf16 || !ZMIJ_USE_U64_LANE_CHAIN)
+                         ? UINT64_C(1000000000000) : UINT64_C(1000000000))) {
+      using Char = std::conditional_t<utf16, uint16_t, char>;
+      Char* chars = static_cast<Char*>(output);
+      while (magnitude > UINT32_MAX) {
+        uint64_t quotient = magnitude / 100;
+        const char* pair = zmij::detail::digits2(magnitude - quotient * 100);
+        index -= 2;
+        chars[index] = Char(pair[0]);
+        chars[index + 1] = Char(pair[1]);
+        magnitude = quotient;
+      }
+      uint32_t small = uint32_t(magnitude);
+      while (small >= 100) {
+        uint32_t quotient = small / 100;
+        const char* pair = zmij::detail::digits2(small - quotient * 100);
+        index -= 2;
+        chars[index] = Char(pair[0]);
+        chars[index + 1] = Char(pair[1]);
+        small = quotient;
+      }
+      if (small >= 10) {
+        const char* pair = zmij::detail::digits2(small);
+        index -= 2;
+        chars[index] = Char(pair[0]);
+        chars[index + 1] = Char(pair[1]);
+      } else {
+        chars[--index] = Char('0' + small);
+      }
+      if (negative) chars[--index] = '-';
+      return index;
+    }
+  }
 #if ZMIJ_USE_U64_LANE_CHAIN
   if constexpr (sizeof(Int) == 8 && !utf16) {
     // The preceding exact-store fast path covered -9..9. Every remaining

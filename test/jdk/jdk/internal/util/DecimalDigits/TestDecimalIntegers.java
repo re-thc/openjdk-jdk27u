@@ -177,6 +177,14 @@ public class TestDecimalIntegers {
             format(value, false);
         }
         Random random = new Random(0xDEC1A1L);
+        long power = 1;
+        for (int digits = 1; digits <= 19; ++digits) {
+            for (long value : new long[] {power - 1, power, power + 1}) {
+                format(value, true);
+                format(-value, true);
+            }
+            if (digits < 19) power *= 10;
+        }
         for (int n = 0; n < 4096; ++n) {
             long value = random.nextLong();
             for (int radix : new int[] {2, 8, 10, 16, 36}) {

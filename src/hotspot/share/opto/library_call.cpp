@@ -870,18 +870,6 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
     set_control(fast_control);
     return slow_control;
   }
-  case vmIntrinsics::_formatDecimalLongLatin1:
-  case vmIntrinsics::_formatDecimalLongUTF16: {
-    // Keep short values in the Java writer; the native call pays off for long text.
-    const jlong limit = 1000000000000LL;
-    Node* shifted = _gvn.transform(new AddLNode(argument(0), longcon(limit - 1)));
-    Node* compare = _gvn.transform(new CmpULNode(shifted, longcon(2 * limit - 1)));
-    Node* small = _gvn.transform(new BoolNode(compare, BoolTest::lt));
-    IfNode* branch = create_and_xform_if(control(), small, PROB_FAIR, COUNT_UNKNOWN);
-    Node* slow = _gvn.transform(new IfTrueNode(branch));
-    set_control(_gvn.transform(new IfFalseNode(branch)));
-    return slow;
-  }
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
     return inline_cipherBlockChaining_AESCrypt_predicate(false);
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:

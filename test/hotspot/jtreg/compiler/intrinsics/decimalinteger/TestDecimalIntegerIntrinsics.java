@@ -99,10 +99,24 @@ public class TestDecimalIntegerIntrinsics {
         for (Method writer : writers) {
             requireLevel(wb, writer, expectedLevel);
         }
+        long power = 1;
+        for (int digits = 1; digits <= 19; ++digits) {
+            for (long value : new long[] {power - 1, power, power + 1}) {
+                for (int offset : new int[] {0, 1, 7}) {
+                    check(value, offset, false, true);
+                    check(value, offset, true, true);
+                    check(-value, offset, false, true);
+                    check(-value, offset, true, true);
+                }
+            }
+            if (digits < 19) power *= 10;
+        }
         for (long value : new long[] {0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6,
                 7, -7, 8, -8, 9, -9, 10, -10, 99, -99, 100, -100,
-                9999, 10000, Integer.MIN_VALUE, Integer.MAX_VALUE, 1L << 32,
-                -(1L << 32), 999999999999L, 1000000000000L, 1000000000001L,
+                9999, 10000, Integer.MIN_VALUE, Integer.MAX_VALUE,
+                (1L << 32) - 1, 1L << 32, (1L << 32) + 1,
+                -((1L << 32) - 1), -(1L << 32), -((1L << 32) + 1),
+                999999999999L, 1000000000000L, 1000000000001L,
                 -999999999999L, -1000000000000L, -1000000000001L,
                 Long.MIN_VALUE, Long.MAX_VALUE}) {
             for (int offset : new int[] {0, 1, 7}) {
