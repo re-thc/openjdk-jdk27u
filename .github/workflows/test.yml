@@ -188,7 +188,9 @@ jobs:
         id: extra-options
         run: |
           if [[ '${{ runner.os }}' == 'Windows' ]]; then
-            echo 'stream-options=-Dstdin.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8' >> "$GITHUB_OUTPUT"
+            # jtreg's agent decodes its output using the legacy property,
+            # independently of the standard stream encoding properties.
+            echo 'stream-options=-Dstdin.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8' >> "$GITHUB_OUTPUT"
             echo 'stream-marker=-Dtest.stream.encoding=UTF-8' >> "$GITHUB_OUTPUT"
           fi
           if [[ '${{ inputs.static-suffix }}' == '-static' ]]; then
