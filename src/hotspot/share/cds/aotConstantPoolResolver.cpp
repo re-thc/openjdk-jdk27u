@@ -29,12 +29,14 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "runtime/commonIntrinsics.hpp"
 #include "runtime/handles.inline.hpp"
 
 // Returns true if we CAN PROVE that cp_index will always resolve to
@@ -213,6 +215,82 @@ void AOTConstantPoolResolver::preresolve_class_cp_entries(JavaThread* current, I
                                 resolved_klass->external_name());
       }
     }
+  }
+}
+
+// A common interpreter entry normally skips its Java implementation. A fallback
+// can resolve references in that implementation, so retaining only references
+// that happened to resolve makes otherwise identical CDS dumps differ. Resolve
+// the symbolic references without executing Java code, using the same bounded
+// resolver and archive eligibility checks as explicit class-list CP recipes.
+void AOTConstantPoolResolver::preresolve_common_intrinsic_cp_entries(JavaThread* current, InstanceKlass* ik) {
+  assert(CDSConfig::is_dumping_classic_static_archive(), "classic CDS only");
+  if (!CommonIntrinsics::enabled() || !InlineIntrinsics ||
+      ik->class_loader() != nullptr || !ik->is_linked() ||
+      SystemDictionaryShared::should_be_excluded(ik)) {
+    return;
+  }
+
+  ResourceMark rm(current);
+  HandleMark hm(current);
+  constantPoolHandle cp(current, ik->constants());
+  GrowableArray<bool> references(cp->length(), cp->length(), false);
+  bool found_reference = false;
+  for (int i = 0; i < ik->methods()->length(); i++) {
+    methodHandle m(current, ik->methods()->at(i));
+    vmIntrinsics::ID id = m->intrinsic_id();
+    // These implementations have optional class and invokestatic resolutions
+    // observed in ordinary static dumps. Do not change AOT training recipes or
+    // pre-resolve unrelated Java implementations.
+    if ((id != vmIntrinsics::_numberOfLeadingZeros_l && id != vmIntrinsics::_vectorizedHashCode) ||
+        m->is_native() || m->is_synchronized() ||
+        !CommonIntrinsics::is_available_for_interpreter(id) || !vmIntrinsics::is_intrinsic_available(id)) {
+      continue;
+    }
+
+    BytecodeStream bcs(m);
+    while (bcs.next() != Bytecodes::_illegal) {
+      int cp_index = -1;
+      switch (bcs.code()) {
+      case Bytecodes::_new:
+      case Bytecodes::_anewarray:
+      case Bytecodes::_checkcast:
+      case Bytecodes::_instanceof:
+      case Bytecodes::_multianewarray:
+        cp_index = bcs.get_index_u2();
+        break;
+      case Bytecodes::_ldc:
+      case Bytecodes::_ldc_w: {
+        Bytecode_loadconstant ldc(m, bcs.bci());
+        int index = ldc.pool_index();
+        if (cp->tag_at(index).is_klass_or_reference()) {
+          cp_index = index;
+        }
+        break;
+      }
+      case Bytecodes::_getstatic:
+      case Bytecodes::_putstatic:
+      case Bytecodes::_getfield:
+      case Bytecodes::_putfield:
+      case Bytecodes::_invokevirtual:
+      case Bytecodes::_invokespecial:
+      case Bytecodes::_invokestatic:
+      case Bytecodes::_invokeinterface:
+        cp_index = cp->to_cp_index(bcs.get_index_u2(), bcs.code());
+        references.at_put(cp->uncached_klass_ref_index_at(cp_index), true);
+        break;
+      default:
+        break;
+      }
+      if (cp_index >= 0) {
+        references.at_put(cp_index, true);
+        found_reference = true;
+      }
+    }
+  }
+  if (found_reference) {
+    preresolve_class_cp_entries(current, ik, &references);
+    preresolve_field_and_method_cp_entries(current, ik, &references);
   }
 }
 

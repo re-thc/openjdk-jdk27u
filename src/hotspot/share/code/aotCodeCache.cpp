@@ -2050,6 +2050,7 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(Runtime1::move_mirror_patching);
     ADD_EXTERNAL_ADDRESS(Runtime1::move_appendix_patching);
     ADD_EXTERNAL_ADDRESS(Runtime1::predicate_failed_trap);
+    ADD_EXTERNAL_ADDRESS(Runtime1::intrinsic_failed_trap);
     ADD_EXTERNAL_ADDRESS(Runtime1::unimplemented_entry);
     // already added
     // ADD_EXTERNAL_ADDRESS(Thread::current);

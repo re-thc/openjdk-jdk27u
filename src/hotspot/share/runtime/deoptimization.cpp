@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1591,6 +1592,162 @@ Deoptimization::get_method_data(JavaThread* thread, const methodHandle& m,
   return mdo;
 }
 
+// Local derived constants.
+// Further breakdown of DataLayout::trap_state, as promised by DataLayout.
+// C1 guard failures also record and consume per-bytecode trap history.
+const int DS_REASON_MASK   = ((uint)DataLayout::trap_mask) >> 1;
+const int DS_RECOMPILE_BIT = DataLayout::trap_mask - DS_REASON_MASK;
+
+//---------------------------trap_state_reason---------------------------------
+Deoptimization::DeoptReason
+Deoptimization::trap_state_reason(int trap_state) {
+  // This assert provides the link between the width of DataLayout::trap_bits
+  // and the encoding of "recorded" reasons.  It ensures there are enough
+  // bits to store all needed reasons in the per-BCI MDO profile.
+  assert(DS_REASON_MASK >= Reason_RECORDED_LIMIT, "enough bits");
+  int recompile_bit = (trap_state & DS_RECOMPILE_BIT);
+  trap_state -= recompile_bit;
+  if (trap_state == DS_REASON_MASK) {
+    return Reason_many;
+  } else {
+    assert((int)Reason_none == 0, "state=0 => Reason_none");
+    return (DeoptReason)trap_state;
+  }
+}
+//-------------------------trap_state_has_reason-------------------------------
+int Deoptimization::trap_state_has_reason(int trap_state, int reason) {
+  assert(reason_is_recorded_per_bytecode((DeoptReason)reason), "valid reason");
+  assert(DS_REASON_MASK >= Reason_RECORDED_LIMIT, "enough bits");
+  int recompile_bit = (trap_state & DS_RECOMPILE_BIT);
+  trap_state -= recompile_bit;
+  if (trap_state == DS_REASON_MASK) {
+    return -1;  // true, unspecifically (bottom of state lattice)
+  } else if (trap_state == reason) {
+    return 1;   // true, definitely
+  } else if (trap_state == 0) {
+    return 0;   // false, definitely (top of state lattice)
+  } else {
+    return 0;   // false, definitely
+  }
+}
+//-------------------------trap_state_add_reason-------------------------------
+int Deoptimization::trap_state_add_reason(int trap_state, int reason) {
+  assert(reason_is_recorded_per_bytecode((DeoptReason)reason) || reason == Reason_many, "valid reason");
+  int recompile_bit = (trap_state & DS_RECOMPILE_BIT);
+  trap_state -= recompile_bit;
+  if (trap_state == DS_REASON_MASK) {
+    return trap_state + recompile_bit;     // already at state lattice bottom
+  } else if (trap_state == reason) {
+    return trap_state + recompile_bit;     // the condition is already true
+  } else if (trap_state == 0) {
+    return reason + recompile_bit;          // no condition has yet been true
+  } else {
+    return DS_REASON_MASK + recompile_bit;  // fall to state lattice bottom
+  }
+}
+//-----------------------trap_state_is_recompiled------------------------------
+bool Deoptimization::trap_state_is_recompiled(int trap_state) {
+  return (trap_state & DS_RECOMPILE_BIT) != 0;
+}
+//-----------------------trap_state_set_recompiled-----------------------------
+int Deoptimization::trap_state_set_recompiled(int trap_state, bool z) {
+  if (z)  return trap_state |  DS_RECOMPILE_BIT;
+  else    return trap_state & ~DS_RECOMPILE_BIT;
+}
+ProfileData*
+Deoptimization::query_update_method_data(MethodData* trap_mdo,
+                                         int trap_bci,
+                                         Deoptimization::DeoptReason reason,
+                                         Method* compiled_method,
+                                         //outputs:
+                                         uint& ret_this_trap_count,
+                                         bool& ret_maybe_prior_trap,
+                                         bool& ret_maybe_prior_recompile) {
+  trap_mdo->check_extra_data_locked();
+
+  bool maybe_prior_trap = false;
+  bool maybe_prior_recompile = false;
+  uint this_trap_count = 0;
+  uint idx = reason;
+  uint prior_trap_count = trap_mdo->trap_count(idx);
+  this_trap_count  = trap_mdo->inc_trap_count(idx);
+
+  // If the runtime cannot find a place to store trap history,
+  // it is estimated based on the general condition of the method.
+  // If the method has ever been recompiled, or has ever incurred
+  // a trap with the present reason , then this BCI is assumed
+  // (pessimistically) to be the culprit.
+  maybe_prior_trap      = (prior_trap_count != 0);
+  maybe_prior_recompile = (trap_mdo->decompile_count() != 0);
+  ProfileData* pdata = nullptr;
+
+
+  // For reasons which are recorded per bytecode, we check per-BCI data.
+  DeoptReason per_bc_reason = reason_recorded_per_bytecode_if_any(reason);
+  if (per_bc_reason != Reason_none) {
+    // Find the profile data for this BCI.  If there isn't one,
+    // try to allocate one from the MDO's set of spares.
+    // This will let us detect a repeated trap at this point.
+    pdata = trap_mdo->allocate_bci_to_data(trap_bci, reason_is_speculate(reason) ? compiled_method : nullptr);
+
+    if (pdata != nullptr) {
+      if (reason_is_speculate(reason) && !pdata->is_SpeculativeTrapData()) {
+        if (LogCompilation && xtty != nullptr) {
+          ttyLocker ttyl;
+          // no more room for speculative traps in this MDO
+          xtty->elem("speculative_traps_oom");
+        }
+      }
+      // Query the trap state of this profile datum.
+      int tstate0 = pdata->trap_state();
+      if (!trap_state_has_reason(tstate0, per_bc_reason))
+        maybe_prior_trap = false;
+      if (!trap_state_is_recompiled(tstate0))
+        maybe_prior_recompile = false;
+
+      // Update the trap state of this profile datum.
+      int tstate1 = tstate0;
+      // Record the reason.
+      tstate1 = trap_state_add_reason(tstate1, per_bc_reason);
+      // Store the updated state on the MDO, for next time.
+      if (tstate1 != tstate0)
+        pdata->set_trap_state(tstate1);
+    } else {
+      if (LogCompilation && xtty != nullptr) {
+        ttyLocker ttyl;
+        // Missing MDP?  Leave a small complaint in the log.
+        xtty->elem("missing_mdp bci='%d'", trap_bci);
+      }
+    }
+  }
+
+  // Return results:
+  ret_this_trap_count = this_trap_count;
+  ret_maybe_prior_trap = maybe_prior_trap;
+  ret_maybe_prior_recompile = maybe_prior_recompile;
+  return pdata;
+}
+
+void
+Deoptimization::update_method_data_from_interpreter(MethodData* trap_mdo, int trap_bci, int reason) {
+  ResourceMark rm;
+  // Ignored outputs:
+  uint ignore_this_trap_count;
+  bool ignore_maybe_prior_trap;
+  bool ignore_maybe_prior_recompile;
+  assert(!reason_is_speculate(reason), "reason speculate only used by compiler");
+
+  // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+  MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
+  query_update_method_data(trap_mdo, trap_bci,
+                           (DeoptReason)reason,
+                           nullptr,
+                           ignore_this_trap_count,
+                           ignore_maybe_prior_trap,
+                           ignore_maybe_prior_recompile);
+}
+
 #ifdef COMPILER2
 void Deoptimization::load_class_by_index(const constantPoolHandle& constant_pool, int index, TRAPS) {
   // In case of an unresolved klass entry, load the class.
@@ -2145,100 +2302,6 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
 }
 JRT_END
 
-ProfileData*
-Deoptimization::query_update_method_data(MethodData* trap_mdo,
-                                         int trap_bci,
-                                         Deoptimization::DeoptReason reason,
-                                         Method* compiled_method,
-                                         //outputs:
-                                         uint& ret_this_trap_count,
-                                         bool& ret_maybe_prior_trap,
-                                         bool& ret_maybe_prior_recompile) {
-  trap_mdo->check_extra_data_locked();
-
-  bool maybe_prior_trap = false;
-  bool maybe_prior_recompile = false;
-  uint this_trap_count = 0;
-  uint idx = reason;
-  uint prior_trap_count = trap_mdo->trap_count(idx);
-  this_trap_count  = trap_mdo->inc_trap_count(idx);
-
-  // If the runtime cannot find a place to store trap history,
-  // it is estimated based on the general condition of the method.
-  // If the method has ever been recompiled, or has ever incurred
-  // a trap with the present reason , then this BCI is assumed
-  // (pessimistically) to be the culprit.
-  maybe_prior_trap      = (prior_trap_count != 0);
-  maybe_prior_recompile = (trap_mdo->decompile_count() != 0);
-  ProfileData* pdata = nullptr;
-
-
-  // For reasons which are recorded per bytecode, we check per-BCI data.
-  DeoptReason per_bc_reason = reason_recorded_per_bytecode_if_any(reason);
-  if (per_bc_reason != Reason_none) {
-    // Find the profile data for this BCI.  If there isn't one,
-    // try to allocate one from the MDO's set of spares.
-    // This will let us detect a repeated trap at this point.
-    pdata = trap_mdo->allocate_bci_to_data(trap_bci, reason_is_speculate(reason) ? compiled_method : nullptr);
-
-    if (pdata != nullptr) {
-      if (reason_is_speculate(reason) && !pdata->is_SpeculativeTrapData()) {
-        if (LogCompilation && xtty != nullptr) {
-          ttyLocker ttyl;
-          // no more room for speculative traps in this MDO
-          xtty->elem("speculative_traps_oom");
-        }
-      }
-      // Query the trap state of this profile datum.
-      int tstate0 = pdata->trap_state();
-      if (!trap_state_has_reason(tstate0, per_bc_reason))
-        maybe_prior_trap = false;
-      if (!trap_state_is_recompiled(tstate0))
-        maybe_prior_recompile = false;
-
-      // Update the trap state of this profile datum.
-      int tstate1 = tstate0;
-      // Record the reason.
-      tstate1 = trap_state_add_reason(tstate1, per_bc_reason);
-      // Store the updated state on the MDO, for next time.
-      if (tstate1 != tstate0)
-        pdata->set_trap_state(tstate1);
-    } else {
-      if (LogCompilation && xtty != nullptr) {
-        ttyLocker ttyl;
-        // Missing MDP?  Leave a small complaint in the log.
-        xtty->elem("missing_mdp bci='%d'", trap_bci);
-      }
-    }
-  }
-
-  // Return results:
-  ret_this_trap_count = this_trap_count;
-  ret_maybe_prior_trap = maybe_prior_trap;
-  ret_maybe_prior_recompile = maybe_prior_recompile;
-  return pdata;
-}
-
-void
-Deoptimization::update_method_data_from_interpreter(MethodData* trap_mdo, int trap_bci, int reason) {
-  ResourceMark rm;
-  // Ignored outputs:
-  uint ignore_this_trap_count;
-  bool ignore_maybe_prior_trap;
-  bool ignore_maybe_prior_recompile;
-  assert(!reason_is_speculate(reason), "reason speculate only used by compiler");
-
-  // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-  MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
-
-  query_update_method_data(trap_mdo, trap_bci,
-                           (DeoptReason)reason,
-                           nullptr,
-                           ignore_this_trap_count,
-                           ignore_maybe_prior_trap,
-                           ignore_maybe_prior_recompile);
-}
-
 Deoptimization::UnrollBlock* Deoptimization::uncommon_trap(JavaThread* current, jint trap_request, jint exec_mode) {
   // Enable WXWrite: current function is called from methods compiled by C2 directly
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
@@ -2252,67 +2315,6 @@ Deoptimization::UnrollBlock* Deoptimization::uncommon_trap(JavaThread* current, 
   return fetch_unroll_info_helper(current, exec_mode);
 }
 
-// Local derived constants.
-// Further breakdown of DataLayout::trap_state, as promised by DataLayout.
-const int DS_REASON_MASK   = ((uint)DataLayout::trap_mask) >> 1;
-const int DS_RECOMPILE_BIT = DataLayout::trap_mask - DS_REASON_MASK;
-
-//---------------------------trap_state_reason---------------------------------
-Deoptimization::DeoptReason
-Deoptimization::trap_state_reason(int trap_state) {
-  // This assert provides the link between the width of DataLayout::trap_bits
-  // and the encoding of "recorded" reasons.  It ensures there are enough
-  // bits to store all needed reasons in the per-BCI MDO profile.
-  assert(DS_REASON_MASK >= Reason_RECORDED_LIMIT, "enough bits");
-  int recompile_bit = (trap_state & DS_RECOMPILE_BIT);
-  trap_state -= recompile_bit;
-  if (trap_state == DS_REASON_MASK) {
-    return Reason_many;
-  } else {
-    assert((int)Reason_none == 0, "state=0 => Reason_none");
-    return (DeoptReason)trap_state;
-  }
-}
-//-------------------------trap_state_has_reason-------------------------------
-int Deoptimization::trap_state_has_reason(int trap_state, int reason) {
-  assert(reason_is_recorded_per_bytecode((DeoptReason)reason), "valid reason");
-  assert(DS_REASON_MASK >= Reason_RECORDED_LIMIT, "enough bits");
-  int recompile_bit = (trap_state & DS_RECOMPILE_BIT);
-  trap_state -= recompile_bit;
-  if (trap_state == DS_REASON_MASK) {
-    return -1;  // true, unspecifically (bottom of state lattice)
-  } else if (trap_state == reason) {
-    return 1;   // true, definitely
-  } else if (trap_state == 0) {
-    return 0;   // false, definitely (top of state lattice)
-  } else {
-    return 0;   // false, definitely
-  }
-}
-//-------------------------trap_state_add_reason-------------------------------
-int Deoptimization::trap_state_add_reason(int trap_state, int reason) {
-  assert(reason_is_recorded_per_bytecode((DeoptReason)reason) || reason == Reason_many, "valid reason");
-  int recompile_bit = (trap_state & DS_RECOMPILE_BIT);
-  trap_state -= recompile_bit;
-  if (trap_state == DS_REASON_MASK) {
-    return trap_state + recompile_bit;     // already at state lattice bottom
-  } else if (trap_state == reason) {
-    return trap_state + recompile_bit;     // the condition is already true
-  } else if (trap_state == 0) {
-    return reason + recompile_bit;          // no condition has yet been true
-  } else {
-    return DS_REASON_MASK + recompile_bit;  // fall to state lattice bottom
-  }
-}
-//-----------------------trap_state_is_recompiled------------------------------
-bool Deoptimization::trap_state_is_recompiled(int trap_state) {
-  return (trap_state & DS_RECOMPILE_BIT) != 0;
-}
-//-----------------------trap_state_set_recompiled-----------------------------
-int Deoptimization::trap_state_set_recompiled(int trap_state, bool z) {
-  if (z)  return trap_state |  DS_RECOMPILE_BIT;
-  else    return trap_state & ~DS_RECOMPILE_BIT;
-}
 //---------------------------format_trap_state---------------------------------
 // This is used for debugging and diagnostics, including LogFile output.
 const char* Deoptimization::format_trap_state(char* buf, size_t buflen,
@@ -2533,10 +2535,6 @@ void Deoptimization::print_statistics() {
 #else // COMPILER2
 
 // Stubs for C1 only system.
-bool Deoptimization::trap_state_is_recompiled(int trap_state) {
-  return false;
-}
-
 const char* Deoptimization::trap_reason_name(int reason) {
   return "unknown";
 }
@@ -2551,15 +2549,6 @@ jint Deoptimization::deoptimization_count(const char *reason_str, const char *ac
 
 void Deoptimization::print_statistics() {
   // no output
-}
-
-void
-Deoptimization::update_method_data_from_interpreter(MethodData* trap_mdo, int trap_bci, int reason) {
-  // no update
-}
-
-int Deoptimization::trap_state_has_reason(int trap_state, int reason) {
-  return 0;
 }
 
 void Deoptimization::gather_statistics(DeoptReason reason, DeoptAction action,

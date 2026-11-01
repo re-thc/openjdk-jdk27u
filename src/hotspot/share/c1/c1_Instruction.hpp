@@ -359,6 +359,8 @@ class Instruction: public CompilationResourceObj {
     DeoptimizeOnException,
     KillsMemoryFlag,
     OmitChecksFlag,
+    CommonIntrinsicEligibilityProvenFlag,
+    CommonIntrinsicAesBackendProvenFlag,
     InstructionLastFlag
   };
 

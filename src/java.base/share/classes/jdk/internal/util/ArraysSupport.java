@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Teamoffy Pte. Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +32,7 @@ import java.util.Objects;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -369,7 +371,7 @@ public class ArraysSupport {
             case T_BYTE -> hashCode(initialValue, (byte[]) array, fromIndex, length);
             case T_SHORT -> hashCode(initialValue, (short[]) array, fromIndex, length);
             case T_INT -> hashCode(initialValue, (int[]) array, fromIndex, length);
-                default -> throw new IllegalArgumentException("unrecognized basic type: " + basicType);
+            default -> throw new IllegalArgumentException("unrecognized basic type: " + basicType);
         };
     }
 

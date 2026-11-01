@@ -1274,12 +1274,16 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
       break;
 
     case StubId::c1_predicate_failed_trap_id:
+    case StubId::c1_intrinsic_failed_trap_id:
       {
-        StubFrame f(sasm, "predicate_failed_trap", dont_gc_arguments);
+        bool intrinsic = id == StubId::c1_intrinsic_failed_trap_id;
+        StubFrame f(sasm, intrinsic ? "intrinsic_failed_trap" : "predicate_failed_trap", dont_gc_arguments);
 
         OopMap* map = save_live_registers(sasm, 1);
 
-        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, predicate_failed_trap));
+        address target = intrinsic ? CAST_FROM_FN_PTR(address, intrinsic_failed_trap)
+                                   : CAST_FROM_FN_PTR(address, predicate_failed_trap);
+        int call_offset = __ call_RT(noreg, noreg, target);
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, map);
         restore_live_registers(sasm);

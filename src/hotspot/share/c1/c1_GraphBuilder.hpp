@@ -347,6 +347,8 @@ class GraphBuilder {
   void fill_sync_handler(Value lock, BlockBegin* sync_handler, bool default_handler = false);
 
   void build_graph_for_intrinsic(ciMethod* callee, bool ignore_return);
+  void build_bounded_common_intrinsic(ciMethod* callee, Values* args,
+                                   ValueStack* state_before, bool ignore_return);
 
   // inliners
   bool try_inline(           ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc = Bytecodes::_illegal, Value receiver = nullptr);

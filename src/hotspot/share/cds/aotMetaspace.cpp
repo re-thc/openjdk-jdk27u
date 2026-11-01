@@ -945,6 +945,9 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
       OopHandle mirror = mirrors->at(i);
       InstanceKlass* ik = java_lang_Class::as_InstanceKlass(mirror.resolve());
       AOTConstantPoolResolver::preresolve_string_cp_entries(ik, CHECK);
+      if (CDSConfig::is_dumping_classic_static_archive()) {
+        AOTConstantPoolResolver::preresolve_common_intrinsic_cp_entries(THREAD, ik);
+      }
     }
   }
 }

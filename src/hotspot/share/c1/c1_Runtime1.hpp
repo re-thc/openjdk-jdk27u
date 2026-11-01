@@ -148,6 +148,7 @@ public:
   static int  is_instance_of(oopDesc* mirror, oopDesc* obj);
 
   static void predicate_failed_trap(JavaThread* current);
+  static void intrinsic_failed_trap(JavaThread* current);
 
   static void check_abort_on_vm_exception(oopDesc* ex);
 

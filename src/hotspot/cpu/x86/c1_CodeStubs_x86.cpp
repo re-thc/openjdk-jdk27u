@@ -97,12 +97,67 @@ PredicateFailedStub::PredicateFailedStub(CodeEmitInfo* info) {
 
 void PredicateFailedStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  address a = Runtime1::entry_for(StubId::c1_predicate_failed_trap_id);
+  address a = Runtime1::entry_for(_is_intrinsic ? StubId::c1_intrinsic_failed_trap_id
+                                               : StubId::c1_predicate_failed_trap_id);
   __ call(RuntimeAddress(a));
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   DEBUG_ONLY(__ should_not_reach_here());
 }
+
+#ifdef AMD64
+void CommonIntrinsicFallbackStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+  // Every guard precedes raw-address formation and argument mutation.
+  // Transfer in reverse dependency order into the Java calling convention.
+#ifdef _WIN64
+  // Windows Java uses rdx, r8, r9, rdi, rsi, unlike the SysV order.
+  if (_digest) {
+    __ movl(j_rarg2, rdx);
+    __ movptr(j_rarg1, rsi);
+    __ movptr(j_rarg0, rdi);
+    __ movl(j_rarg3, rcx);
+  } else {
+    __ movl(j_rarg1, rdi);
+    __ movl(j_rarg2, rsi);
+    __ movl(j_rarg3, rdx);
+    __ movptr(j_rarg0, rax);
+    if (_hash_type->is_constant()) {
+      __ movl(j_rarg4, _hash_type->as_constant_ptr()->as_jint());
+    } else {
+      __ movl(j_rarg4, rcx);
+    }
+  }
+#else
+  if (_digest) {
+    __ movl(j_rarg3, rcx);
+    __ movl(j_rarg2, rdx);
+    __ movptr(j_rarg1, rsi);
+    __ movptr(j_rarg0, rdi);
+  } else {
+    if (_hash_type->is_constant()) {
+      __ movl(j_rarg4, _hash_type->as_constant_ptr()->as_jint());
+    } else {
+      __ movl(j_rarg4, rcx);
+    }
+    __ movl(j_rarg3, rdx);
+    __ movl(j_rarg2, rsi);
+    __ movl(j_rarg1, rdi);
+    __ movptr(j_rarg0, rax);
+  }
+#endif
+  ce->align_call(_digest ? lir_optvirtual_call : lir_static_call);
+  ce->emit_static_call_stub();
+  if (ce->compilation()->bailed_out()) return;
+  address target = _digest ? SharedRuntime::get_resolve_opt_virtual_call_stub()
+                           : SharedRuntime::get_resolve_static_call_stub();
+  __ call(AddressLiteral(target, _digest ? relocInfo::opt_virtual_call_type
+                                        : relocInfo::static_call_type));
+  ce->add_call_info_here(_info);
+  __ post_call_nop();
+  __ jmp(_continuation);
+}
+#endif
 
 void DivByZeroStub::emit_code(LIR_Assembler* ce) {
   if (_offset != -1) {

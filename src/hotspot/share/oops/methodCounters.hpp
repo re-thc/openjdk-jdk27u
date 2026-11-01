@@ -107,6 +107,10 @@ class MethodCounters : public Metadata {
 #endif // COMPILER2
 
 #if INCLUDE_JVMTI
+  static ByteSize number_of_breakpoints_offset() {
+    return byte_offset_of(MethodCounters, _number_of_breakpoints);
+  }
+
   u2   number_of_breakpoints() const   { return _number_of_breakpoints; }
   void incr_number_of_breakpoints()    { ++_number_of_breakpoints; }
   void decr_number_of_breakpoints()    { --_number_of_breakpoints; }
