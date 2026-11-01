@@ -360,6 +360,7 @@ class Instruction: public CompilationResourceObj {
     KillsMemoryFlag,
     OmitChecksFlag,
     CommonIntrinsicEligibilityProvenFlag,
+    CommonIntrinsicAesBackendProvenFlag,
     InstructionLastFlag
   };
 

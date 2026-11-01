@@ -3707,6 +3707,42 @@ void GraphBuilder::build_bounded_common_intrinsic(ciMethod* callee, Values* args
   }
   CHECK_BAILOUT();
 
+  // Only the instance mode kernels share their Java entry with non-AES
+  // backends. Check after pure eligibility so rejected lengths/aliases do
+  // not introduce a field access. AES_Crypt is final, hence instanceof is
+  // equivalent to the old exact-klass check and also rejects null safely.
+  Value aes_cipher = nullptr;
+  const bool aes_mode = id == vmIntrinsics::_electronicCodeBook_encryptAESCrypt ||
+      id == vmIntrinsics::_electronicCodeBook_decryptAESCrypt ||
+      id == vmIntrinsics::_cipherBlockChaining_encryptAESCrypt ||
+      id == vmIntrinsics::_cipherBlockChaining_decryptAESCrypt ||
+      id == vmIntrinsics::_counterMode_AESCrypt;
+  if (live && aes_mode) {
+    ciField* cipher_field = callee->holder()->get_field_by_offset(
+        CommonIntrinsics::embedded_cipher_offset, false);
+    ciKlass* aes = compilation()->env()->Object_klass()->find_klass(
+        ciSymbol::make("com/sun/crypto/provider/AES_Crypt"));
+    if (cipher_field == nullptr || !aes->is_loaded() || !aes->is_instance_klass() ||
+        !aes->as_instance_klass()->is_final()) {
+      bailout("common intrinsic AES layout unavailable");
+      return;
+    }
+    assert(has_receiver && cipher_field->is_final() && !cipher_field->is_volatile(), "stable cipher field");
+    assert(cipher_field->name()->equals(ciSymbol::make("embeddedCipher")) &&
+           cipher_field->signature()->equals(ciSymbol::make("Lcom/sun/crypto/provider/SymmetricCipher;")) &&
+           cipher_field->holder()->name()->equals(ciSymbol::make("com/sun/crypto/provider/FeedbackCipher")),
+           "expected inherited cipher field");
+    // LoadField is pinned and barriered; retain this same oop as an explicit
+    // compiler input rather than loading/checking embeddedCipher again in LIR.
+    aes_cipher = append(new LoadField(args->at(0), CommonIntrinsics::embedded_cipher_offset,
+                                     cipher_field, false, state_before, false));
+    InstanceOf* test = new InstanceOf(aes, aes_cipher, state_before);
+    test->set_direct_compare(direct_compare(aes));
+    Value is_aes = append_split(test);
+    reject(is_aes, If::eql, constant(0));
+  }
+  CHECK_BAILOUT();
+
   auto join_result = [&](Value value) {
     if (result_type != voidType && !ignore_return) push(result_type, value);
     if (callee != method() && profile_return() && result_type->is_object_kind()) {
@@ -3716,9 +3752,13 @@ void GraphBuilder::build_bounded_common_intrinsic(ciMethod* callee, Values* args
   };
   if (live) {
     Values* fast_args = state()->pop_arguments(callee->arg_size());
+    // Auxiliary operand is not a Java argument: never add it to ValueStack,
+    // slow Invoke arguments, or invocation profiling/debug state.
+    if (aes_cipher != nullptr) fast_args->append(aes_cipher);
     Intrinsic* fast = new Intrinsic(result_type, id, fast_args, has_receiver, state_before,
                                     vmIntrinsics::preserves_state(id), vmIntrinsics::can_trap(id));
     fast->set_flag(Instruction::CommonIntrinsicEligibilityProvenFlag, true);
+    fast->set_flag(Instruction::CommonIntrinsicAesBackendProvenFlag, aes_cipher != nullptr);
     if (has_receiver) fast->set_needs_null_check(false);
     join_result(append_split(fast));
   }

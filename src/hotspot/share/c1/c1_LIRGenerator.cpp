@@ -3007,8 +3007,8 @@ void LIRGenerator::do_BigIntegerIntrinsic(Intrinsic* x) {
 
 void LIRGenerator::do_CryptoIntrinsic(Intrinsic* x) {
   const bool eligibility_proven = x->check_flag(Instruction::CommonIntrinsicEligibilityProvenFlag);
-  CodeEmitInfo* info = state_for(x, x->state_before());
-  info->set_force_reexecute();
+  const bool aes_backend_proven = x->check_flag(Instruction::CommonIntrinsicAesBackendProvenFlag);
+  CodeEmitInfo* info = nullptr;
   LIR_OprList values(x->number_of_arguments());
   for (int i = 0; i < x->number_of_arguments(); i++) {
     LIRItem item(x->argument_at(i), this);
@@ -3016,6 +3016,10 @@ void LIRGenerator::do_CryptoIntrinsic(Intrinsic* x) {
     values.append(item.result());
   }
   auto guard = [&](LIR_Condition condition, LIR_Opr left, LIR_Opr right) {
+    if (info == nullptr) {
+      info = state_for(x, x->state_before());
+      info->set_force_reexecute();
+    }
     __ cmp(condition, left, right);
     __ branch(condition, new PredicateFailedStub(info, true));
   };
@@ -3067,6 +3071,11 @@ void LIRGenerator::do_CryptoIntrinsic(Intrinsic* x) {
   bool ecb = id == vmIntrinsics::_electronicCodeBook_encryptAESCrypt || id == vmIntrinsics::_electronicCodeBook_decryptAESCrypt;
   bool cbc = id == vmIntrinsics::_cipherBlockChaining_encryptAESCrypt || id == vmIntrinsics::_cipherBlockChaining_decryptAESCrypt;
   bool ctr = id == vmIntrinsics::_counterMode_AESCrypt;
+  assert(!aes_backend_proven || ((ecb || cbc || ctr) && eligibility_proven &&
+         x->number_of_arguments() == 7 && x->argument_at(6)->type()->is_object_kind()),
+         "backend proof requires one auxiliary cipher oop on an instance mode kernel");
+  assert(!(ecb || cbc || ctr) || x->number_of_arguments() == (aes_backend_proven ? 7 : 6),
+         "unexpected instance mode argument shape");
   bool decrypting = id == vmIntrinsics::_aescrypt_decryptBlock ||
                     id == vmIntrinsics::_electronicCodeBook_decryptAESCrypt ||
                     id == vmIntrinsics::_cipherBlockChaining_decryptAESCrypt;
@@ -3081,7 +3090,10 @@ void LIRGenerator::do_CryptoIntrinsic(Intrinsic* x) {
     } else {
       same_position(1, 2, 4, 5);
     }
-    key = aes_key(values.at(0), decrypting);
+    key = aes_backend_proven
+        ? field(values.at(6), decrypting ? CommonIntrinsics::aes_decrypt_key_offset
+                                        : CommonIntrinsics::aes_encrypt_key_offset)
+        : aes_key(values.at(0), decrypting);
     if (cbc) {
       state = field(values.at(0), CommonIntrinsics::cbc_r_offset);
       entry = decrypting ? StubRoutines::cipherBlockChaining_decryptAESCrypt()
